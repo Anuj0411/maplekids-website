@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Language Switcher Layout Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f0f0f0;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        
+        /* Language Switcher Styles */
+        .language-switcher {
+            position: relative;
+            z-index: 9999;
+            pointer-events: auto;
+        }
+        
+        .language-options {
+            display: flex !important;
+            flex-direction: row !important;
+            gap: 8px;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .language-option {
+            display: inline-flex !important;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            border: 2px solid transparent;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            position: relative;
+            z-index: 10000;
+            white-space: nowrap;
+        }
+        
+        .language-option:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            border-color: #ffc107;
+        }
+        
+        .language-option.active {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            color: white;
+            border-color: #ff6b35;
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+        }
+        
+        .language-option .flag {
+            font-size: 1.2rem;
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+        }
+        
+        .language-option .code {
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Language Switcher Layout Test</h1>
+        <p>This page tests the side-by-side layout of the language switcher buttons.</p>
+        
+        <div class="test-section">
+            <h3>Desktop Layout Test</h3>
+            <div class="language-switcher">
+                <div class="language-options">
+                    <button class="language-option active">
+                        <span class="flag">🇺🇸</span>
+                        <span class="code">EN</span>
+                    </button>
+                    <button class="language-option">
+                        <span class="flag">🇮🇳</span>
+                        <span class="code">हि</span>
+                    </button>
+                </div>
+            </div>
+            <p><strong>Expected:</strong> Two buttons side by side horizontally</p>
+        </div>
+        
+        <div class="test-section">
+            <h3>Mobile Layout Test</h3>
+            <div class="language-switcher" style="max-width: 300px;">
+                <div class="language-options">
+                    <button class="language-option">
+                        <span class="flag">🇺🇸</span>
+                        <span class="code">EN</span>
+                    </button>
+                    <button class="language-option active">
+                        <span class="flag">🇮🇳</span>
+                        <span class="code">हि</span>
+                    </button>
+                </div>
+            </div>
+            <p><strong>Expected:</strong> Two buttons side by side, responsive</p>
+        </div>
+        
+        <div class="test-section">
+            <h3>Instructions</h3>
+            <ol>
+                <li>Check that both buttons are displayed side by side (horizontally)</li>
+                <li>Verify that the flag icons and text codes are visible</li>
+                <li>Test hover effects by hovering over the buttons</li>
+                <li>Ensure the layout works on different screen sizes</li>
+            </ol>
+        </div>
+        
+        <div class="test-section">
+            <h3>CSS Properties Applied</h3>
+            <ul>
+                <li><code>display: flex !important</code> - Forces flex layout</li>
+                <li><code>flex-direction: row !important</code> - Ensures horizontal layout</li>
+                <li><code>justify-content: center</code> - Centers the buttons</li>
+                <li><code>gap: 8px</code> - Adds space between buttons</li>
+                <li><code>display: inline-flex !important</code> - Makes buttons inline</li>
+                <li><code>white-space: nowrap</code> - Prevents text wrapping</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
