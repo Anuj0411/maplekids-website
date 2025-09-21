@@ -4,31 +4,48 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.75);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: var(--z-modal);
-  padding: var(--space-5);
-  backdrop-filter: blur(4px);
+  z-index: 1000;
+  padding: 20px;
+  backdrop-filter: blur(8px);
+  animation: overlayFadeIn 0.3s ease-out;
+}
+
+@keyframes overlayFadeIn {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(8px);
+  }
 }
 
 .modal {
-  background: var(--bg-primary);
-  border-radius: var(--radius-2xl);
-  box-shadow: var(--shadow-2xl);
-  max-width: 600px;
-  max-height: 90vh;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+  max-width: 700px;
+  max-height: 95vh;
   width: 100%;
   position: relative;
   overflow: hidden;
-  animation: modalSlideIn 0.3s ease-out;
+  animation: modalSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  flex-direction: column;
 }
 
 @keyframes modalSlideIn {
   from {
     opacity: 0;
-    transform: translateY(-20px) scale(0.95);
+    transform: translateY(-30px) scale(0.9);
   }
   to {
     opacity: 1;
@@ -36,23 +53,32 @@
   }
 }
 
-.modal h2 {
+.modal-title {
   margin: 0;
-  padding: 24px 28px 20px 28px;
-  border-bottom: 1px solid #e5e7eb;
-  color: #1f2937;
-  font-size: 1.5rem;
-  font-weight: 600;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 28px 32px 24px 32px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
   color: white;
+  font-size: 1.6rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #60a5fa 0%, #34d399 100%);
+  position: relative;
+  border-radius: 20px 20px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 70px;
+  letter-spacing: -0.025em;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .modal-close {
   position: absolute;
   top: 20px;
   right: 20px;
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   font-size: 20px;
   color: white;
   cursor: pointer;
@@ -62,47 +88,300 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   backdrop-filter: blur(10px);
+  z-index: 10;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .modal-close:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: scale(1.1);
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: scale(1.1) rotate(90deg);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.modal-close:active {
+  transform: scale(0.95) rotate(90deg);
 }
 
 .modal-content {
-  padding: 28px;
-  overflow-y: auto;
-  max-height: calc(90vh - 120px);
-  background: #fafafa;
+  padding: 24px 32px 32px 32px;
+  overflow: hidden;
+  flex: 1;
+  background: #ffffff;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.modal-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* M-CHAT Modal specific overrides */
+.mchat-modal {
+  max-height: 90vh;
+  overflow: hidden;
+}
+
+.mchat-modal .modal-title {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
+  box-shadow: 0 4px 20px rgba(79, 70, 229, 0.3);
+  flex-shrink: 0;
+}
+
+.mchat-modal .modal-title::before {
+  content: "🧠";
+  font-size: 1.6rem;
+  margin-right: 10px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.mchat-modal .modal-content {
+  padding: 0;
+  overflow: hidden;
+  background: transparent;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Motor Skills Modal specific overrides */
+.motor-skills-modal .modal-title {
+  background: linear-gradient(135deg, #059669, #0d9488) !important;
+  box-shadow: 0 4px 20px rgba(5, 150, 105, 0.3);
+}
+
+.motor-skills-modal .modal-title::before {
+  content: "🏃";
+  font-size: 1.6rem;
+  margin-right: 10px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+/* Speech Language Modal specific overrides */
+.speech-language-modal {
+  max-height: 90vh;
+  overflow: hidden;
+}
+
+.speech-language-modal .modal-title {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important;
+  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+  flex-shrink: 0;
+}
+
+.speech-language-modal .modal-title::before {
+  content: "🗣️";
+  font-size: 1.6rem;
+  margin-right: 10px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.speech-language-modal .modal-content {
+  padding: 0;
+  overflow: hidden;
+  background: transparent;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Social Skills Modal specific overrides */
+.social-skills-modal {
+  max-height: 90vh;
+  overflow: hidden;
+}
+
+.social-skills-modal .modal-title {
+  background: linear-gradient(135deg, #7c3aed, #a855f7) !important;
+  box-shadow: 0 4px 20px rgba(124, 58, 237, 0.3);
+  flex-shrink: 0;
+}
+
+.social-skills-modal .modal-title::before {
+  content: "👥";
+  font-size: 1.6rem;
+  margin-right: 10px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.social-skills-modal .modal-content {
+  padding: 0;
+  overflow: hidden;
+  background: transparent;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Results Modal specific overrides */
+.results-modal .modal-title {
+  background: linear-gradient(135deg, #dc2626, #ea580c) !important;
+  box-shadow: 0 4px 20px rgba(220, 38, 38, 0.3);
+  flex-shrink: 0;
+}
+
+.results-modal .modal-title::before {
+  content: "📊";
+  font-size: 1.6rem;
+  margin-right: 10px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
   .modal-overlay {
-    padding: 10px;
+    padding: 16px;
+    backdrop-filter: blur(12px);
   }
   
   .modal {
     max-width: 95vw;
     max-height: 95vh;
+    border-radius: 16px;
+    box-shadow: 
+      0 20px 40px -12px rgba(0, 0, 0, 0.3),
+      0 0 0 1px rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
   }
   
-  .modal h2 {
+  .modal-title {
+    padding: 20px 24px 16px 24px;
+    font-size: 1.4rem;
+    min-height: 60px;
+    border-radius: 16px 16px 0 0;
+  }
+  
+  .modal-title::before {
+    font-size: 1.4rem;
+    margin-right: 8px;
+  }
+  
+  .modal-content {
+    padding: 20px 24px 24px 24px;
+    overflow: hidden;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  
+  .modal-close {
+    top: 16px;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+    font-size: 18px;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    font-weight: bold;
+  }
+  
+  .modal-close:hover {
+    background: rgba(0, 0, 0, 0.8);
+    transform: scale(1.05) rotate(90deg);
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+  
+  .mchat-modal {
+    max-height: 90vh;
+  }
+  
+  .motor-skills-modal {
+    max-height: 85vh;
+    overflow: hidden;
+  }
+  
+  .motor-skills-modal .modal-content {
+    padding: 0;
+    overflow: hidden;
+    max-height: 85vh;
+    background: transparent;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-overlay {
+    padding: 12px;
+    backdrop-filter: blur(16px);
+  }
+  
+  .modal {
+    border-radius: 12px;
+    box-shadow: 
+      0 16px 32px -8px rgba(0, 0, 0, 0.4),
+      0 0 0 1px rgba(255, 255, 255, 0.1);
+  }
+  
+  .modal-title {
     padding: 16px 20px 12px 20px;
-    font-size: 1.25rem;
+    font-size: 1.2rem;
+    min-height: 50px;
+    border-radius: 12px 12px 0 0;
+  }
+  
+  .modal-title::before {
+    font-size: 1.2rem;
+    margin-right: 6px;
   }
   
   .modal-content {
     padding: 20px;
+    max-height: calc(95vh - 100px);
   }
   
   .modal-close {
     top: 12px;
     right: 12px;
-    font-size: 20px;
+    font-size: 16px;
     width: 28px;
     height: 28px;
+    background: rgba(220, 38, 38, 0.9);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    font-weight: bold;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  .modal-close:hover {
+    background: rgba(220, 38, 38, 1);
+    transform: scale(1.1) rotate(90deg);
+    border-color: rgba(255, 255, 255, 0.6);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+  
+  .mchat-modal .modal-content {
+    max-width: 98vw;
+    max-height: 95vh;
+    margin: 0.5rem;
+  }
+  
+  .motor-skills-modal .modal-content {
+    max-width: 98vw;
+    max-height: 95vh;
+    margin: 0.5rem;
   }
 }

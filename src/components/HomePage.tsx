@@ -5,6 +5,9 @@ import './HomePage.css';
 import { eventService } from '../firebase/services';
 import { Carousel } from './common';
 import Header from './common/Header';
+import WhatsAppEnquiryForm from './WhatsAppEnquiryForm';
+import FlashAnnouncement from './FlashAnnouncement';
+import { useAnnouncement } from '../contexts/AnnouncementContext';
 import schoolImage from '../assets/school_image.jpg';
 import backToSchool1 from '../assets/back_to_school.jpg';
 import backToSchool2 from '../assets/back_to_school2.jpg';
@@ -36,23 +39,50 @@ const HomePage: React.FC = () => {
   const [showTitleAnimation, setShowTitleAnimation] = useState(true);
   const [visibleCharacters, setVisibleCharacters] = useState<string[]>([]);
   const animationStartedRef = useRef(false);
+  const [showWhatsAppForm, setShowWhatsAppForm] = useState(false);
+  const { announcements, handleAnnouncementDismiss } = useAnnouncement();
+  
+  // WhatsApp Configuration - Replace with your actual WhatsApp number
+  const whatsappNumber = '919238612960'; // Format: country code + number (no + sign)
   // Scroll to section function
   const scrollToSection = (sectionId: string) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      // Get header height to account for fixed header
-      const header = document.querySelector('.header');
-      const headerHeight = header ? header.getBoundingClientRect().height : 80;
+    console.log('Scrolling to section:', sectionId); // Debug log
+    
+    // Add a small delay to ensure DOM is ready
+    setTimeout(() => {
+      const element = document.getElementById(sectionId);
+      console.log('Element found:', element); // Debug log
       
-      // Calculate the position to scroll to (accounting for header)
-      const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
-      const offsetPosition = elementPosition - headerHeight - 20; // 20px extra padding
-      
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth'
-      });
-    }
+      if (element) {
+        // Get header height to account for fixed header
+        const header = document.querySelector('.header');
+        const headerHeight = header ? header.getBoundingClientRect().height : 80;
+        console.log('Header height:', headerHeight); // Debug log
+        
+        // Calculate the position to scroll to (accounting for header)
+        const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
+        const offsetPosition = Math.max(0, elementPosition - headerHeight - 20); // 20px extra padding, ensure non-negative
+        console.log('Scrolling to position:', offsetPosition); // Debug log
+        
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth'
+        });
+      } else {
+        console.error('Element not found:', sectionId);
+        // Try alternative selectors
+        const altElement = document.querySelector(`[id="${sectionId}"]`);
+        if (altElement) {
+          console.log('Found element with alternative selector');
+          const elementPosition = altElement.getBoundingClientRect().top + window.pageYOffset;
+          const offsetPosition = Math.max(0, elementPosition - 100); // Default offset
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth'
+          });
+        }
+      }
+    }, 100);
   };
 
   // Create carousel items from assets images
@@ -143,6 +173,30 @@ const HomePage: React.FC = () => {
     }
   }, []);
 
+  // Handle hash navigation when page loads
+  useEffect(() => {
+    const handleHashNavigation = () => {
+      const hash = window.location.hash.substring(1); // Remove the # symbol
+      if (hash) {
+        // Small delay to ensure DOM is ready
+        setTimeout(() => {
+          scrollToSection(hash);
+        }, 500);
+      }
+    };
+
+    // Handle initial hash
+    handleHashNavigation();
+
+    // Listen for hash changes
+    window.addEventListener('hashchange', handleHashNavigation);
+
+    return () => {
+      window.removeEventListener('hashchange', handleHashNavigation);
+    };
+  }, []);
+
+
   const animateTitle = () => {
     const title = "Maplekids";
     const characters = title.split('');
@@ -206,6 +260,12 @@ const HomePage: React.FC = () => {
     <div className="home-container" dir={t('common.direction', { defaultValue: 'ltr' })}>
       {/* Header */}
       <Header scrollToSection={scrollToSection} />
+      
+      {/* Flash Announcements */}
+      <FlashAnnouncement 
+        announcements={announcements}
+        onDismiss={handleAnnouncementDismiss}
+      />
       
       {/* Floating Bubbles Background */}
       <div className="floating-bubbles">
@@ -294,8 +354,6 @@ const HomePage: React.FC = () => {
           
           <div className="about-text">
             <div className="about-highlight">
-              <span className="highlight-icon">🌟</span>
-              <h3>{t('home.about.highlight.title')}</h3>
             </div>
             <p>{t('home.about.highlight.description')}</p>
             
@@ -606,14 +664,15 @@ const HomePage: React.FC = () => {
             </div>
             <button 
               className="btn-primary btn-cta"
-              onClick={() => navigate('/signin')}
+              onClick={() => setShowWhatsAppForm(true)}
             >
-              <span className="btn-icon">🚀</span>
-              {t('home.cta.button')}
+              <span className="btn-icon">📱</span>
+              Enquire Now via WhatsApp
             </button>
           </div>
         </div>
       </div>
+
 
       {/* Footer */}
       <footer id="contact" className="footer">
@@ -644,6 +703,14 @@ const HomePage: React.FC = () => {
           <p>&copy; 2024 Maplekids Play School. {t('home.footer.copyright')}</p>
         </div>
       </footer>
+
+      {/* WhatsApp Enquiry Form Modal */}
+      <WhatsAppEnquiryForm
+        isOpen={showWhatsAppForm}
+        onClose={() => setShowWhatsAppForm(false)}
+        whatsappNumber={whatsappNumber}
+        schoolName="Maple Kids Play School"
+      />
     </div>
   );
 };

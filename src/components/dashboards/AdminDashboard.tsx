@@ -6,6 +6,8 @@ import { Button, Table } from '../common';
 import AttendanceOverview from '../AttendanceOverview';
 import UserCreationModal from '../UserCreationModal';
 import ExcelBulkUserCreationModal from '../ExcelBulkUserCreationModal';
+import AdminAnnouncementManager from '../AdminAnnouncementManager';
+import { Announcement } from '../../services/announcementService';
 
 // Use the exact interfaces from Firebase services to avoid type mismatches
 interface User {
@@ -543,6 +545,15 @@ const AdminDashboard: React.FC = () => {
             <span className="tab-text">Events</span>
           </button>
           <button 
+            className={`tab-button ${activeTab === 'announcements' ? 'active' : ''}`}
+            onClick={() => setActiveTab('announcements')}
+            data-icon="📢"
+            data-label="Announcements"
+          >
+            <span className="tab-icon">📢</span>
+            <span className="tab-text">Announcements</span>
+          </button>
+          <button 
             className={`tab-button ${activeTab === 'finance' ? 'active' : ''}`}
             onClick={() => setActiveTab('finance')}
             data-icon="💰"
@@ -810,6 +821,18 @@ const AdminDashboard: React.FC = () => {
                 emptyMessage="No students found."
               />
             </div>
+          </div>
+        )}
+
+        {/* Announcements Tab */}
+        {activeTab === 'announcements' && (
+          <div className="tab-content">
+            <AdminAnnouncementManager 
+              onAnnouncementChange={(announcements: Announcement[]) => {
+                // Update local state if needed
+                console.log('Announcements updated:', announcements);
+              }}
+            />
           </div>
         )}
 

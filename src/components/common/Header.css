@@ -5,21 +5,20 @@
   left: 0;
   right: 0;
   background: #ffffff;
-  backdrop-filter: none;
-  border-bottom: 2px solid var(--primary-yellow);
+  border-bottom: 1px solid #e5e7eb;
   z-index: 1000;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .header-container {
-  max-width: 1200px;
+  max-width: 90%;
   margin: 0 auto;
-  padding: 0 var(--space-6);
+  padding: 0 2rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 80px;
-  gap: var(--space-4);
+  height: 70px;
+  gap: 2rem;
 }
 
 .header-logo {
@@ -67,34 +66,35 @@
 .header-actions {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
+  gap: 1rem;
 }
 
 .btn-header {
-  padding: 12px 24px;
-  font-size: 0.95rem;
-  font-weight: 700;
-  min-width: 120px;
-  height: 44px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  min-width: 100px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
-  transition: all 0.3s ease;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .btn-header:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(245, 158, 11, 0.5);
+  background: #2563eb;
 }
 
 /* Header Navigation Styles */
 .header-navigation {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: 0.5rem;
   flex: 1;
   justify-content: center;
   max-width: 600px;
@@ -104,20 +104,22 @@
   background: transparent;
   border: none;
   color: #6b7280;
-  padding: var(--space-2) var(--space-4);
-  font-size: var(--font-size-sm);
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   white-space: nowrap;
   position: relative;
   border-radius: 6px;
+  flex-shrink: 0;
 }
 
 .nav-tab:hover {
-  color: #f59e0b;
-  background: rgba(255, 193, 7, 0.1);
+  color: #1f2937;
+  background: #f9fafb;
 }
+
 
 .nav-tab::after {
   content: '';
@@ -155,6 +157,19 @@
 }
 
 /* Responsive Design */
+@media (max-width: 1024px) {
+  .header-navigation {
+    max-width: 500px;
+    gap: 0.25rem;
+  }
+  
+  .nav-tab {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+  }
+  
+}
+
 @media (max-width: 768px) {
   .header-container {
     padding: 0 var(--space-4);
@@ -164,12 +179,12 @@
   }
   
   .header-navigation {
-    gap: var(--space-1);
-    max-width: 400px;
+    gap: 2px;
+    max-width: 350px;
   }
   
   .nav-tab {
-    padding: var(--space-1) var(--space-2);
+    padding: 6px 8px;
     font-size: 0.7rem;
   }
   
@@ -197,16 +212,18 @@
   }
 }
 
+@media (max-width: 768px) {
+  .header-navigation {
+    display: none; /* Hide navigation on smaller screens, use mobile menu instead */
+  }
+}
+
 @media (max-width: 480px) {
   .header-container {
     padding: 0 var(--space-3);
     height: 70px;
     gap: var(--space-1);
     flex-wrap: nowrap;
-  }
-  
-  .header-navigation {
-    display: none; /* Hide navigation on very small screens */
   }
   
   .header-logo {
@@ -361,24 +378,25 @@ body.mobile-menu-open {
 
 .mobile-nav-item {
   display: block;
-  width: 100%;
+  width: 80%;
   background: none;
   border: none;
-  padding: 16px 20px;
+  padding: 12px 20px;
   text-align: left;
   color: #374151;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  border-left: 3px solid transparent;
+  border-radius: 6px;
+  margin: 2px 0;
 }
 
 .mobile-nav-item:hover {
-  background: rgba(245, 158, 11, 0.1);
-  color: #f59e0b;
-  border-left-color: #f59e0b;
+  background: #f3f4f6;
+  color: #1f2937;
 }
+
 
 .mobile-language-section {
   padding: 20px;
@@ -435,7 +453,7 @@ body.mobile-menu-open {
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 600px) {
   .desktop-language-switcher {
     display: none;
   }
@@ -505,4 +523,5 @@ body.mobile-menu-open {
     padding: 14px 16px;
     font-size: 0.9rem;
   }
+  
 }

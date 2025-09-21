@@ -5,9 +5,10 @@ import LanguageSelectionPopup from './LanguageSelectionPopup';
 
 interface LanguageWrapperProps {
   children: React.ReactNode;
+  startLanguageTimer?: boolean; // Control when language timer should start
 }
 
-const LanguageWrapper: React.FC<LanguageWrapperProps> = ({ children }) => {
+const LanguageWrapper: React.FC<LanguageWrapperProps> = ({ children, startLanguageTimer = true }) => {
   const { i18n } = useTranslation();
   const [languageSelected, setLanguageSelected] = useState(false);
 
@@ -41,7 +42,7 @@ const LanguageWrapper: React.FC<LanguageWrapperProps> = ({ children }) => {
 
   return (
     <>
-      {!languageSelected && (
+      {!languageSelected && startLanguageTimer && (
         <LanguageSelectionPopup onLanguageSelect={handleLanguageSelect} />
       )}
       {children}

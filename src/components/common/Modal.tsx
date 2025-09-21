@@ -44,13 +44,13 @@ const Modal: React.FC<ModalProps> = ({
 
   if (!isOpen) return null;
 
-  const sizeClasses = {
-    sm: 'max-w-md',
-    md: 'max-w-lg',
-    lg: 'max-w-2xl',
-    xl: 'max-w-4xl',
-    full: 'max-w-full mx-4'
-  }[size];
+  // const sizeClasses = { // Removed unused variable
+  //   sm: 'max-w-md',
+  //   md: 'max-w-lg',
+  //   lg: 'max-w-2xl',
+  //   xl: 'max-w-4xl',
+  //   full: 'max-w-full mx-4'
+  // }[size];
 
   const handleOverlayClick = (e: React.MouseEvent) => {
     if (closeOnOverlayClick && e.target === e.currentTarget) {
@@ -63,26 +63,22 @@ const Modal: React.FC<ModalProps> = ({
       className="modal-overlay" 
       onClick={handleOverlayClick}
     >
-      <div className={`modal-content ${sizeClasses} ${className}`}>
-        {(title || showCloseButton) && (
-          <div className="flex items-center justify-between p-6 border-b border-primary">
-            {title && (
-              <h2 className="text-xl font-semibold text-primary">
-                {title}
-              </h2>
-            )}
-            {showCloseButton && (
-              <button 
-                className="btn btn-outline btn-sm p-2"
-                onClick={onClose}
-                aria-label="Close modal"
-              >
-                <span className="text-lg">&times;</span>
-              </button>
-            )}
-          </div>
+      <div className={`modal ${className}`}>
+        {title && (
+          <h2 className="modal-title">
+            {title}
+          </h2>
         )}
-        <div className="p-6">
+        {showCloseButton && (
+          <button 
+            className="modal-close"
+            onClick={onClose}
+            aria-label="Close modal"
+          >
+            ×
+          </button>
+        )}
+        <div className="modal-content">
           {children}
         </div>
       </div>

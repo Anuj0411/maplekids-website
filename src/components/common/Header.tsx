@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+// import { useTranslation } from 'react-i18next'; // Removed unused import
 import Logo from './Logo';
 import LanguageToggle from './LanguageToggle';
 import './Header.css';
@@ -10,6 +11,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ scrollToSection }) => {
   const navigate = useNavigate();
+  // const { t } = useTranslation(); // Removed unused import
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleMobileMenuToggle = () => {
@@ -42,6 +44,15 @@ const Header: React.FC<HeaderProps> = ({ scrollToSection }) => {
     }, 100);
   };
 
+  const handleDesktopNavClick = (sectionId: string) => {
+    // Add small delay to ensure any animations complete
+    setTimeout(() => {
+      if (scrollToSection) {
+        scrollToSection(sectionId);
+      }
+    }, 50);
+  };
+
   return (
     <header className="header">
       <div className="header-container">
@@ -57,37 +68,37 @@ const Header: React.FC<HeaderProps> = ({ scrollToSection }) => {
           <div className="header-navigation">
             <button 
               className="nav-tab" 
-              onClick={() => scrollToSection('about')}
+              onClick={() => handleDesktopNavClick('about')}
             >
               About
             </button>
             <button 
               className="nav-tab" 
-              onClick={() => scrollToSection('why-maplekids')}
+              onClick={() => handleDesktopNavClick('why-maplekids')}
             >
               Why Maplekids
             </button>
             <button 
               className="nav-tab" 
-              onClick={() => scrollToSection('games')}
+              onClick={() => handleDesktopNavClick('games')}
             >
               Fun Games
             </button>
             <button 
               className="nav-tab" 
-              onClick={() => scrollToSection('events')}
+              onClick={() => handleDesktopNavClick('events')}
             >
               Events
             </button>
             <button 
               className="nav-tab" 
-              onClick={() => scrollToSection('gallery')}
+              onClick={() => handleDesktopNavClick('gallery')}
             >
               Gallery
             </button>
             <button 
               className="nav-tab" 
-              onClick={() => scrollToSection('contact')}
+              onClick={() => handleDesktopNavClick('contact')}
             >
               Contact
             </button>

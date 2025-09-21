@@ -79,7 +79,8 @@
     "profile": "Profile",
     "logout": "Logout",
     "signin": "Sign In",
-    "signup": "Sign Up"
+    "signup": "Sign Up",
+    "childcareCenter": "Development Hub"
   },
   "home": {
     "hero": {
@@ -162,7 +163,6 @@
       "title": "About Our School",
       "subtitle": "Discover the heart and soul of Maplekids - where every child's journey begins",
       "highlight": {
-        "title": "Founded in 2024 with a Vision",
         "description": "Founded in 2024, Maplekids was started with a vision to nurture early life learnings in children, helping them grow into responsible, confident, and future-ready individuals. We believe every child is unique and gifted, and our mission is to preserve their natural qualities while guiding them through joyful, value-based, and holistic learning."
       },
       "stats": {
@@ -506,6 +506,429 @@
         "Manage events and gallery",
         "System administration"
       ]
+    }
+  },
+  "childcareCenter": {
+    "hero": {
+      "title": "Child Development Hub",
+      "subtitle": "Comprehensive assessment tools to track your child's growth and development",
+      "description": "Monitor your child's developmental milestones with our evidence-based screening tools. Get insights and guidance to support your child's unique journey."
+    },
+    "tests": {
+      "title": "Assessment Tools",
+      "subtitle": "Track your child's development with our comprehensive evaluation tools",
+      "mchat": {
+        "title": "M-CHAT Test",
+        "description": "Modified Checklist for Autism in Toddlers - Ages 16-30 months",
+        "features": ["Autism Screening", "23 Questions", "5-10 minutes"],
+        "startButton": "Start M-CHAT Test"
+      },
+      "speech": {
+        "title": "Speech & Language",
+        "description": "Comprehensive speech and language development screening",
+        "features": ["Receptive Language", "Expressive Language", "Articulation", "Pragmatic Language"],
+        "startButton": "Start Speech & Language Test"
+      },
+      "motorSkills": {
+        "title": "Motor Skills Assessment",
+        "description": "M-ABC based motor skills evaluation for children aged 3-16",
+        "features": ["Manual Dexterity", "Balance & Coordination", "Aiming & Catching"],
+        "startButton": "Start Motor Skills Test"
+      },
+      "social": {
+        "title": "Social Skills",
+        "description": "Social interaction and emotional development screening",
+        "features": ["Social Interaction", "Emotional Regulation", "Communication", "Play Skills"],
+        "startButton": "Start Social Skills Test"
+      }
+    },
+    "mchatTest": {
+      "title": "M-CHAT Test",
+      "progress": "Question {current} of {total}",
+      "criticalIndicator": "⚠️ This is a critical question",
+      "cancelButton": "Cancel Test",
+      "questions": [
+        "Does your child enjoy being swung, bounced on your knee, etc.?",
+        "Does your child take an interest in other children?",
+        "Does your child like climbing on things, such as up stairs?",
+        "Does your child enjoy playing peek-a-boo/hide-and-seek?",
+        "Does your child ever pretend, for example, to talk on the phone or take care of a doll or pretend other things?",
+        "Does your child ever use his/her index finger to point, to ask for something?",
+        "Does your child ever use his/her index finger to point, to indicate interest in something?",
+        "Can your child play properly with small toys (e.g. cars or blocks) without just mouthing, fiddling, or dropping them?",
+        "Does your child ever bring objects over to you (parent) to show you something?",
+        "Does your child look you in the eye for more than a second or two?",
+        "Does your child ever seem oversensitive to noise? (e.g., plugging ears)",
+        "Does your child smile in response to your face or your smile?",
+        "Does your child imitate you? (e.g., you make a face-will your child imitate it?)",
+        "Does your child respond to his/her name when you call?",
+        "If you point at a toy across the room, does your child look at it?",
+        "Does your child walk?",
+        "Does your child look at things you are looking at?",
+        "Does your child make unusual finger movements near his/her face?",
+        "Does your child try to attract your attention to his/her own activity?",
+        "Have you ever wondered if your child is deaf?",
+        "Does your child understand what people say?",
+        "Does your child sometimes stare at nothing or wander with no purpose?",
+        "Does your child look at your face to check your reaction when faced with something unfamiliar?"
+      ]
+    },
+    "results": {
+      "title": "M-CHAT Test Results",
+      "score": "Test Score",
+      "outOf": "out of {total} questions",
+      "riskLevels": {
+        "high": "High Risk - Professional Evaluation Recommended",
+        "medium": "Medium Risk - Monitor and Follow-up",
+        "low": "Low Risk - Continue Monitoring"
+      },
+      "recommendations": "Recommendations",
+      "nextSteps": "Next Steps",
+      "importantNotice": {
+        "title": "⚠️ Important Notice",
+        "text": "This screening tool is not a diagnostic tool. It helps identify children who may need further evaluation. Always consult with healthcare professionals for proper assessment and diagnosis."
+      },
+      "actions": {
+        "takeAnotherTest": "Take Another Test",
+        "backToHome": "Back to Home"
+      }
+    },
+    "motorSkillsTest": {
+      "title": "Motor Skills Assessment",
+      "progress": "Question {current} of {total}",
+      "categories": {
+        "manual_dexterity": "Manual Dexterity",
+        "aiming_catching": "Aiming & Catching",
+        "balance": "Balance & Coordination"
+      },
+      "options": {
+        "excellent": "Excellent",
+        "good": "Good",
+        "fair": "Fair",
+        "poor": "Poor"
+      },
+      "questions": [
+        {
+          "category": "manual_dexterity",
+          "question": "Can your child pick up small objects (like beads or coins) using thumb and index finger?",
+          "ageGroup": "3-4"
+        },
+        {
+          "category": "manual_dexterity",
+          "question": "Does your child use scissors to cut along a straight line?",
+          "ageGroup": "5-6"
+        },
+        {
+          "category": "manual_dexterity",
+          "question": "Can your child tie shoelaces independently?",
+          "ageGroup": "7-8"
+        },
+        {
+          "category": "manual_dexterity",
+          "question": "Does your child write letters and numbers with proper formation?",
+          "ageGroup": "9-10"
+        },
+        {
+          "category": "aiming_catching",
+          "question": "Can your child catch a large ball (8-10 inches) thrown from 3 feet away?",
+          "ageGroup": "3-4"
+        },
+        {
+          "category": "aiming_catching",
+          "question": "Does your child throw a ball overhand with some accuracy?",
+          "ageGroup": "5-6"
+        },
+        {
+          "category": "aiming_catching",
+          "question": "Can your child catch a tennis ball with one hand?",
+          "ageGroup": "7-8"
+        },
+        {
+          "category": "aiming_catching",
+          "question": "Does your child hit a target (like a basket or goal) from 10 feet away?",
+          "ageGroup": "9-10"
+        },
+        {
+          "category": "balance",
+          "question": "Can your child walk on a straight line (like a curb or tape on floor)?",
+          "ageGroup": "3-4"
+        },
+        {
+          "category": "balance",
+          "question": "Does your child hop on one foot for at least 3 hops?",
+          "ageGroup": "5-6"
+        },
+        {
+          "category": "balance",
+          "question": "Can your child walk backward heel-to-toe for 5 steps?",
+          "ageGroup": "7-8"
+        },
+        {
+          "category": "balance",
+          "question": "Does your child maintain balance while standing on one foot for 10 seconds?",
+          "ageGroup": "9-10"
+        },
+        {
+          "category": "manual_dexterity",
+          "question": "Can your child button and unbutton clothes independently?",
+          "ageGroup": "11-12"
+        },
+        {
+          "category": "aiming_catching",
+          "question": "Does your child participate in team sports requiring hand-eye coordination?",
+          "ageGroup": "11-12"
+        },
+        {
+          "category": "balance",
+          "question": "Can your child ride a bicycle without training wheels?",
+          "ageGroup": "11-12"
+        }
+      ]
+    },
+    "speechLanguageTest": {
+      "title": "Speech & Language Assessment",
+      "progress": "Question {current} of {total}",
+      "categories": {
+        "receptive_language": "Receptive Language",
+        "expressive_language": "Expressive Language",
+        "articulation": "Articulation",
+        "pragmatic_language": "Pragmatic Language"
+      },
+      "options": {
+        "always": "Always",
+        "often": "Often",
+        "sometimes": "Sometimes",
+        "rarely": "Rarely",
+        "never": "Never"
+      },
+      "questions": [
+        {
+          "category": "receptive_language",
+          "question": "Does your child follow simple one-step instructions (e.g., 'Get your shoes')?",
+          "ageGroup": "2-3"
+        },
+        {
+          "category": "expressive_language",
+          "question": "Does your child use 2-3 word phrases to communicate needs?",
+          "ageGroup": "2-3"
+        },
+        {
+          "category": "articulation",
+          "question": "Can others understand most of what your child says?",
+          "ageGroup": "3-4"
+        },
+        {
+          "category": "pragmatic_language",
+          "question": "Does your child maintain eye contact during conversations?",
+          "ageGroup": "3-4"
+        },
+        {
+          "category": "receptive_language",
+          "question": "Does your child understand 'who', 'what', 'where' questions?",
+          "ageGroup": "4-5"
+        },
+        {
+          "category": "expressive_language",
+          "question": "Does your child use complete sentences (4+ words) to express ideas?",
+          "ageGroup": "4-5"
+        },
+        {
+          "category": "articulation",
+          "question": "Does your child pronounce most sounds correctly for their age?",
+          "ageGroup": "5-6"
+        },
+        {
+          "category": "pragmatic_language",
+          "question": "Does your child take turns in conversations appropriately?",
+          "ageGroup": "5-6"
+        },
+        {
+          "category": "receptive_language",
+          "question": "Does your child understand complex instructions with multiple steps?",
+          "ageGroup": "6-7"
+        },
+        {
+          "category": "expressive_language",
+          "question": "Does your child tell stories with a clear beginning, middle, and end?",
+          "ageGroup": "6-7"
+        }
+      ]
+    },
+    "socialSkillsTest": {
+      "title": "Social Skills Assessment",
+      "progress": "Question {current} of {total}",
+      "categories": {
+        "social_interaction": "Social Interaction",
+        "emotional_regulation": "Emotional Regulation",
+        "communication": "Communication",
+        "play_skills": "Play Skills"
+      },
+      "options": {
+        "always": "Always",
+        "often": "Often",
+        "sometimes": "Sometimes",
+        "rarely": "Rarely",
+        "never": "Never"
+      },
+      "questions": [
+        {
+          "category": "social_interaction",
+          "question": "Does your child initiate play with other children?",
+          "ageGroup": "3-4"
+        },
+        {
+          "category": "emotional_regulation",
+          "question": "Does your child calm down within 10-15 minutes after being upset?",
+          "ageGroup": "3-4"
+        },
+        {
+          "category": "communication",
+          "question": "Does your child share toys or take turns during play?",
+          "ageGroup": "3-4"
+        },
+        {
+          "category": "play_skills",
+          "question": "Does your child engage in pretend or imaginative play?",
+          "ageGroup": "3-4"
+        },
+        {
+          "category": "social_interaction",
+          "question": "Does your child show empathy when others are hurt or sad?",
+          "ageGroup": "4-5"
+        },
+        {
+          "category": "emotional_regulation",
+          "question": "Does your child express emotions appropriately for the situation?",
+          "ageGroup": "4-5"
+        },
+        {
+          "category": "communication",
+          "question": "Does your child ask for help when needed?",
+          "ageGroup": "4-5"
+        },
+        {
+          "category": "play_skills",
+          "question": "Does your child follow rules in group games?",
+          "ageGroup": "5-6"
+        },
+        {
+          "category": "social_interaction",
+          "question": "Does your child make and maintain friendships?",
+          "ageGroup": "6-7"
+        },
+        {
+          "category": "emotional_regulation",
+          "question": "Does your child handle disappointment or frustration well?",
+          "ageGroup": "6-7"
+        }
+      ]
+    },
+    "resources": {
+      "title": "Additional Resources",
+      "subtitle": "Helpful information and support for parents",
+      "earlyIntervention": {
+        "title": "Early Intervention Services",
+        "description": "Learn about early intervention programs available in your area",
+        "link": "Learn More"
+      },
+      "specialists": {
+        "title": "Find Specialists",
+        "description": "Connect with developmental pediatricians and therapists",
+        "link": "Find Help"
+      },
+      "supportGroups": {
+        "title": "Support Groups",
+        "description": "Connect with other parents facing similar challenges",
+        "link": "Join Community"
+      },
+      "emergencySupport": {
+        "title": "Emergency Support",
+        "description": "24/7 helplines for immediate assistance and guidance",
+        "link": "Get Help Now"
+      }
+    },
+    "footer": {
+      "title": "Maplekids Development Hub",
+      "tagline": "Supporting every child's unique journey",
+      "quickLinks": "Quick Links",
+      "home": "Home",
+      "screeningTools": "Assessment Tools",
+      "resources": "Resources",
+      "contactSupport": "Contact Support",
+      "phone": "+91-9876543210",
+      "email": "development@maplekids.com",
+      "address": "Maplekids Play School, Hatta",
+      "copyright": "All rights reserved."
+    }
+  },
+  "whatsappEnquiry": {
+    "title": "Enquire Now - WhatsApp",
+    "header": {
+      "title": "Get in Touch via WhatsApp",
+      "description": "Fill in the details below and we'll connect you directly to our admissions team via WhatsApp."
+    },
+    "form": {
+      "parentName": "Parent's Name",
+      "parentNamePlaceholder": "Enter parent's full name",
+      "childName": "Child's Name",
+      "childNamePlaceholder": "Enter child's full name",
+      "class": "Class/Grade",
+      "classPlaceholder": "e.g., Nursery, LKG, UKG, 1st",
+      "age": "Age",
+      "agePlaceholder": "e.g., 3 years, 4 years 6 months",
+      "contact": "Contact Number",
+      "contactPlaceholder": "10-digit mobile number",
+      "message": "Additional Message (Optional)",
+      "messagePlaceholder": "Any specific questions or requirements...",
+      "required": "Required",
+      "validation": {
+        "fillAllFields": "Please fill in all required fields",
+        "invalidPhone": "Please enter a valid 10-digit phone number"
+      }
+    },
+    "buttons": {
+      "cancel": "Cancel",
+      "sendWhatsApp": "Send via WhatsApp",
+      "openingWhatsApp": "Opening WhatsApp..."
+    },
+    "info": {
+      "note": "Note: This will open WhatsApp with a pre-filled message. You can edit the message before sending."
+    },
+    "message": {
+      "greeting": "Hello! I'm interested in enrolling my child at {schoolName}.",
+      "parentDetails": "Parent Details:",
+      "parentName": "Parent Name: {parentName}",
+      "childDetails": "Child Details:",
+      "name": "Name: {name}",
+      "class": "Class: {class}",
+      "age": "Age: {age}",
+      "contact": "Contact: {contact}",
+      "additionalMessage": "Additional Message:",
+      "footer": "Please provide me with more information about admission process and fees.\n\nThank you!"
+    }
+  },
+  "indianParentGuide": {
+    "title": "Parent Guide",
+    "subtitle": "Your comprehensive resource for modern parenting",
+    "searchPlaceholder": "Search parenting topics...",
+    "ageGroups": {
+      "toddler": "Toddler (1-3 years)",
+      "preschool": "Preschool (3-5 years)",
+      "earlyPrimary": "Early Primary (5-8 years)",
+      "primary": "Primary (8-12 years)"
+    },
+    "sections": {
+      "overview": "Overview",
+      "tips": "Tips",
+      "activities": "Activities",
+      "cultural": "Cultural",
+      "challenges": "Challenges"
+    },
+    "quickActions": {
+      "contactExpert": "Contact Expert",
+      "downloadGuide": "Download Guide",
+      "joinCommunity": "Join Community",
+      "bookConsultation": "Book Consultation"
     }
   }
 }

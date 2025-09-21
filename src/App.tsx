@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import './App.css';
 import './i18n'; // Import i18n configuration
 import { AuthProvider } from './contexts/AuthContext';
+import { AnnouncementProvider, useAnnouncement } from './contexts/AnnouncementContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import HomePage from './components/HomePage';
 import LanguageWrapper from './components/LanguageWrapper';
@@ -19,9 +20,12 @@ import EditStudentForm from './components/forms/EditStudentForm';
 import EditEventForm from './components/forms/EditEventForm';
 import EditUserForm from './components/forms/EditUserForm';
 
-function App() {
+// Component that uses announcement context and controls language timer
+const AppContent: React.FC = () => {
+  const { announcementDismissed } = useAnnouncement();
+  
   return (
-    <LanguageWrapper>
+    <LanguageWrapper startLanguageTimer={announcementDismissed}>
       <AuthProvider>
         <Router>
           <div className="App">
@@ -110,6 +114,14 @@ function App() {
         </Router>
       </AuthProvider>
     </LanguageWrapper>
+  );
+};
+
+function App() {
+  return (
+    <AnnouncementProvider>
+      <AppContent />
+    </AnnouncementProvider>
   );
 }
 
