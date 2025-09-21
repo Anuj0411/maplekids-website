@@ -1421,6 +1421,11 @@ body {
   color: #999;
 }
 
+.home-container .footer-bottom p {
+  margin: 5px 0;
+  color: #ccc; /* Lighter text color */
+}
+
 /* Animations */
 @keyframes fadeInUp {
   from {

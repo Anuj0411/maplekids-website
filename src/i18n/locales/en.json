@@ -186,7 +186,8 @@
         "trial": "Free Trial Class",
         "size": "Small Class Sizes"
       },
-      "button": "Enroll Now"
+      "button": "Enroll Now",
+      "whatsappButton": "Enquire Now via WhatsApp"
     },
     "footer": {
       "tagline": "Nurturing young minds with love, care, and quality education",
@@ -197,7 +198,9 @@
       "teacherLogin": "Teacher Login",
       "aboutUs": "About Us",
       "contactInfo": "Contact Info",
-      "copyright": "All rights reserved"
+      "copyright": "All rights reserved",
+      "developer": "Developed by Anuj Parashar",
+      "contact": "Contact: anuj.parashar.10@gmail.com"
     }
   },
   "auth": {
@@ -858,7 +861,9 @@
       "phone": "+91-9876543210",
       "email": "development@maplekids.com",
       "address": "Maplekids Play School, Hatta",
-      "copyright": "All rights reserved."
+      "copyright": "All rights reserved.",
+      "developer": "Developed by Anuj Parashar",
+      "contact": "Contact: anuj.parashar.10@gmail.com"
     }
   },
   "whatsappEnquiry": {

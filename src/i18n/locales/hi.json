@@ -208,10 +208,11 @@
         "trial": "मुफ्त ट्रायल क्लास",
         "size": "छोटे क्लास साइज"
       },
-      "button": "अभी नामांकन करें"
+      "button": "अभी नामांकन करें",
+      "whatsappButton": "WhatsApp पर अभी पूछताछ करें"
     },
     "footer": {
-      "tagline": "प्रेम, देखभाल और गुणवत्तापूर्ण शिक्षा के साथ युवा दिमागों का पोषण",
+      "tagline": "जहाँ हर बच्चा सीखता है प्यार और आत्मविश्वास के साथ",
       "quickLinks": "त्वरित लिंक",
       "enrollment": "नामांकन",
       "parentPortal": "अभिभावक पोर्टल",
@@ -219,7 +220,9 @@
       "teacherLogin": "शिक्षक लॉगिन",
       "aboutUs": "हमारे बारे में",
       "contactInfo": "संपर्क जानकारी",
-      "copyright": "सभी अधिकार सुरक्षित"
+      "copyright": "सभी अधिकार सुरक्षित",
+      "developer": "डेवलपर: अनुज पराशर",
+      "contact": "संपर्क: anuj.parashar.10@gmail.com"
     }
   },
   "childcareCenter": {
@@ -342,7 +345,9 @@
       "phone": "+91-9876543210",
       "email": "development@maplekids.com",
       "address": "मेपलकिड्स प्ले स्कूल, पुणे",
-      "copyright": "सभी अधिकार सुरक्षित।"
+      "copyright": "सभी अधिकार सुरक्षित।",
+      "developer": "डेवलपर: अनुज पराशर",
+      "contact": "संपर्क: anuj.parashar.10@gmail.com"
     },
     "motorSkillsTest": {
       "title": "मोटर कौशल मूल्यांकन",

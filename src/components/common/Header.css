@@ -90,6 +90,25 @@
   background: #2563eb;
 }
 
+/* Button text visibility control */
+.btn-text-desktop {
+  display: inline;
+}
+
+.btn-text-mobile {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  .btn-text-desktop {
+    display: none;
+  }
+  
+  .btn-text-mobile {
+    display: inline;
+  }
+}
+
 /* Header Navigation Styles */
 .header-navigation {
   display: flex;
@@ -172,10 +191,14 @@
 
 @media (max-width: 768px) {
   .header-container {
-    padding: 0 var(--space-4);
+    padding: 0 var(---4);
     height: 80px;
     gap: var(--space-2);
     flex-wrap: nowrap;
+  }
+  
+  .header-logo {
+    max-width: 55%; /* Ensure logo doesn't take too much space on tablets */
   }
   
   .header-navigation {
@@ -202,11 +225,11 @@
   }
   
   .btn-header {
-    padding: var(--space-2) var(--space-4);
+    padding: var(--space-2) var(--space-3); /* Reduced horizontal padding */
     font-size: var(--font-size-xs);
-    min-width: 100px;
-    height: 40px;
-    border-radius: 10px;
+    min-width: 90px; /* Reduced from 100px */
+    height: 36px; /* Reduced from 40px */
+    border-radius: 8px; /* Reduced border radius */
     font-weight: 600;
     white-space: nowrap;
   }
@@ -220,7 +243,6 @@
 
 @media (max-width: 480px) {
   .header-container {
-    padding: 0 var(--space-3);
     height: 70px;
     gap: var(--space-1);
     flex-wrap: nowrap;
@@ -247,13 +269,18 @@
   }
   
   .btn-header {
-    padding: var(--space-2) var(--space-3);
+    padding: var(--space-2) var(--space-2);
     font-size: 0.75rem;
-    min-width: 90px;
+    min-width: 70px;
     height: 36px;
     border-radius: 8px;
     font-weight: 600;
     white-space: nowrap;
+  }
+  
+  .mobile-menu-btn {
+    padding: 4px;
+    margin-left: var(--space-1);
   }
 }
 
@@ -473,7 +500,6 @@ body.mobile-menu-open {
 /* Extra small devices */
 @media (max-width: 360px) {
   .header-container {
-    padding: 0 var(--space-2);
     height: 65px;
     flex-wrap: nowrap;
   }

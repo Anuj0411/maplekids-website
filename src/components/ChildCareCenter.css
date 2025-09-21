@@ -958,6 +958,11 @@
   color: #34495e;
 }
 
+.childcare-center-container .footer-bottom p {
+  margin: 5px 0;
+  color: #5a6c7d; /* Lighter text color */
+}
+
 /* Animations */
 @keyframes pulse {
   0%, 100% { transform: scale(1); }

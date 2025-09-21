@@ -1,17 +1,23 @@
 /* WhatsApp Enquiry Form Styles */
 .whatsapp-enquiry-modal {
-  max-width: 600px;
+  max-width: 650px; /* Slightly wider for better content spacing */
   max-height: 90vh;
+  border-radius: 20px; /* More rounded corners */
+  overflow: hidden;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15); /* Enhanced shadow */
 }
 
 .whatsapp-enquiry-modal .modal-content {
   padding: 0;
   overflow-y: auto;
   max-height: calc(90vh - 140px);
+  border-radius: 20px; /* Match modal border radius */
 }
 
 .whatsapp-enquiry-container {
   padding: 0;
+  background: #ffffff;
+  border-radius: 20px; /* Consistent rounded corners */
 }
 
 /* WhatsApp Modal Header Override */
@@ -32,61 +38,90 @@
 
 .whatsapp-header {
   text-align: center;
-  padding: 2rem 2rem 1.5rem;
+  padding: 2.5rem 2.5rem 2rem; /* Increased padding */
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   border-bottom: 1px solid #e2e8f0;
   margin: 0;
   border-radius: 0 0 20px 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Add decorative elements to header */
+.whatsapp-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(37, 211, 102, 0.05) 0%, transparent 70%);
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(180deg); }
 }
 
 .whatsapp-header h3 {
-  margin: 0 0 0.75rem 0;
-  font-size: 1.3rem;
+  margin: 0 0 1rem 0; /* Increased bottom margin */
+  font-size: 1.4rem; /* Slightly larger */
   font-weight: 700;
   color: #1e293b;
   letter-spacing: -0.025em;
+  position: relative;
+  z-index: 1;
 }
 
 .whatsapp-header p {
   margin: 0;
   color: #64748b;
-  font-size: 0.95rem;
-  line-height: 1.5;
+  font-size: 1rem; /* Slightly larger */
+  line-height: 1.6; /* Better line height */
+  position: relative;
+  z-index: 1;
+  max-width: 500px;
+  margin: 0 auto; /* Center the text */
 }
 
 .whatsapp-form {
-  padding: 0 2rem 2rem;
+  padding: 2.5rem 2.5rem 2.5rem; /* Increased padding on all sides */
   background: #ffffff;
+  position: relative;
 }
 
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: 1.5rem; /* Increased gap between form fields */
+  margin-bottom: 1.5rem; /* Increased bottom margin */
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
+  margin-bottom: 0.5rem; /* Add bottom margin to each form group */
 }
 
 .form-group label {
   font-weight: 600;
-  color: #333;
-  margin-bottom: 0.5rem;
-  font-size: 0.9rem;
+  color: #374151; /* Slightly darker for better contrast */
+  margin-bottom: 0.75rem; /* Increased bottom margin */
+  font-size: 0.95rem; /* Slightly larger */
+  letter-spacing: 0.025em; /* Better letter spacing */
 }
 
 .form-group input,
 .form-group textarea {
-  padding: 0.875rem 1rem;
+  padding: 1rem 1.25rem; /* Increased padding */
   border: 2px solid #e2e8f0;
-  border-radius: 12px;
+  border-radius: 14px; /* More rounded corners */
   font-size: 1rem;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   background: #ffffff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Subtle shadow */
+  font-family: inherit;
 }
 
 .form-group input:focus,
@@ -94,9 +129,10 @@
   outline: none;
   border-color: #25D366;
   box-shadow: 
-    0 0 0 4px rgba(37, 211, 102, 0.1),
-    0 4px 12px rgba(0, 0, 0, 0.1);
-  transform: translateY(-1px);
+    0 0 0 4px rgba(37, 211, 102, 0.15), /* Enhanced focus ring */
+    0 6px 20px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px); /* More pronounced lift effect */
+  background: #f8fffe; /* Subtle background change on focus */
 }
 
 .form-group input:disabled,
@@ -108,30 +144,69 @@
 
 .form-group textarea {
   resize: vertical;
-  min-height: 80px;
+  min-height: 120px; /* Increased minimum height for better usability */
   font-family: inherit;
+  line-height: 1.6; /* Better line height for textarea */
+  padding: 1.25rem 1.5rem; /* Enhanced padding for textarea */
+  border-radius: 16px; /* More rounded corners for textarea */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border: 2px solid #e2e8f0;
+  font-size: 1rem;
+}
+
+/* Specific styling for the message/additional details textarea */
+.form-group textarea[name="message"] {
+  min-height: 140px; /* Even more height for additional details */
+  padding: 1.5rem 1.75rem; /* Extra padding for additional details */
+  font-size: 1.05rem; /* Slightly larger font for better readability */
+  line-height: 1.7; /* Better line spacing for longer text */
+}
+
+.form-group textarea[name="message"]:focus {
+  background: #f8fffe; /* Subtle background change on focus */
+  border-color: #25D366;
+  box-shadow: 
+    0 0 0 4px rgba(37, 211, 102, 0.15),
+    0 6px 20px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.form-group textarea[name="message"]::placeholder {
+  color: #94a3b8; /* Lighter placeholder color */
+  font-style: italic; /* Italic placeholder for distinction */
+  font-size: 0.95rem;
 }
 
 .form-actions {
   display: flex;
-  gap: 1rem;
+  gap: 1.5rem; /* Increased gap between buttons */
   justify-content: flex-end;
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #e1e5e9;
+  margin-top: 2.5rem; /* Increased top margin */
+  padding-top: 2rem; /* Increased top padding */
+  border-top: 2px solid #f1f5f9; /* Thicker, lighter border */
+  background: linear-gradient(135deg, #fafbfc 0%, #f8fafc 100%); /* Subtle background */
+  margin-left: -2.5rem; /* Extend to form edges */
+  margin-right: -2.5rem;
+  padding-left: 2.5rem;
+  padding-right: 2.5rem;
+  padding-bottom: 2rem;
+  border-radius: 0 0 20px 20px; /* Match modal border radius */
 }
 
 .btn-cancel {
-  padding: 0.875rem 1.75rem;
+  padding: 1rem 2rem; /* Increased padding */
   border: 2px solid #e2e8f0;
   background: #ffffff;
   color: #64748b;
-  border-radius: 12px;
+  border-radius: 14px; /* More rounded corners */
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   font-size: 1rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08); /* Enhanced shadow */
+  min-width: 120px; /* Ensure consistent button width */
 }
 
 .btn-cancel:hover:not(:disabled) {
@@ -143,11 +218,11 @@
 }
 
 .btn-whatsapp {
-  padding: 0.875rem 1.75rem;
+  padding: 1rem 2rem; /* Increased padding */
   background: linear-gradient(135deg, #60a5fa, #34d399);
   color: white;
   border: none;
-  border-radius: 12px;
+  border-radius: 14px; /* More rounded corners */
   font-weight: 700;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -157,8 +232,10 @@
   gap: 0.75rem;
   min-width: 200px;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(96, 165, 250, 0.2);
+  box-shadow: 0 6px 20px rgba(96, 165, 250, 0.3); /* Enhanced shadow */
   letter-spacing: 0.025em;
+  position: relative;
+  overflow: hidden;
 }
 
 .btn-whatsapp:hover:not(:disabled) {
@@ -194,18 +271,20 @@
 
 .whatsapp-info {
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  padding: 1.25rem 2rem;
+  padding: 2rem 2.5rem; /* Increased padding */
   border-radius: 0 0 20px 20px;
   margin: 0;
   border-left: 4px solid #25D366;
-  border-top: 1px solid #e2e8f0;
+  border-top: 2px solid #e2e8f0; /* Thicker border */
+  position: relative;
 }
 
 .whatsapp-info p {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 0.95rem; /* Slightly larger */
   color: #64748b;
-  line-height: 1.5;
+  line-height: 1.6; /* Better line height */
+  font-weight: 500; /* Slightly bolder */
 }
 
 /* Responsive Design */
@@ -225,15 +304,28 @@
   }
   
   .whatsapp-form {
-    padding: 0 1.5rem 1.5rem;
+    padding: 2rem 1.5rem 2rem; /* Maintain good padding on mobile */
   }
   
   .whatsapp-header {
-    padding: 1.5rem 1.5rem 1rem;
+    padding: 2rem 1.5rem 1.5rem; /* Maintain good padding on mobile */
   }
   
   .whatsapp-info {
-    padding: 1rem 1.5rem;
+    padding: 1.5rem 1.5rem; /* Maintain good padding on mobile */
+  }
+  
+  .form-actions {
+    margin-left: -1.5rem;
+    margin-right: -1.5rem;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+  
+  /* Enhanced textarea styling for tablet */
+  .form-group textarea[name="message"] {
+    min-height: 120px; /* Slightly smaller on tablet */
+    padding: 1.25rem 1.5rem; /* Adjusted padding for tablet */
   }
   
   .form-actions {
@@ -259,11 +351,11 @@
   }
   
   .whatsapp-form {
-    padding: 0 1rem 1rem;
+    padding: 1.5rem 1rem 1.5rem; /* Maintain good padding on small mobile */
   }
   
   .whatsapp-header {
-    padding: 1rem 1rem 0.75rem;
+    padding: 1.5rem 1rem 1rem; /* Maintain good padding on small mobile */
   }
   
   .whatsapp-header h3 {
@@ -271,10 +363,24 @@
   }
   
   .whatsapp-header p {
-    font-size: 0.85rem;
+    font-size: 0.9rem; /* Slightly larger for better readability */
   }
   
   .whatsapp-info {
-    padding: 0.75rem 1rem;
+    padding: 1.25rem 1rem; /* Maintain good padding on small mobile */
+  }
+  
+  .form-actions {
+    margin-left: -1rem;
+    margin-right: -1rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  /* Enhanced textarea styling for mobile */
+  .form-group textarea[name="message"] {
+    min-height: 100px; /* Smaller on mobile for better fit */
+    padding: 1rem 1.25rem; /* Adjusted padding for mobile */
+    font-size: 1rem; /* Standard font size on mobile */
   }
 }

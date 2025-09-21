@@ -667,7 +667,7 @@ const HomePage: React.FC = () => {
               onClick={() => setShowWhatsAppForm(true)}
             >
               <span className="btn-icon">📱</span>
-              Enquire Now via WhatsApp
+              {t('home.cta.whatsappButton')}
             </button>
           </div>
         </div>
