@@ -23,7 +23,7 @@ const WhatsAppEnquiryForm: React.FC<WhatsAppEnquiryFormProps> = ({
   isOpen,
   onClose,
   whatsappNumber,
-  schoolName = 'Maple Kids'
+  schoolName = 'MapleKids Play School'
 }) => {
   const { t } = useTranslation();
   const [formData, setFormData] = useState<FormData>({
@@ -45,20 +45,22 @@ const WhatsAppEnquiryForm: React.FC<WhatsAppEnquiryFormProps> = ({
   };
 
   const generateWhatsAppMessage = (data: FormData) => {
-    const message = `${t('whatsappEnquiry.message.greeting', { schoolName })}
+    const message = `Hello! I'm interested in enrolling my child at ${schoolName}.
 
-*${t('whatsappEnquiry.message.parentDetails')}*
-• ${t('whatsappEnquiry.message.parentName', { parentName: data.parentName })}
+*Parent Details:*
+• Parent Name: ${data.parentName}
 
-*${t('whatsappEnquiry.message.childDetails')}*
-• ${t('whatsappEnquiry.message.name', { name: data.name })}
-• ${t('whatsappEnquiry.message.class', { class: data.class })}
-• ${t('whatsappEnquiry.message.age', { age: data.age })}
-• ${t('whatsappEnquiry.message.contact', { contact: data.contact })}
+*Child Details:*
+• Name: ${data.name}
+• Class: ${data.class}
+• Age: ${data.age}
+• Contact: ${data.contact}
 
-${data.message ? `*${t('whatsappEnquiry.message.additionalMessage')}*\n${data.message}` : ''}
+${data.message ? `*Additional Message:*\n${data.message}` : ''}
 
-${t('whatsappEnquiry.message.footer')}`;
+Please provide me with more information about admission process and fees.
+
+Thank you!`;
 
     return encodeURIComponent(message);
   };

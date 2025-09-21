@@ -168,11 +168,11 @@ body {
 @keyframes jumpIn {
   0% {
     opacity: 0;
-    transform: translateY(-50px) scale(0.5) rotate(-10deg);
+    transform: translateY(-50px) scale(0.5) rotate(-3deg);
   }
   50% {
     opacity: 1;
-    transform: translateY(10px) scale(1.1) rotate(5deg);
+    transform: translateY(10px) scale(1.1) rotate(2deg);
   }
   100% {
     opacity: 1;
@@ -283,7 +283,7 @@ body {
 .floating-item {
   position: absolute;
   font-size: 3rem;
-  animation: float 3s ease-in-out infinite;
+  animation: float 4s ease-in-out infinite;
   opacity: 0.8;
 }
 
@@ -294,7 +294,7 @@ body {
 
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-20px); }
+  50% { transform: translateY(-8px); }
 }
 
 @keyframes pulseGlow {
@@ -1096,7 +1096,7 @@ body {
 }
 
 .feature-card:hover .card-inner {
-  transform: rotateY(180deg);
+  transform: rotateY(90deg);
 }
 
 .card-front, .card-back {
@@ -1121,7 +1121,7 @@ body {
 
 .card-back {
   background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-  transform: rotateY(180deg);
+  transform: rotateY(90deg);
   position: relative;
   overflow: hidden;
 }
