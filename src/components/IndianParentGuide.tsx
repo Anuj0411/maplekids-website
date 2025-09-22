@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import './IndianParentGuide.css';
 import { getLocalizedTopicContent } from './IndianParentGuideContentLocalized';
@@ -29,10 +29,13 @@ const IndianParentGuide: React.FC = () => {
   // Interactive features state
   const [completedTips, setCompletedTips] = useState<Set<number>>(new Set());
   const [favoriteTips, setFavoriteTips] = useState<Set<number>>(new Set());
-  const [showQuiz, setShowQuiz] = useState<boolean>(false);
-  const [quizScore, setQuizScore] = useState<number>(0);
   const [dailyChallenge, setDailyChallenge] = useState<string>('');
-  const [showPersonalizedTips, setShowPersonalizedTips] = useState<boolean>(false);
+
+  const generateDailyChallenge = useCallback(() => {
+    const challenges = t('indianParentGuide.dailyChallenges', { returnObjects: true }) as string[];
+    const randomChallenge = challenges[Math.floor(Math.random() * challenges.length)];
+    setDailyChallenge(randomChallenge);
+  }, [t]);
 
   // Update content when age group or topic changes
   useEffect(() => {
@@ -42,13 +45,7 @@ const IndianParentGuide: React.FC = () => {
   // Generate daily challenge
   useEffect(() => {
     generateDailyChallenge();
-  }, []);
-
-  const generateDailyChallenge = () => {
-    const challenges = t('indianParentGuide.dailyChallenges', { returnObjects: true }) as string[];
-    const randomChallenge = challenges[Math.floor(Math.random() * challenges.length)];
-    setDailyChallenge(randomChallenge);
-  };
+  }, [generateDailyChallenge]);
 
   const toggleTipCompleted = (tipIndex: number) => {
     const newCompleted = new Set(completedTips);
