@@ -102,6 +102,12 @@ const Header: React.FC<HeaderProps> = ({ scrollToSection }) => {
             >
               Contact
             </button>
+            {/* <button 
+              className="nav-special"
+              onClick={() => navigate('/parent-guide')}
+            >
+              Parent Guide
+            </button> */}
           </div>
         )}
         
@@ -182,6 +188,13 @@ const Header: React.FC<HeaderProps> = ({ scrollToSection }) => {
               >
                 Contact
               </button>
+              {/* <button 
+                className="mobile-nav-special"
+                onClick={() => navigate('/parent-guide')}
+              >
+                <span className="emoji">👨‍👩‍👧‍👦</span>
+                Parent Guide
+              </button> */}
               
               {/* Language Switcher in Mobile Menu */}
               <div className="mobile-language-section">

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import './IndianParentGuide.css';
-import { getTopicContent } from './IndianParentGuideContent';
+import { getLocalizedTopicContent } from './IndianParentGuideContentLocalized';
 
 interface GuideSection {
   id: string;
@@ -25,11 +25,68 @@ const IndianParentGuide: React.FC = () => {
   const [selectedTopic, setSelectedTopic] = useState<string>('overview');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [currentContent, setCurrentContent] = useState<any>(null);
+  
+  // Interactive features state
+  const [completedTips, setCompletedTips] = useState<Set<number>>(new Set());
+  const [favoriteTips, setFavoriteTips] = useState<Set<number>>(new Set());
+  const [showQuiz, setShowQuiz] = useState<boolean>(false);
+  const [quizScore, setQuizScore] = useState<number>(0);
+  const [dailyChallenge, setDailyChallenge] = useState<string>('');
+  const [showPersonalizedTips, setShowPersonalizedTips] = useState<boolean>(false);
 
   // Update content when age group or topic changes
   useEffect(() => {
-    setCurrentContent(getTopicContent(selectedTopic, selectedAgeGroup));
-  }, [selectedAgeGroup, selectedTopic]);
+    setCurrentContent(getLocalizedTopicContent(selectedTopic, selectedAgeGroup, t));
+  }, [selectedAgeGroup, selectedTopic, t]);
+
+  // Generate daily challenge
+  useEffect(() => {
+    generateDailyChallenge();
+  }, []);
+
+  const generateDailyChallenge = () => {
+    const challenges = t('indianParentGuide.dailyChallenges', { returnObjects: true }) as string[];
+    const randomChallenge = challenges[Math.floor(Math.random() * challenges.length)];
+    setDailyChallenge(randomChallenge);
+  };
+
+  const toggleTipCompleted = (tipIndex: number) => {
+    const newCompleted = new Set(completedTips);
+    if (newCompleted.has(tipIndex)) {
+      newCompleted.delete(tipIndex);
+    } else {
+      newCompleted.add(tipIndex);
+    }
+    setCompletedTips(newCompleted);
+  };
+
+  const toggleTipFavorite = (tipIndex: number) => {
+    const newFavorites = new Set(favoriteTips);
+    if (newFavorites.has(tipIndex)) {
+      newFavorites.delete(tipIndex);
+    } else {
+      newFavorites.add(tipIndex);
+    }
+    setFavoriteTips(newFavorites);
+  };
+
+  const getPersonalizedRecommendations = () => {
+    const recommendations = [];
+    
+    if (completedTips.size > 3) {
+      recommendations.push(t('indianParentGuide.recommendations.greatProgress'));
+    }
+    
+    if (favoriteTips.size > 0) {
+      recommendations.push(t('indianParentGuide.recommendations.favoriteTechniques'));
+    }
+    
+    if (selectedAgeGroup === 'toddler') {
+      recommendations.push(t('indianParentGuide.recommendations.toddlerFocus'));
+    }
+    
+    return recommendations;
+  };
 
   const ageGroups = [
     { id: 'toddler', label: t('indianParentGuide.ageGroups.toddler'), icon: '👶' },
@@ -42,38 +99,38 @@ const IndianParentGuide: React.FC = () => {
   const guideSections: GuideSection[] = [
     {
       id: 'overview',
-      title: 'Indian Parenting Overview',
+      title: t('indianParentGuide.topics.overview.title'),
       icon: '🏠',
-      description: 'Understanding modern Indian parenting challenges and opportunities',
-      content: currentContent || getTopicContent('overview', selectedAgeGroup)
+      description: t('indianParentGuide.topics.overview.description'),
+      content: currentContent || getLocalizedTopicContent('overview', selectedAgeGroup, t)
     },
     {
       id: 'education',
-      title: 'Education & Academic Success',
+      title: t('indianParentGuide.topics.education.title'),
       icon: '📚',
-      description: 'Navigating the Indian education system and academic pressure',
-      content: currentContent || getTopicContent('education', selectedAgeGroup)
+      description: t('indianParentGuide.topics.education.description'),
+      content: currentContent || getLocalizedTopicContent('education', selectedAgeGroup, t)
     },
     {
       id: 'values',
-      title: 'Values & Character Building',
+      title: t('indianParentGuide.topics.values.title'),
       icon: '🙏',
-      description: 'Instilling Indian values and character development',
-      content: currentContent || getTopicContent('values', selectedAgeGroup)
+      description: t('indianParentGuide.topics.values.description'),
+      content: currentContent || getLocalizedTopicContent('values', selectedAgeGroup, t)
     },
     {
       id: 'health',
-      title: 'Health & Nutrition',
+      title: t('indianParentGuide.topics.health.title'),
       icon: '🥗',
-      description: 'Indian approach to child health and nutrition',
-      content: currentContent || getTopicContent('health', selectedAgeGroup)
+      description: t('indianParentGuide.topics.health.description'),
+      content: currentContent || getLocalizedTopicContent('health', selectedAgeGroup, t)
     },
     {
       id: 'technology',
-      title: 'Technology & Digital Parenting',
+      title: t('indianParentGuide.topics.technology.title'),
       icon: '📱',
-      description: 'Managing technology use in Indian families',
-      content: currentContent || getTopicContent('technology', selectedAgeGroup)
+      description: t('indianParentGuide.topics.technology.description'),
+      content: currentContent || getLocalizedTopicContent('technology', selectedAgeGroup, t)
     }
   ];
 
@@ -87,28 +144,67 @@ const IndianParentGuide: React.FC = () => {
       case 'overview':
         return (
           <div className="content-section">
-            <h3>Overview</h3>
+            <h3>{t('indianParentGuide.content.overview')}</h3>
             <p>{section.content.overview}</p>
           </div>
         );
       case 'tips':
         return (
           <div className="content-section">
-            <h3>Practical Tips</h3>
+            <div className="tips-header">
+              <h3>{t('indianParentGuide.content.interactiveTips')}</h3>
+              <div className="tips-stats">
+                <span className="stat-item">
+                  {completedTips.size} {t('indianParentGuide.content.completed')}
+                </span>
+                <span className="stat-item">
+                  {favoriteTips.size} {t('indianParentGuide.content.favorites')}
+                </span>
+              </div>
+            </div>
             <ul className="tips-list">
               {section.content.tips.map((tip, index) => (
-                <li key={index} className="tip-item">
-                  <span className="tip-icon">💡</span>
-                  {tip}
+                <li key={index} className={`tip-item ${completedTips.has(index) ? 'completed' : ''} ${favoriteTips.has(index) ? 'favorite' : ''}`}>
+                  <div className="tip-content">
+                    <span className="tip-icon">💡</span>
+                    <span className="tip-text">{tip}</span>
+                    <div className="tip-actions">
+                      <button
+                        className={`action-btn complete-btn ${completedTips.has(index) ? 'active' : ''}`}
+                        onClick={() => toggleTipCompleted(index)}
+                        title={completedTips.has(index) ? t('indianParentGuide.content.markIncomplete') : t('indianParentGuide.content.markCompleted')}
+                      >
+                        {completedTips.has(index) ? '✓' : '○'}
+                      </button>
+                      <button
+                        className={`action-btn favorite-btn ${favoriteTips.has(index) ? 'active' : ''}`}
+                        onClick={() => toggleTipFavorite(index)}
+                        title={favoriteTips.has(index) ? t('indianParentGuide.content.removeFromFavorites') : t('indianParentGuide.content.addToFavorites')}
+                      >
+                        {favoriteTips.has(index) ? '❤️' : '🤍'}
+                      </button>
+                    </div>
+                  </div>
                 </li>
               ))}
             </ul>
+            {getPersonalizedRecommendations().length > 0 && (
+              <div className="personalized-recommendations">
+                <h4>{t('indianParentGuide.content.personalizedRecommendations')}</h4>
+                {getPersonalizedRecommendations().map((rec, index) => (
+                  <div key={index} className="recommendation-item">
+                    <span className="rec-icon">✨</span>
+                    <span>{rec}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         );
       case 'activities':
         return (
           <div className="content-section">
-            <h3>Activities & Exercises</h3>
+            <h3>{t('indianParentGuide.content.activitiesExercises')}</h3>
             <div className="activities-grid">
               {section.content.activities.map((activity, index) => (
                 <div key={index} className="activity-card">
@@ -122,7 +218,7 @@ const IndianParentGuide: React.FC = () => {
       case 'cultural':
         return (
           <div className="content-section">
-            <h3>Cultural Considerations</h3>
+            <h3>{t('indianParentGuide.content.culturalConsiderations')}</h3>
             <div className="cultural-notes">
               {section.content.culturalNotes.map((note, index) => (
                 <div key={index} className="cultural-note">
@@ -136,17 +232,17 @@ const IndianParentGuide: React.FC = () => {
       case 'challenges':
         return (
           <div className="content-section">
-            <h3>Common Challenges & Solutions</h3>
+            <h3>{t('indianParentGuide.content.commonChallenges')}</h3>
             <div className="challenges-solutions">
               {section.content.commonChallenges.map((challenge, index) => (
                 <div key={index} className="challenge-solution">
                   <div className="challenge">
                     <span className="challenge-icon">⚠️</span>
-                    <strong>Challenge:</strong> {challenge}
+                    <strong>{t('indianParentGuide.content.challenge')}:</strong> {challenge}
                   </div>
                   <div className="solution">
                     <span className="solution-icon">✅</span>
-                    <strong>Solution:</strong> {section.content.solutions[index]}
+                    <strong>{t('indianParentGuide.content.solution')}:</strong> {section.content.solutions[index]}
                   </div>
                 </div>
               ))}
@@ -173,7 +269,7 @@ const IndianParentGuide: React.FC = () => {
         </div>
 
         <div className="age-group-selector">
-          <h3>Select Age Group:</h3>
+          <h3>{t('indianParentGuide.content.selectAgeGroup')}</h3>
           <div className="age-groups">
             {ageGroups.map((age) => (
               <button
@@ -190,14 +286,33 @@ const IndianParentGuide: React.FC = () => {
             ))}
           </div>
           <div className="age-group-info">
-            <p>Currently viewing: <strong>{ageGroups.find(age => age.id === selectedAgeGroup)?.label}</strong></p>
+            <p>{t('indianParentGuide.content.currentlyViewing')} <strong>{ageGroups.find(age => age.id === selectedAgeGroup)?.label}</strong></p>
+          </div>
+        </div>
+
+        {/* Daily Challenge Section */}
+        <div className="daily-challenge-section">
+          <h3>{t('indianParentGuide.content.todaysChallenge')}</h3>
+          <div className="challenge-card">
+            <div className="challenge-content">
+              <span className="challenge-icon">🎯</span>
+              <div className="challenge-text">
+                <p>{dailyChallenge}</p>
+                <button 
+                  className="challenge-btn"
+                  onClick={generateDailyChallenge}
+                >
+                  {t('indianParentGuide.content.getNewChallenge')}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       <div className="guide-content">
         <div className="sections-sidebar">
-          <h3>Parenting Topics</h3>
+          <h3>{t('indianParentGuide.content.parentingTopics')}</h3>
           {filteredSections.map((section) => (
             <div 
               key={section.id} 

@@ -929,11 +929,120 @@
       "cultural": "Cultural",
       "challenges": "Challenges"
     },
+    "topics": {
+      "overview": {
+        "title": "Parenting Overview",
+        "description": "Understanding modern parenting challenges and opportunities"
+      },
+      "education": {
+        "title": "Education & Academic Success",
+        "description": "Navigating the education system and academic pressure"
+      },
+      "values": {
+        "title": "Values & Character Building",
+        "description": "Instilling values and character development"
+      },
+      "health": {
+        "title": "Health & Nutrition",
+        "description": "Child health and nutrition approach"
+      },
+      "technology": {
+        "title": "Technology & Digital Parenting",
+        "description": "Managing technology use in families"
+      }
+    },
+    "content": {
+      "selectAgeGroup": "Select Age Group:",
+      "currentlyViewing": "Currently viewing:",
+      "parentingTopics": "Parenting Topics",
+      "overview": "Overview",
+      "interactiveTips": "Interactive Tips",
+      "completed": "completed",
+      "favorites": "favorites",
+      "markCompleted": "Mark as completed",
+      "markIncomplete": "Mark as incomplete",
+      "addToFavorites": "Add to favorites",
+      "removeFromFavorites": "Remove from favorites",
+      "personalizedRecommendations": "Personalized Recommendations",
+      "activitiesExercises": "Activities & Exercises",
+      "culturalConsiderations": "Cultural Considerations",
+      "commonChallenges": "Common Challenges & Solutions",
+      "challenge": "Challenge",
+      "solution": "Solution",
+      "todaysChallenge": "Today's Challenge",
+      "getNewChallenge": "Get New Challenge"
+    },
+    "hero": {
+      "features": {
+        "ageSpecific": "Age-Specific Guidance",
+        "cultural": "Cultural Sensitivity",
+        "practical": "Practical Solutions"
+      }
+    },
+    "dailyChallenges": [
+      "Spend 15 minutes playing with your child without any distractions",
+      "Practice one new positive parenting technique today",
+      "Have a meaningful conversation with your child about their day",
+      "Try a new activity or game together as a family",
+      "Practice patience during a challenging moment",
+      "Share a story or read a book together",
+      "Encourage your child to express their feelings openly",
+      "Practice gratitude by sharing what you're thankful for"
+    ],
+    "recommendations": {
+      "greatProgress": "Great progress! You're building strong parenting habits.",
+      "favoriteTechniques": "Based on your favorites, try similar techniques in other areas.",
+      "toddlerFocus": "For toddlers, focus on safety, routine, and gentle guidance."
+    },
     "quickActions": {
       "contactExpert": "Contact Expert",
       "downloadGuide": "Download Guide",
       "joinCommunity": "Join Community",
       "bookConsultation": "Book Consultation"
+    }
+  },
+  "parentGuide": {
+    "content": {
+      "overview": {
+        "toddler": {
+          "overview": "Toddler years (1-3 years) are crucial for building trust and independence. Focus on safety, basic communication, and introducing family values through play.",
+          "tips": [
+            "Establish consistent daily routines with family elements",
+            "Introduce simple words and phrases through songs",
+            "Use educational toys and games for development",
+            "Teach basic respect through gentle guidance",
+            "Encourage exploration while maintaining safety"
+          ],
+          "activities": [
+            "Simple prayer or blessing before meals",
+            "Playing with educational toys (rattles, blocks)",
+            "Singing nursery rhymes and songs",
+            "Gentle introduction to festivals through colors and sounds",
+            "Basic yoga poses and breathing exercises"
+          ],
+          "culturalNotes": [
+            "Toddlers learn through imitation - model respectful behavior",
+            "Introduce family foods gradually and positively",
+            "Respect for elders can be taught through simple gestures",
+            "Extended family dynamics may require extra patience",
+            "Gender-neutral approach to all activities"
+          ],
+          "commonChallenges": [
+            "Managing tantrums while maintaining family respect",
+            "Balancing independence with safety in extended families",
+            "Introducing discipline without being harsh",
+            "Managing screen time in modern households",
+            "Dealing with picky eating and family foods"
+          ],
+          "solutions": [
+            "Use positive reinforcement and gentle redirection",
+            "Create safe spaces for independent play",
+            "Set clear, age-appropriate boundaries",
+            "Limit screen time and provide engaging alternatives",
+            "Make mealtimes fun and interactive"
+          ]
+        }
+      }
     }
   }
 }

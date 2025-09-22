@@ -47,15 +47,15 @@ const ParentGuidePage: React.FC = () => {
           <div className="hero-features">
             <div className="feature-item">
               <span className="feature-icon">👶</span>
-              <span>Age-specific guidance</span>
+              <span>{t('indianParentGuide.hero.features.ageSpecific')}</span>
             </div>
             <div className="feature-item">
               <span className="feature-icon">🏛️</span>
-              <span>Cultural considerations</span>
+              <span>{t('indianParentGuide.hero.features.cultural')}</span>
             </div>
             <div className="feature-item">
               <span className="feature-icon">💡</span>
-              <span>Practical tips & activities</span>
+              <span>{t('indianParentGuide.hero.features.practical')}</span>
             </div>
           </div>
         </div>
