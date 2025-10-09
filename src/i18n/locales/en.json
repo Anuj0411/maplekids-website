@@ -118,6 +118,37 @@
         "description2": "Count objects and learn numbers!"
       }
     },
+    "childcareCenter": {
+      "title": "Child Development Hub",
+      "subtitle": "Unlock your child's potential with our comprehensive development screening tools. Track milestones, identify strengths, and get personalized insights to support your child's unique learning journey.",
+      "badge": "New Feature",
+      "stats": {
+        "assessmentTools": "4+",
+        "assessmentToolsLabel": "Assessment Tools",
+        "happyParents": "100+",
+        "happyParentsLabel": "Happy Parents",
+        "accuracyRate": "95%",
+        "accuracyRateLabel": "Accuracy Rate"
+      },
+      "features": {
+        "mchat": {
+          "title": "M-CHAT Screening",
+          "description": "Autism screening for toddlers"
+        },
+        "socialSkills": {
+          "title": "Social Skills",
+          "description": "Emotional development assessment"
+        },
+        "progressTracking": {
+          "title": "Progress Tracking",
+          "description": "Monitor development milestones"
+        }
+      },
+      "actions": {
+        "startAssessment": "Start Assessment",
+        "learnMore": "Learn More"
+      }
+    },
     "features": {
       "title": "Why Choose Maplekids?",
       "subtitle": "Discover what makes us the perfect choice for your child's early education",
@@ -858,8 +889,8 @@
       "screeningTools": "Assessment Tools",
       "resources": "Resources",
       "contactSupport": "Contact Support",
-      "phone": "+91-9876543210",
-      "email": "development@maplekids.com",
+      "phone": "+91-9238612960",
+      "email": "maplekidshatta@gmail.com",
       "address": "Maplekids Play School, Hatta",
       "copyright": "All rights reserved.",
       "developer": "Developed by Anuj Parashar",

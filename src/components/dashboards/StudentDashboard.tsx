@@ -46,6 +46,15 @@ const StudentDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   
+  // Attendance pagination and filtering state
+  const [attendanceSearchTerm, setAttendanceSearchTerm] = useState('');
+  const [attendanceStatusFilter, setAttendanceStatusFilter] = useState('all');
+  const [attendanceCurrentPage, setAttendanceCurrentPage] = useState(1);
+  const [attendanceItemsPerPage] = useState(20);
+  
+  // Report card expansion state
+  const [expandedReports, setExpandedReports] = useState<Set<string>>(new Set());
+  
 
   const loadAcademicReports = useCallback(async () => {
     if (!student) {
@@ -200,16 +209,6 @@ const StudentDashboard: React.FC = () => {
     }
   };
 
-  const getAttendanceStatus = (date: string) => {
-    const attendanceRecord = attendance.find(a => a.date === date);
-    if (!attendanceRecord) return 'Not marked';
-    
-    const studentAttendance = attendanceRecord.students.find(
-      s => s.rollNumber === student?.rollNumber
-    );
-    
-    return studentAttendance?.status || 'Not marked';
-  };
 
 
 
@@ -231,6 +230,64 @@ const StudentDashboard: React.FC = () => {
     }).length;
     
     return { totalDays, presentDays, absentDays, lateDays };
+  };
+
+  // Filter and paginate attendance records
+  const getFilteredAttendance = () => {
+    let filtered = attendance.filter(record => {
+      const studentAttendance = record.students.find(s => s.rollNumber === student?.rollNumber);
+      const status = studentAttendance?.status || 'unmarked';
+      
+      // Search filter
+      const matchesSearch = attendanceSearchTerm === '' || 
+        record.date.toLowerCase().includes(attendanceSearchTerm.toLowerCase()) ||
+        (studentAttendance?.remarks || '').toLowerCase().includes(attendanceSearchTerm.toLowerCase());
+      
+      // Status filter
+      const matchesStatus = attendanceStatusFilter === 'all' || status === attendanceStatusFilter;
+      
+      return matchesSearch && matchesStatus;
+    });
+    
+    // Sort by date (most recent first)
+    filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    
+    return filtered;
+  };
+
+  const getPaginatedAttendance = () => {
+    const filtered = getFilteredAttendance();
+    const startIndex = (attendanceCurrentPage - 1) * attendanceItemsPerPage;
+    const endIndex = startIndex + attendanceItemsPerPage;
+    return filtered.slice(startIndex, endIndex);
+  };
+
+  const getAttendancePaginationInfo = () => {
+    const filtered = getFilteredAttendance();
+    const totalPages = Math.ceil(filtered.length / attendanceItemsPerPage);
+    const startIndex = (attendanceCurrentPage - 1) * attendanceItemsPerPage + 1;
+    const endIndex = Math.min(attendanceCurrentPage * attendanceItemsPerPage, filtered.length);
+    
+    return {
+      totalItems: filtered.length,
+      totalPages,
+      startIndex,
+      endIndex,
+      currentPage: attendanceCurrentPage
+    };
+  };
+
+  // Toggle report card expansion
+  const toggleReportExpansion = (reportId: string) => {
+    setExpandedReports(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(reportId)) {
+        newSet.delete(reportId);
+      } else {
+        newSet.add(reportId);
+      }
+      return newSet;
+    });
   };
 
   if (loading) {
@@ -351,19 +408,67 @@ const StudentDashboard: React.FC = () => {
             <Card className="recent-activity">
               <h3>📈 Recent Activity</h3>
               <div className="activity-list">
-                {attendance.slice(-5).reverse().map((record) => {
-                  const status = getAttendanceStatus(record.date);
-                  return (
-                    <div key={record.id} className="activity-item">
-                      <span className="activity-date">{record.date}</span>
-                      <span className={`activity-status status-${status}`}>
-                        {status === 'present' ? '✅ Present' : 
-                         status === 'absent' ? '❌ Absent' : 
-                         status === 'late' ? '⏰ Late' : '❓ Not marked'}
-                      </span>
+                {(() => {
+                  const activities: Array<{
+                    id: string;
+                    type: 'report' | 'remark';
+                    date: string;
+                    title: string;
+                    description: string;
+                    icon: string;
+                    color: string;
+                  }> = [];
+
+                  // Add recent academic reports
+                  academicReports.slice(0, 3).forEach((report) => {
+                    activities.push({
+                      id: `report-${report.id}`,
+                      type: 'report',
+                      date: new Date(report.createdAt?.toDate?.() || report.createdAt).toLocaleDateString(),
+                      title: `📊 ${report.term} Report`,
+                      description: `${report.subjects.length} subjects - ${report.term} term`,
+                      icon: '📊',
+                      color: 'blue'
+                    });
+                  });
+
+                  // Add recent remarks
+                  remarks.slice(0, 2).forEach((remark) => {
+                    activities.push({
+                      id: `remark-${remark.id}`,
+                      type: 'remark',
+                      date: new Date(remark.createdAt?.toDate?.() || remark.createdAt).toLocaleDateString(),
+                      title: `💬 ${remark.type === 'positive' ? 'Positive' : remark.type === 'negative' ? 'Needs Attention' : 'General'} Remark`,
+                      description: remark.remark.length > 50 ? remark.remark.substring(0, 50) + '...' : remark.remark,
+                      icon: remark.type === 'positive' ? '✅' : remark.type === 'negative' ? '⚠️' : '💬',
+                      color: remark.type === 'positive' ? 'green' : remark.type === 'negative' ? 'red' : 'blue'
+                    });
+                  });
+
+                  // Sort by date (most recent first)
+                  activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+                  // Show only the 5 most recent activities
+                  return activities.slice(0, 5).map((activity) => (
+                    <div key={activity.id} className="activity-item">
+                      <div className="activity-content">
+                        <div className="activity-header">
+                          <span className="activity-icon">{activity.icon}</span>
+                          <span className="activity-title">{activity.title}</span>
+                          <span className="activity-date">{activity.date}</span>
+                        </div>
+                        <p className="activity-description">{activity.description}</p>
+                      </div>
                     </div>
-                  );
-                })}
+                  ));
+                })()}
+                
+                {academicReports.length === 0 && remarks.length === 0 && (
+                  <div className="no-activity">
+                    <p>📝 No recent activity to show</p>
+                    <p className="sub-text">Academic reports and remarks will appear here</p>
+                  </div>
+                )}
               </div>
             </Card>
           </div>
@@ -372,14 +477,54 @@ const StudentDashboard: React.FC = () => {
         {activeTab === 'attendance' && (
           <div className="tab-content">
             <Card>
-              <h3>📅 Attendance History</h3>
+              <div className="attendance-header">
+                <h3>📅 Attendance History</h3>
+                <div className="attendance-summary">
+                  <span className="summary-text">
+                    Showing {getAttendancePaginationInfo().startIndex}-{getAttendancePaginationInfo().endIndex} of {getAttendancePaginationInfo().totalItems} records
+                  </span>
+                </div>
+              </div>
+              
+              {/* Search and Filter Controls */}
+              <div className="attendance-controls">
+                <div className="search-control">
+                  <input
+                    type="text"
+                    placeholder="Search by date or remarks..."
+                    value={attendanceSearchTerm}
+                    onChange={(e) => {
+                      setAttendanceSearchTerm(e.target.value);
+                      setAttendanceCurrentPage(1); // Reset to first page when searching
+                    }}
+                    className="search-input"
+                  />
+                </div>
+                <div className="filter-control">
+                  <select
+                    value={attendanceStatusFilter}
+                    onChange={(e) => {
+                      setAttendanceStatusFilter(e.target.value);
+                      setAttendanceCurrentPage(1); // Reset to first page when filtering
+                    }}
+                    className="filter-select"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="present">Present</option>
+                    <option value="absent">Absent</option>
+                    <option value="late">Late</option>
+                    <option value="unmarked">Not Marked</option>
+                  </select>
+                </div>
+              </div>
+
               <div className="attendance-table">
                 <div className="table-header">
                   <span>Date</span>
                   <span>Status</span>
                   <span>Remarks</span>
                 </div>
-                {attendance.map((record) => {
+                {getPaginatedAttendance().map((record) => {
                   const studentAttendance = record.students.find(s => s.rollNumber === student.rollNumber);
                   return (
                     <div key={record.id} className="table-row">
@@ -392,6 +537,37 @@ const StudentDashboard: React.FC = () => {
                   );
                 })}
               </div>
+
+              {/* Pagination Controls */}
+              {getAttendancePaginationInfo().totalPages > 1 && (
+                <div className="pagination-controls">
+                  <button
+                    onClick={() => setAttendanceCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={attendanceCurrentPage === 1}
+                    className="pagination-btn prev-btn"
+                  >
+                    ← Previous
+                  </button>
+                  
+                  <div className="pagination-info">
+                    <span>Page {attendanceCurrentPage} of {getAttendancePaginationInfo().totalPages}</span>
+                  </div>
+                  
+                  <button
+                    onClick={() => setAttendanceCurrentPage(prev => Math.min(getAttendancePaginationInfo().totalPages, prev + 1))}
+                    disabled={attendanceCurrentPage === getAttendancePaginationInfo().totalPages}
+                    className="pagination-btn next-btn"
+                  >
+                    Next →
+                  </button>
+                </div>
+              )}
+
+              {getAttendancePaginationInfo().totalItems === 0 && (
+                <div className="no-data">
+                  <p>No attendance records found matching your criteria.</p>
+                </div>
+              )}
             </Card>
           </div>
         )}
@@ -399,12 +575,12 @@ const StudentDashboard: React.FC = () => {
         {activeTab === 'report' && (
           <div className="tab-content">
             <Card>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div className="report-header-controls">
                 <h3>📋 Academic Report Card</h3>
                 <Button
                   variant="secondary"
                   onClick={loadAcademicReports}
-                  style={{ padding: '8px 16px' }}
+                  className="refresh-btn"
                 >
                   🔄 Refresh Reports
                 </Button>
@@ -432,45 +608,114 @@ const StudentDashboard: React.FC = () => {
                     else if (percentage >= 50) overallGrade = 'C+';
                     else if (percentage >= 40) overallGrade = 'C';
 
+                    const reportId = report.id || `report-${reportIndex}`;
+                    const isExpanded = expandedReports.has(reportId);
+
                     return (
-                      <div key={report.id || reportIndex} className="report-card">
-                        <div className="report-header">
-                          <h4>📋 {report.term} Report</h4>
-                          <div className="report-date">
-                            {report.createdAt && (
-                              <span>
-                                {report.createdAt.toDate ? 
-                                  report.createdAt.toDate().toLocaleDateString() : 
-                                  new Date(report.createdAt).toLocaleDateString()
-                                }
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        
-                        <div className="report-summary">
-                          <div className="overall-grade">
-                            <h5>Overall Grade: <span className={`grade-badge grade-${overallGrade}`}>{overallGrade}</span></h5>
-                            <p>Percentage: {Math.round(percentage * 10) / 10}% ({totalMarks}/{totalMaxMarks} marks)</p>
-                          </div>
-                        </div>
-                        
-                        <div className="subjects-table">
-                          <div className="table-header">
-                            <span>Subject</span>
-                            <span>Grade</span>
-                            <span>Marks</span>
-                            <span>Remarks</span>
-                          </div>
-                          {report.subjects?.map((subject, subjectIndex) => (
-                            <div key={subjectIndex} className="table-row">
-                              <span className="subject-name">{subject.subject || 'Unknown Subject'}</span>
-                              <span className={`grade-badge grade-${subject.grade || 'F'}`}>{subject.grade || 'F'}</span>
-                              <span className="marks">{subject.marks || 0}/{subject.maxMarks || 0}</span>
-                              <span className="remarks">{subject.remarks || '-'}</span>
+                      <div key={reportId} className="report-card">
+                        <div 
+                          className="report-header" 
+                          onClick={() => toggleReportExpansion(reportId)}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          <div className="report-header-left">
+                            <h4>📋 {report.term} Report</h4>
+                            <div className="report-date">
+                              {report.createdAt && (
+                                <span>
+                                  {report.createdAt.toDate ? 
+                                    report.createdAt.toDate().toLocaleDateString() : 
+                                    new Date(report.createdAt).toLocaleDateString()
+                                  }
+                                </span>
+                              )}
                             </div>
-                          )) || []}
+                          </div>
+                          <div className="report-header-right">
+                            <div className="report-summary-compact">
+                              <div className="summary-item">
+                                <span className="summary-label">Grade:</span>
+                                <span className={`grade-badge grade-${overallGrade}`}>{overallGrade}</span>
+                              </div>
+                              <div className="summary-item">
+                                <span className="summary-label">Percentage:</span>
+                                <span className="summary-value">{Math.round(percentage * 10) / 10}%</span>
+                              </div>
+                              <div className="summary-item">
+                                <span className="summary-label">Marks:</span>
+                                <span className="summary-value">{totalMarks}/{totalMaxMarks}</span>
+                              </div>
+                            </div>
+                            <div className="expand-icon">
+                              {isExpanded ? '▼' : '▶'}
+                            </div>
+                          </div>
                         </div>
+                        
+                        {isExpanded && (
+                          <div className="report-details">
+                            <div className="subjects-list">
+                              <h5 className="subjects-title">Subject-wise Performance</h5>
+                              
+                              {/* Desktop Table View */}
+                              <table className="subjects-table">
+                                <thead>
+                                  <tr>
+                                    <th>Subject</th>
+                                    <th>Grade</th>
+                                    <th>Marks</th>
+                                    <th>Remarks</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {report.subjects?.map((subject, subjectIndex) => (
+                                    <tr key={subjectIndex}>
+                                      <td className="subject-name">{subject.subject || 'Unknown Subject'}</td>
+                                      <td className="subject-grade">
+                                        <span className={`grade-badge grade-${subject.grade || 'F'}`}>
+                                          {subject.grade || 'F'}
+                                        </span>
+                                      </td>
+                                      <td className="subject-marks">
+                                        {subject.marks || 0}/{subject.maxMarks || 0}
+                                      </td>
+                                      <td className="subject-remarks">
+                                        {subject.remarks || '-'}
+                                      </td>
+                                    </tr>
+                                  )) || []}
+                                </tbody>
+                              </table>
+                              
+                              {/* Mobile Card View */}
+                              <div className="subjects-mobile">
+                                {report.subjects?.map((subject, subjectIndex) => (
+                                  <div key={subjectIndex} className="subject-mobile-card">
+                                    <div className="subject-mobile-header">
+                                      <span className="subject-mobile-name">{subject.subject || 'Unknown Subject'}</span>
+                                      <span className={`grade-badge grade-${subject.grade || 'F'}`}>
+                                        {subject.grade || 'F'}
+                                      </span>
+                                    </div>
+                                    <div className="subject-mobile-details">
+                                      <div className="subject-mobile-marks">
+                                        <span className="subject-mobile-marks-label">Marks:</span>
+                                        <span className="subject-mobile-marks-value">
+                                          {subject.marks || 0}/{subject.maxMarks || 0}
+                                        </span>
+                                      </div>
+                                      {subject.remarks && (
+                                        <div className="subject-mobile-remarks">
+                                          {subject.remarks}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )) || []}
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     );
                   })}

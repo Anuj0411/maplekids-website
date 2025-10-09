@@ -203,6 +203,46 @@ const ExcelBulkUserCreationModal: React.FC<ExcelBulkUserCreationModalProps> = ({
     saveAs(data, fileName);
   };
 
+  // Helper function to clean and normalize data
+  const cleanData = (value: any): string => {
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'number') return value.toString();
+    if (typeof value === 'string') return value.trim();
+    return String(value).trim();
+  };
+
+  // Helper function to normalize headers (case-insensitive, trim whitespace)
+  const normalizeHeader = (header: string): string => {
+    return header.toLowerCase().trim().replace(/\s+/g, ' ');
+  };
+
+  // Helper function to find column index by flexible header matching
+  const findColumnIndex = (headers: string[], targetHeader: string): number => {
+    const normalizedTarget = normalizeHeader(targetHeader);
+    
+    // First try exact match
+    let index = headers.findIndex(header => normalizeHeader(header) === normalizedTarget);
+    if (index !== -1) return index;
+    
+    // Then try partial matches for common variations
+    const variations = [
+      targetHeader.toLowerCase(),
+      targetHeader.toLowerCase().replace(/\s+/g, ''),
+      targetHeader.toLowerCase().replace(/\s+/g, '_'),
+      targetHeader.toLowerCase().replace(/\s+/g, '-')
+    ];
+    
+    for (const variation of variations) {
+      index = headers.findIndex(header => 
+        normalizeHeader(header).includes(variation) || 
+        variation.includes(normalizeHeader(header))
+      );
+      if (index !== -1) return index;
+    }
+    
+    return -1;
+  };
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -214,7 +254,14 @@ const ExcelBulkUserCreationModal: React.FC<ExcelBulkUserCreationModalProps> = ({
         const workbook = XLSX.read(data, { type: 'array' });
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        
+        // Use raw option to preserve data types and handle empty cells better
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+          header: 1, 
+          raw: false,
+          defval: '',
+          blankrows: false
+        });
 
         if (jsonData.length < 2) {
           alert('Excel file must have at least a header row and one data row.');
@@ -224,33 +271,59 @@ const ExcelBulkUserCreationModal: React.FC<ExcelBulkUserCreationModalProps> = ({
         const headers = jsonData[0] as string[];
         const rows = jsonData.slice(1) as any[][];
 
+        // Clean headers
+        const cleanedHeaders = headers.map(header => cleanData(header));
+
         const expectedHeaders = userType === 'student'
           ? ['First Name', 'Last Name', 'Email', 'Phone', 'Address', 'Password', 'Class', 'Roll Number', 'Age', 'Father Name', 'Mother Name', 'Admission Date']
           : ['First Name', 'Last Name', 'Email', 'Phone', 'Address', 'Password'];
 
-        // Validate headers
-        const isValidHeaders = expectedHeaders.every(header => headers.includes(header));
-        if (!isValidHeaders) {
-          alert(`Invalid headers. Expected: ${expectedHeaders.join(', ')}`);
+        // Find column indices using flexible matching
+        const columnIndices: { [key: string]: number } = {};
+        const missingHeaders: string[] = [];
+
+        for (const expectedHeader of expectedHeaders) {
+          const index = findColumnIndex(cleanedHeaders, expectedHeader);
+          if (index !== -1) {
+            columnIndices[expectedHeader] = index;
+          } else {
+            missingHeaders.push(expectedHeader);
+          }
+        }
+
+        // If critical headers are missing, show error with suggestions
+        const criticalHeaders = userType === 'student' 
+          ? ['First Name', 'Last Name', 'Email', 'Phone', 'Address', 'Password', 'Class', 'Roll Number']
+          : ['First Name', 'Last Name', 'Email', 'Phone', 'Address', 'Password'];
+
+        const missingCritical = missingHeaders.filter(header => criticalHeaders.includes(header));
+        
+        if (missingCritical.length > 0) {
+          alert(`Missing critical headers: ${missingCritical.join(', ')}\n\nFound headers: ${cleanedHeaders.join(', ')}\n\nPlease check your Excel file and try again.`);
           return;
         }
 
+        // Parse users with flexible column mapping
         const parsedUsers: ExcelUser[] = rows.map((row, index) => {
           const rowNumber = index + 2; // +2 because Excel is 1-indexed and we skip header
+          
+          // Clean and normalize row data
+          const cleanedRow = row.map(cell => cleanData(cell));
+          
           const user: ExcelUser = {
             id: `user-${index + 1}`,
-            firstName: row[0] || '',
-            lastName: row[1] || '',
-            email: row[2] || '',
-            phone: row[3] || '',
-            address: row[4] || '',
-            password: row[5] || '',
-            class: userType === 'student' ? row[6] : undefined,
-            rollNumber: userType === 'student' ? row[7] : undefined,
-            age: userType === 'student' ? row[8] : undefined,
-            fatherName: userType === 'student' ? row[9] : undefined,
-            motherName: userType === 'student' ? row[10] : undefined,
-            admissionDate: userType === 'student' ? row[11] : undefined,
+            firstName: cleanedRow[columnIndices['First Name']] || '',
+            lastName: cleanedRow[columnIndices['Last Name']] || '',
+            email: cleanedRow[columnIndices['Email']] || '',
+            phone: cleanedRow[columnIndices['Phone']] || '',
+            address: cleanedRow[columnIndices['Address']] || '',
+            password: cleanedRow[columnIndices['Password']] || '',
+            class: userType === 'student' ? (cleanedRow[columnIndices['Class']] || '') : undefined,
+            rollNumber: userType === 'student' ? (cleanedRow[columnIndices['Roll Number']] || '') : undefined,
+            age: userType === 'student' ? (parseInt(cleanedRow[columnIndices['Age']]) || 0) : undefined,
+            fatherName: userType === 'student' ? (cleanedRow[columnIndices['Father Name']] || '') : undefined,
+            motherName: userType === 'student' ? (cleanedRow[columnIndices['Mother Name']] || '') : undefined,
+            admissionDate: userType === 'student' ? (cleanedRow[columnIndices['Admission Date']] || '') : undefined,
             isValid: true,
             errors: [],
             rowNumber
@@ -263,7 +336,7 @@ const ExcelBulkUserCreationModal: React.FC<ExcelBulkUserCreationModalProps> = ({
         setStep('review');
       } catch (error) {
         console.error('Error parsing Excel file:', error);
-        alert('Error parsing Excel file. Please make sure it\'s a valid Excel file.');
+        alert(`Error parsing Excel file: ${error instanceof Error ? error.message : 'Unknown error'}\n\nPlease make sure it's a valid Excel file and try again.`);
       }
     };
 
@@ -273,67 +346,114 @@ const ExcelBulkUserCreationModal: React.FC<ExcelBulkUserCreationModalProps> = ({
   const validateUser = (user: ExcelUser): ExcelUser => {
     const errors: string[] = [];
     
-    if (!user.firstName?.trim()) errors.push('First name is required');
-    if (!user.lastName?.trim()) errors.push('Last name is required');
-    if (!user.email?.trim()) errors.push('Email is required');
-    if (!user.phone?.trim()) errors.push('Phone is required');
-    if (!user.address?.trim()) errors.push('Address is required');
-    if (!user.password?.trim()) errors.push('Password is required');
-    if (userType === 'student' && !user.class?.trim()) errors.push('Class is required');
-    if (userType === 'student' && !user.rollNumber?.trim()) errors.push('Roll number is required');
-    if (userType === 'student' && !user.age) errors.push('Age is required');
-    if (userType === 'student' && !user.fatherName?.trim()) errors.push('Father name is required');
-    if (userType === 'student' && !user.motherName?.trim()) errors.push('Mother name is required');
-    if (userType === 'student' && !user.admissionDate?.trim()) errors.push('Admission date is required');
+    // Clean and normalize all string fields
+    const cleanString = (str: any): string => {
+      if (!str) return '';
+      return String(str).trim();
+    };
     
-    // Email format validation
+    const cleanNumber = (num: any): number => {
+      if (typeof num === 'number') return num;
+      if (typeof num === 'string') {
+        const cleaned = num.replace(/[^\d]/g, '');
+        return cleaned ? parseInt(cleaned, 10) : 0;
+      }
+      return 0;
+    };
+    
+    // Clean all user data
+    user.firstName = cleanString(user.firstName);
+    user.lastName = cleanString(user.lastName);
+    user.email = cleanString(user.email);
+    user.phone = cleanString(user.phone);
+    user.address = cleanString(user.address);
+    user.password = cleanString(user.password);
+    
+    if (userType === 'student') {
+      user.class = cleanString(user.class);
+      user.rollNumber = cleanString(user.rollNumber);
+      user.age = cleanNumber(user.age);
+      user.fatherName = cleanString(user.fatherName);
+      user.motherName = cleanString(user.motherName);
+      user.admissionDate = cleanString(user.admissionDate);
+    }
+    
+    // Required field validation
+    if (!user.firstName) errors.push('First name is required');
+    if (!user.lastName) errors.push('Last name is required');
+    if (!user.email) errors.push('Email is required');
+    if (!user.phone) errors.push('Phone is required');
+    if (!user.address) errors.push('Address is required');
+    if (!user.password) errors.push('Password is required');
+    
+    if (userType === 'student') {
+      if (!user.class) errors.push('Class is required');
+      if (!user.rollNumber) errors.push('Roll number is required');
+      if (!user.age || user.age <= 0) errors.push('Age must be a positive number');
+      if (!user.fatherName) errors.push('Father name is required');
+      if (!user.motherName) errors.push('Mother name is required');
+      if (!user.admissionDate) errors.push('Admission date is required');
+    }
+    
+    // Email format validation (more flexible)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (user.email && !emailRegex.test(user.email)) {
       errors.push('Invalid email format');
     }
     
-    // Phone number validation (10 digits)
-    const phoneRegex = /^\d{10}$/;
-    if (user.phone && !phoneRegex.test(user.phone)) {
-      errors.push('Phone must be exactly 10 digits');
+    // Phone number validation (more flexible - accepts various formats)
+    const phoneDigits = user.phone.replace(/\D/g, '');
+    if (user.phone && phoneDigits.length !== 10) {
+      errors.push('Phone must contain exactly 10 digits');
     }
-
-    // Class validation for students
-    if (userType === 'student' && user.class && !classes.includes(user.class.toLowerCase())) {
-      errors.push(`Invalid class. Must be one of: ${classes.join(', ')}`);
-    }
-
+    
     // Age validation for students
-    if (userType === 'student' && user.age && (user.age < 1 || user.age > 18)) {
-      errors.push('Age must be between 1 and 18');
+    if (userType === 'student' && user.age && (user.age < 3 || user.age > 18)) {
+      errors.push('Age must be between 3 and 18');
     }
-
-    // Date validation for students
+    
+    // Class validation for students
+    if (userType === 'student' && user.class) {
+      const validClasses = ['play', 'nursery', 'lkg', 'ukg', '1st'];
+      if (!validClasses.includes(user.class.toLowerCase())) {
+        errors.push(`Class must be one of: ${validClasses.join(', ')}`);
+      }
+    }
+    
+    // Date validation for admission date
     if (userType === 'student' && user.admissionDate) {
-      const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
-      if (!dateRegex.test(user.admissionDate)) {
-        errors.push('Admission date must be in MM/DD/YYYY format');
+      const dateStr = user.admissionDate;
+      // Try to parse various date formats
+      let parsedDate: Date | null = null;
+      
+      // Try MM/DD/YYYY format
+      if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(dateStr)) {
+        const [month, day, year] = dateStr.split('/').map(Number);
+        parsedDate = new Date(year, month - 1, day);
+      }
+      // Try YYYY-MM-DD format
+      else if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(dateStr)) {
+        parsedDate = new Date(dateStr);
+      }
+      // Try DD-MM-YYYY format
+      else if (/^\d{1,2}-\d{1,2}-\d{4}$/.test(dateStr)) {
+        const [day, month, year] = dateStr.split('-').map(Number);
+        parsedDate = new Date(year, month - 1, day);
+      }
+      
+      if (!parsedDate || isNaN(parsedDate.getTime())) {
+        errors.push('Admission date must be in MM/DD/YYYY, YYYY-MM-DD, or DD-MM-YYYY format');
       } else {
-        // Parse MM/DD/YYYY format
-        const [month, day, year] = user.admissionDate.split('/').map(Number);
-        const date = new Date(year, month - 1, day);
-        if (isNaN(date.getTime()) || date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
-          errors.push('Invalid admission date');
-        } else {
-          // Check if date is within reasonable range
-          const currentYear = new Date().getFullYear();
-          if (year < 2020 || year > currentYear + 1) {
-            errors.push('Admission date must be between 2020 and ' + (currentYear + 1));
-          }
-        }
+        // Update the admission date to ISO format for consistency
+        user.admissionDate = parsedDate.toISOString().split('T')[0];
       }
     }
 
-    return {
-      ...user,
-      isValid: errors.length === 0,
-      errors
-    };
+    // Set validation status
+    user.isValid = errors.length === 0;
+    user.errors = errors;
+    
+    return user;
   };
 
   const updateUser = (userId: string, field: keyof ExcelUser, value: string | number) => {

@@ -40,6 +40,20 @@ const HomePage: React.FC = () => {
   const [visibleCharacters, setVisibleCharacters] = useState<string[]>([]);
   const animationStartedRef = useRef(false);
   const [showWhatsAppForm, setShowWhatsAppForm] = useState(false);
+  
+  // Letter Hunt Game States
+  const [isPlayingLetterHunt, setIsPlayingLetterHunt] = useState(false);
+  const [letterHuntScore, setLetterHuntScore] = useState(0);
+  const [targetLetter, setTargetLetter] = useState<string>('');
+  const [letterOptions, setLetterOptions] = useState<string[]>([]);
+  const [foundLetters, setFoundLetters] = useState<string[]>([]);
+  
+  // Number Count Game States
+  const [isPlayingNumberCount, setIsPlayingNumberCount] = useState(false);
+  const [numberCountScore, setNumberCountScore] = useState(0);
+  const [targetNumber, setTargetNumber] = useState<number>(0);
+  const [objectOptions, setObjectOptions] = useState<number[]>([]);
+  const [currentObjects, setCurrentObjects] = useState<string[]>([]);
   const { announcements, handleAnnouncementDismiss } = useAnnouncement();
   
   // WhatsApp Configuration - Replace with your actual WhatsApp number
@@ -253,6 +267,83 @@ const HomePage: React.FC = () => {
     }
   };
 
+  // Letter Hunt Game Functions
+  const startLetterHuntGame = () => {
+    setIsPlayingLetterHunt(true);
+    setLetterHuntScore(0);
+    setFoundLetters([]);
+    generateNewLetter();
+  };
+
+  const generateNewLetter = () => {
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const randomLetter = alphabet[Math.floor(Math.random() * alphabet.length)];
+    setTargetLetter(randomLetter);
+    
+    // Generate 6 random letters including the target
+    const options = [randomLetter];
+    while (options.length < 6) {
+      const randomChar = alphabet[Math.floor(Math.random() * alphabet.length)];
+      if (!options.includes(randomChar)) {
+        options.push(randomChar);
+      }
+    }
+    setLetterOptions(options.sort(() => Math.random() - 0.5));
+  };
+
+  const handleLetterGuess = (selectedLetter: string) => {
+    if (selectedLetter === targetLetter) {
+      setLetterHuntScore(prev => prev + 10);
+      setFoundLetters(prev => [...prev, selectedLetter]);
+      setTimeout(() => {
+        generateNewLetter();
+      }, 500);
+    } else {
+      setLetterHuntScore(prev => Math.max(0, prev - 5));
+    }
+  };
+
+  // Number Count Game Functions
+  const startNumberCountGame = () => {
+    setIsPlayingNumberCount(true);
+    setNumberCountScore(0);
+    generateNewNumber();
+  };
+
+  const generateNewNumber = () => {
+    const targetNum = Math.floor(Math.random() * 10) + 1; // 1-10
+    setTargetNumber(targetNum);
+    
+    // Generate objects
+    const objects = ['🍎', '⭐', '🔵', '❤️', '🌟', '🎈', '🎯', '🎨', '🎪', '🎭'];
+    const selectedObjects = [];
+    for (let i = 0; i < targetNum; i++) {
+      selectedObjects.push(objects[Math.floor(Math.random() * objects.length)]);
+    }
+    setCurrentObjects(selectedObjects);
+    
+    // Generate number options
+    const options = [targetNum];
+    while (options.length < 4) {
+      const randomNum = Math.floor(Math.random() * 10) + 1;
+      if (!options.includes(randomNum)) {
+        options.push(randomNum);
+      }
+    }
+    setObjectOptions(options.sort(() => Math.random() - 0.5));
+  };
+
+  const handleNumberGuess = (selectedNumber: number) => {
+    if (selectedNumber === targetNumber) {
+      setNumberCountScore(prev => prev + 10);
+      setTimeout(() => {
+        generateNewNumber();
+      }, 500);
+    } else {
+      setNumberCountScore(prev => Math.max(0, prev - 5));
+    }
+  };
+
 
 
 
@@ -318,13 +409,109 @@ const HomePage: React.FC = () => {
           </div>
           
         </div>
+      </div>
+
+      {/* Child Care Center Section */}
+      <div className="childcare-cta-section">
+        <div className="childcare-cta-background">
+          <div className="floating-shapes">
+            <div className="shape shape-1">🧠</div>
+            <div className="shape shape-2">🔍</div>
+            <div className="shape shape-3">📊</div>
+            <div className="shape shape-4">🎯</div>
+            <div className="shape shape-5">💡</div>
+            <div className="shape shape-6">🌟</div>
+          </div>
+        </div>
         
-        <div className="hero-visual">
-          <div className="floating-elements">
-            <div className="floating-item" style={{ animationDelay: '0s' }}>🎈</div>
-            <div className="floating-item" style={{ animationDelay: '2s' }}>📚</div>
-            <div className="floating-item" style={{ animationDelay: '4s' }}>🎨</div>
-            <div className="floating-item" style={{ animationDelay: '6s' }}>🧸</div>
+        <div className="childcare-cta-content">
+          <div className="childcare-cta-text">
+            <div className="childcare-badge">
+              <span className="badge-icon">✨</span>
+              <span>{t('home.childcareCenter.badge')}</span>
+            </div>
+            <h2>
+              <span className="title-icon">🧠</span>
+              {t('home.childcareCenter.title')}
+            </h2>
+            <p className="main-description">
+              {t('home.childcareCenter.subtitle')}
+            </p>
+            
+            <div className="childcare-stats">
+              <div className="stat-item">
+                <div className="stat-number">{t('home.childcareCenter.stats.assessmentTools')}</div>
+                <div className="stat-label">{t('home.childcareCenter.stats.assessmentToolsLabel')}</div>
+              </div>
+              <div className="stat-item">
+                <div className="stat-number">{t('home.childcareCenter.stats.happyParents')}</div>
+                <div className="stat-label">{t('home.childcareCenter.stats.happyParentsLabel')}</div>
+              </div>
+              <div className="stat-item">
+                <div className="stat-number">{t('home.childcareCenter.stats.accuracyRate')}</div>
+                <div className="stat-label">{t('home.childcareCenter.stats.accuracyRateLabel')}</div>
+              </div>
+            </div>
+
+            <div className="childcare-features">
+              <div className="childcare-feature">
+                <div className="feature-icon-wrapper">
+                  <span className="feature-icon">🔍</span>
+                </div>
+                <div className="feature-content">
+                  <h4>{t('home.childcareCenter.features.mchat.title')}</h4>
+                  <p>{t('home.childcareCenter.features.mchat.description')}</p>
+                </div>
+              </div>
+              <div className="childcare-feature">
+                <div className="feature-icon-wrapper">
+                  <span className="feature-icon">🎯</span>
+                </div>
+                <div className="feature-content">
+                  <h4>{t('home.childcareCenter.features.socialSkills.title')}</h4>
+                  <p>{t('home.childcareCenter.features.socialSkills.description')}</p>
+                </div>
+              </div>
+              <div className="childcare-feature">
+                <div className="feature-icon-wrapper">
+                  <span className="feature-icon">📊</span>
+                </div>
+                <div className="feature-content">
+                  <h4>{t('home.childcareCenter.features.progressTracking.title')}</h4>
+                  <p>{t('home.childcareCenter.features.progressTracking.description')}</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="childcare-actions">
+              <button 
+                className="btn-childcare-primary"
+                onClick={() => navigate('/childcare-center')}
+              >
+                <span className="btn-icon">🚀</span>
+                {t('home.childcareCenter.actions.startAssessment')}
+              </button>
+              <button 
+                className="btn-childcare-secondary"
+                onClick={() => scrollToSection('contact')}
+              >
+                <span className="btn-icon">💬</span>
+                {t('home.childcareCenter.actions.learnMore')}
+              </button>
+            </div>
+          </div>
+          
+          <div className="childcare-cta-visual">
+            <div className="visual-container">
+              <div className="main-icon">🧠</div>
+              <div className="orbit-ring">
+                <div className="orbit-item orbit-1">🔍</div>
+                <div className="orbit-item orbit-2">📊</div>
+                <div className="orbit-item orbit-3">🎯</div>
+                <div className="orbit-item orbit-4">💡</div>
+              </div>
+              <div className="pulse-ring"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -543,20 +730,90 @@ const HomePage: React.FC = () => {
             )}
           </div>
           
-          <div className="game-card coming-soon">
+          <div className="game-card">
             <div className="game-header">
               <h3>🔤 {t('home.games.comingSoon.letterHunt')}</h3>
-              <span className="coming-soon-badge">{t('badges.comingSoon')}</span>
+              <div className="game-score">{t('home.games.shapeMatching.score')}: {letterHuntScore}</div>
             </div>
-            <p>{t('home.games.comingSoon.description')}</p>
+            
+            {!isPlayingLetterHunt ? (
+              <div className="game-start">
+                <p>{t('home.games.comingSoon.description')}</p>
+                <button className="btn-game-start" onClick={startLetterHuntGame}>
+                  {t('home.games.shapeMatching.start')}
+                </button>
+              </div>
+            ) : (
+              <div className="game-play">
+                <div className="game-instruction">
+                  <p>Find the letter: <strong>{targetLetter}</strong></p>
+                  {foundLetters.length > 0 && (
+                    <div className="found-letters">
+                      <p>Found letters: {foundLetters.join(', ')}</p>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="letter-options">
+                  {letterOptions.map((letter, index) => (
+                    <button
+                      key={index}
+                      className="letter-option"
+                      onClick={() => handleLetterGuess(letter)}
+                    >
+                      {letter}
+                    </button>
+                  ))}
+                </div>
+                
+                <button className="btn-game-reset" onClick={() => setIsPlayingLetterHunt(false)}>
+                  {t('home.games.shapeMatching.endGame')}
+                </button>
+              </div>
+            )}
           </div>
           
-          <div className="game-card coming-soon">
+          <div className="game-card">
             <div className="game-header">
               <h3>🔢 {t('home.games.comingSoon.numberCount')}</h3>
-              <span className="coming-soon-badge">{t('badges.comingSoon')}</span>
+              <div className="game-score">{t('home.games.shapeMatching.score')}: {numberCountScore}</div>
             </div>
-            <p>{t('home.games.comingSoon.description2')}</p>
+            
+            {!isPlayingNumberCount ? (
+              <div className="game-start">
+                <p>{t('home.games.comingSoon.description2')}</p>
+                <button className="btn-game-start" onClick={startNumberCountGame}>
+                  {t('home.games.shapeMatching.start')}
+                </button>
+              </div>
+            ) : (
+              <div className="game-play">
+                <div className="game-instruction">
+                  <p>Count the objects:</p>
+                  <div className="objects-display">
+                    {currentObjects.map((obj, index) => (
+                      <span key={index} className="object-item">{obj}</span>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="number-options">
+                  {objectOptions.map((number, index) => (
+                    <button
+                      key={index}
+                      className="number-option"
+                      onClick={() => handleNumberGuess(number)}
+                    >
+                      {number}
+                    </button>
+                  ))}
+                </div>
+                
+                <button className="btn-game-reset" onClick={() => setIsPlayingNumberCount(false)}>
+                  {t('home.games.shapeMatching.endGame')}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

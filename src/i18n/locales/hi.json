@@ -128,11 +128,42 @@
           "star": "तारा"
         }
       },
-      "alphabetHunt": {
-        "title": "वर्णमाला खोज",
+      "comingSoon": {
+        "letterHunt": "वर्णमाला खोज",
         "numberCount": "संख्या गिनती",
         "description": "छुपे हुए अक्षरों को खोजें और वर्णमाला सीखें!",
         "description2": "वस्तुओं को गिनें और संख्याएं सीखें!"
+      }
+    },
+    "childcareCenter": {
+      "title": "बाल विकास केंद्र",
+      "subtitle": "हमारे व्यापक विकास स्क्रीनिंग उपकरणों के साथ अपने बच्चे की क्षमता को अनलॉक करें। माइलस्टोन को ट्रैक करें, ताकतों की पहचान करें, और अपने बच्चे की अनूठी सीखने की यात्रा का समर्थन करने के लिए व्यक्तिगत अंतर्दृष्टि प्राप्त करें।",
+      "badge": "नई सुविधा",
+      "stats": {
+        "assessmentTools": "4+",
+        "assessmentToolsLabel": "मूल्यांकन उपकरण",
+        "happyParents": "100+",
+        "happyParentsLabel": "खुश माता-पिता",
+        "accuracyRate": "95%",
+        "accuracyRateLabel": "सटीकता दर"
+      },
+      "features": {
+        "mchat": {
+          "title": "एम-चैट स्क्रीनिंग",
+          "description": "छोटे बच्चों के लिए ऑटिज्म स्क्रीनिंग"
+        },
+        "socialSkills": {
+          "title": "सामाजिक कौशल",
+          "description": "भावनात्मक विकास मूल्यांकन"
+        },
+        "progressTracking": {
+          "title": "प्रगति ट्रैकिंग",
+          "description": "विकास माइलस्टोन की निगरानी करें"
+        }
+      },
+      "actions": {
+        "startAssessment": "मूल्यांकन शुरू करें",
+        "learnMore": "और जानें"
       }
     },
     "features": {
@@ -342,8 +373,8 @@
       "screeningTools": "मूल्यांकन उपकरण",
       "resources": "संसाधन",
       "contactSupport": "संपर्क सहायता",
-      "phone": "+91-9876543210",
-      "email": "development@maplekids.com",
+      "phone": "+91-9238612960",
+      "email": "maplekidshatta@gmail.com",
       "address": "मेपलकिड्स प्ले स्कूल, पुणे",
       "copyright": "सभी अधिकार सुरक्षित।",
       "developer": "डेवलपर: अनुज पराशर",

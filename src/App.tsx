@@ -20,6 +20,7 @@ import EditStudentForm from './components/forms/EditStudentForm';
 import EditEventForm from './components/forms/EditEventForm';
 import EditUserForm from './components/forms/EditUserForm';
 import ParentGuidePage from './components/ParentGuidePage';
+import ChildCareCenter from './components/ChildCareCenter';
 
 // Component that uses announcement context and controls language timer
 const AppContent: React.FC = () => {
@@ -33,6 +34,7 @@ const AppContent: React.FC = () => {
             <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/parent-guide" element={<ParentGuidePage />} />
+            <Route path="/childcare-center" element={<ChildCareCenter />} />
 
             <Route path="/signin" element={<SigninForm />} />
 

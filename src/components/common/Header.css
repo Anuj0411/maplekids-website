@@ -519,6 +519,19 @@
 /* Prevent body scroll when mobile menu is open */
 body.mobile-menu-open {
   overflow: hidden;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+}
+
+/* Ensure proper mobile scrolling when menu is closed */
+@media (max-width: 768px) {
+  body:not(.mobile-menu-open) {
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+  }
 }
 
 .mobile-menu {

@@ -32,6 +32,17 @@ const Header: React.FC<HeaderProps> = ({ scrollToSection }) => {
     };
   }, [isMobileMenuOpen]);
 
+  // Additional cleanup on component mount to ensure clean state
+  useEffect(() => {
+    // Ensure body is scrollable on mount
+    document.body.classList.remove('mobile-menu-open');
+    
+    // Cleanup on unmount
+    return () => {
+      document.body.classList.remove('mobile-menu-open');
+    };
+  }, []);
+
   const handleMobileNavClick = (sectionId: string) => {
     // Close menu immediately to prevent interference
     setIsMobileMenuOpen(false);
@@ -102,12 +113,12 @@ const Header: React.FC<HeaderProps> = ({ scrollToSection }) => {
             >
               Contact
             </button>
-            {/* <button 
+            <button 
               className="nav-special"
-              onClick={() => navigate('/parent-guide')}
+              onClick={() => navigate('/childcare-center')}
             >
-              Parent Guide
-            </button> */}
+              Child Care Center
+            </button>
           </div>
         )}
         

@@ -68,7 +68,7 @@ const BulkUserCreationModal: React.FC<BulkUserCreationModalProps> = ({ isOpen, o
         const lastDigits = (parseInt(baseNumber.slice(-2)) + i - 1).toString().padStart(2, '0');
         phone = baseNumber.slice(0, -2) + lastDigits;
       } else {
-        phone = (9876543210 + i - 1).toString();
+        phone = (9238612960 + i - 1).toString();
       }
       
       // Generate unique roll number for students
@@ -303,11 +303,11 @@ const BulkUserCreationModal: React.FC<BulkUserCreationModalProps> = ({ isOpen, o
                         setTemplateData({ ...templateData, phoneBase: value });
                       }
                     }}
-                    placeholder="e.g., 9876543210"
+                    placeholder="e.g., 9238612960"
                     maxLength={10}
                     required
                   />
-                  <small>Will generate: 9876543210, 9876543211, 9876543212, etc.</small>
+                  <small>Will generate: 9238612960, 9876543211, 9876543212, etc.</small>
                 </div>
               </div>
               <div className="form-row">

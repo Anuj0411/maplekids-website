@@ -260,7 +260,7 @@ const BulkAttendanceForm: React.FC<BulkAttendanceFormProps> = ({
         </div>
       </div>
 
-      {/* Attendance Table */}
+      {/* Desktop Attendance Table */}
       <div className="attendance-table-container">
         <table className="attendance-table">
           <thead>
@@ -319,6 +319,61 @@ const BulkAttendanceForm: React.FC<BulkAttendanceFormProps> = ({
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile Attendance Cards */}
+      <div className="mobile-attendance-cards">
+        {studentAttendance.map((student) => (
+          <div key={student.studentId} className="mobile-student-card">
+            <div className="mobile-student-header">
+              <div className="mobile-student-info">
+                <div className="mobile-roll-number">{student.rollNumber}</div>
+                <div className="mobile-student-name">{student.name}</div>
+              </div>
+              <div className={`mobile-current-status ${student.status}`}>
+                {getStatusIcon(student.status)} {student.status.toUpperCase()}
+              </div>
+            </div>
+
+            <div className="mobile-status-section">
+              <div className="mobile-status-title">Mark Status:</div>
+              <div className="mobile-status-buttons">
+                <button
+                  className={`mobile-status-btn present ${student.status === 'present' ? 'active' : ''}`}
+                  onClick={() => updateStudentStatus(student.studentId, 'present')}
+                >
+                  <span className="mobile-status-icon">✅</span>
+                  <span>Present</span>
+                </button>
+                <button
+                  className={`mobile-status-btn absent ${student.status === 'absent' ? 'active' : ''}`}
+                  onClick={() => updateStudentStatus(student.studentId, 'absent')}
+                >
+                  <span className="mobile-status-icon">❌</span>
+                  <span>Absent</span>
+                </button>
+                <button
+                  className={`mobile-status-btn late ${student.status === 'late' ? 'active' : ''}`}
+                  onClick={() => updateStudentStatus(student.studentId, 'late')}
+                >
+                  <span className="mobile-status-icon">⏰</span>
+                  <span>Late</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="mobile-remarks-section">
+              <div className="mobile-remarks-title">Remarks:</div>
+              <input
+                type="text"
+                placeholder="Add remarks..."
+                value={student.remarks}
+                onChange={(e) => updateStudentRemarks(student.studentId, e.target.value)}
+                className="mobile-remarks-input"
+              />
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Summary and Save */}

@@ -130,15 +130,6 @@ const AttendanceOverview: React.FC<AttendanceOverviewProps> = ({
 
 
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'present': return '✅';
-      case 'absent': return '❌';
-      case 'late': return '⏰';
-      case 'missed': return '❓';
-      default: return '❓';
-    }
-  };
 
   const classOrder = ['play', 'nursery', 'lkg', 'ukg', '1st'];
 
@@ -294,7 +285,7 @@ const AttendanceOverview: React.FC<AttendanceOverviewProps> = ({
             </div>
           ) : (
             <>
-              {/* Summary Cards */}
+              {/* Simplified Class Summary */}
               <div className="attendance-summary">
                 {classOrder.map(className => {
                   let stats: AttendanceStats;
@@ -313,108 +304,121 @@ const AttendanceOverview: React.FC<AttendanceOverviewProps> = ({
                   }
                   
                   const percentage = getAttendancePercentage(stats);
+                  const presentCount = stats.present + stats.late;
                   
                   return (
                     <div key={className} className="class-summary-card">
                       <div className="class-header">
                         <h4 className="class-name">{className.toUpperCase()}</h4>
-                        <span className="attendance-percentage">{percentage}%</span>
-                      </div>
-                      
-                      <div className="class-stats">
-                        <div className="stat-item present">
-                          <span className="stat-icon">✅</span>
-                          <span className="stat-label">Present</span>
-                          <span className="stat-value">{stats.present}</span>
-                        </div>
-                        
-                        <div className="stat-item absent">
-                          <span className="stat-icon">❌</span>
-                          <span className="stat-label">Absent</span>
-                          <span className="stat-value">{stats.absent}</span>
-                        </div>
-                        
-                        <div className="stat-item late">
-                          <span className="stat-icon">⏰</span>
-                          <span className="stat-label">Late</span>
-                          <span className="stat-value">{stats.late}</span>
-                        </div>
-                        
-                        <div className="stat-item missed">
-                          <span className="stat-icon">❓</span>
-                          <span className="stat-label">Not Marked</span>
-                          <span className="stat-value">{stats.missed}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="class-total">
-                        <span className="total-label">Total Students:</span>
-                        <span className="total-value">{stats.total}</span>
-                        {additionalInfo && (
-                          <div className="additional-info">{additionalInfo}</div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Detailed Table */}
-              <div className="attendance-table-container">
-                <h4>📋 Detailed Class-wise Attendance</h4>
-                <div className="attendance-table">
-                  <div className="table-header">
-                    <div className="header-cell class">Class</div>
-                    <div className="header-cell total">Total</div>
-                    <div className="header-cell present">Present</div>
-                    <div className="header-cell absent">Absent</div>
-                    <div className="header-cell late">Late</div>
-                    <div className="header-cell missed">Not Marked</div>
-                    <div className="header-cell percentage">Attendance %</div>
-                  </div>
-                  
-                  {classOrder.map(className => {
-                    const stats = attendanceStats[className];
-                    if (!stats) return null;
-                    
-                    const percentage = getAttendancePercentage(stats);
-                    
-                    return (
-                      <div key={className} className="table-row">
-                        <div className="table-cell class">
-                          <span className="class-badge">{className.toUpperCase()}</span>
-                        </div>
-                        <div className="table-cell total">{stats.total}</div>
-                        <div className="table-cell present">
-                          <span className="status-badge present">
-                            {getStatusIcon('present')} {stats.present}
-                          </span>
-                        </div>
-                        <div className="table-cell absent">
-                          <span className="status-badge absent">
-                            {getStatusIcon('absent')} {stats.absent}
-                          </span>
-                        </div>
-                        <div className="table-cell late">
-                          <span className="status-badge late">
-                            {getStatusIcon('late')} {stats.late}
-                          </span>
-                        </div>
-                        <div className="table-cell missed">
-                          <span className="status-badge missed">
-                            {getStatusIcon('missed')} {stats.missed}
-                          </span>
-                        </div>
-                        <div className="table-cell percentage">
-                          <div className="percentage-bar">
+                        <div className="attendance-percentage-container">
+                          <span className="attendance-percentage">{percentage}%</span>
+                          <div className="attendance-bar">
                             <div 
-                              className="percentage-fill"
+                              className="attendance-fill"
                               style={{ 
                                 width: `${percentage}%`,
                                 backgroundColor: percentage >= 80 ? '#10B981' : percentage >= 60 ? '#F59E0B' : '#EF4444'
                               }}
                             ></div>
-                            <span className="percentage-text">{percentage}%</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="class-stats-simple">
+                        <div className="main-stats">
+                          <div className="stat-item-large present">
+                            <span className="stat-icon">✅</span>
+                            <div className="stat-content">
+                              <span className="stat-value">{presentCount}</span>
+                              <span className="stat-label">Present</span>
+                            </div>
+                          </div>
+                          
+                          <div className="stat-item-large absent">
+                            <span className="stat-icon">❌</span>
+                            <div className="stat-content">
+                              <span className="stat-value">{stats.absent}</span>
+                              <span className="stat-label">Absent</span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="secondary-stats">
+                          <div className="stat-item-small">
+                            <span className="stat-label">Total:</span>
+                            <span className="stat-value">{stats.total}</span>
+                          </div>
+                          {stats.late > 0 && (
+                            <div className="stat-item-small">
+                              <span className="stat-label">Late:</span>
+                              <span className="stat-value">{stats.late}</span>
+                            </div>
+                          )}
+                          {stats.missed > 0 && (
+                            <div className="stat-item-small">
+                              <span className="stat-label">Not Marked:</span>
+                              <span className="stat-value">{stats.missed}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {additionalInfo && (
+                        <div className="additional-info">{additionalInfo}</div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Quick Overview Table */}
+              <div className="quick-overview">
+                <h4>📊 Quick Overview</h4>
+                <div className="overview-table">
+                  {classOrder.map(className => {
+                    let stats: AttendanceStats;
+                    
+                    if (viewMode === 'daily') {
+                      stats = attendanceStats[className];
+                      if (!stats) return null;
+                    } else {
+                      const rangeStats = dateRangeStats?.summaryStats[className];
+                      if (!rangeStats) return null;
+                      stats = rangeStats;
+                    }
+                    
+                    const percentage = getAttendancePercentage(stats);
+                    const presentCount = stats.present + stats.late;
+                    
+                    return (
+                      <div key={className} className="overview-row">
+                        <div className="overview-class">
+                          <span className="class-badge">{className.toUpperCase()}</span>
+                        </div>
+                        <div className="overview-stats">
+                          <div className="overview-stat">
+                            <span className="stat-icon">✅</span>
+                            <span className="stat-value">{presentCount}</span>
+                          </div>
+                          <div className="overview-stat">
+                            <span className="stat-icon">❌</span>
+                            <span className="stat-value">{stats.absent}</span>
+                          </div>
+                          <div className="overview-stat">
+                            <span className="stat-icon">👥</span>
+                            <span className="stat-value">{stats.total}</span>
+                          </div>
+                        </div>
+                        <div className="overview-percentage">
+                          <span className="percentage-value">{percentage}%</span>
+                          <div className="percentage-bar-small">
+                            <div 
+                              className="percentage-fill-small"
+                              style={{ 
+                                width: `${percentage}%`,
+                                backgroundColor: percentage >= 80 ? '#10B981' : percentage >= 60 ? '#F59E0B' : '#EF4444'
+                              }}
+                            ></div>
                           </div>
                         </div>
                       </div>
@@ -425,7 +429,7 @@ const AttendanceOverview: React.FC<AttendanceOverviewProps> = ({
 
               {/* Overall Statistics */}
               <div className="overall-stats">
-                <h4>📈 Overall Statistics</h4>
+                <h4>📈 School Summary</h4>
                 <div className="overall-cards">
                   {(() => {
                     const totalStats = Object.values(attendanceStats).reduce(
@@ -445,6 +449,17 @@ const AttendanceOverview: React.FC<AttendanceOverviewProps> = ({
                     
                     return (
                       <>
+                        <div className="overall-card primary">
+                          <div className="card-icon">📊</div>
+                          <div className="card-content">
+                            <h5>Overall Attendance</h5>
+                            <p className="card-value">{overallPercentage}%</p>
+                            <div className="card-subtitle">
+                              {totalStats.present + totalStats.late} of {totalStats.total} students
+                            </div>
+                          </div>
+                        </div>
+                        
                         <div className="overall-card">
                           <div className="card-icon">👥</div>
                           <div className="card-content">
@@ -456,24 +471,16 @@ const AttendanceOverview: React.FC<AttendanceOverviewProps> = ({
                         <div className="overall-card">
                           <div className="card-icon">✅</div>
                           <div className="card-content">
-                            <h5>Present Today</h5>
+                            <h5>Present</h5>
                             <p className="card-value">{totalStats.present + totalStats.late}</p>
                           </div>
                         </div>
                         
                         <div className="overall-card">
-                          <div className="card-icon">📊</div>
+                          <div className="card-icon">❌</div>
                           <div className="card-content">
-                            <h5>Overall Attendance</h5>
-                            <p className="card-value">{overallPercentage}%</p>
-                          </div>
-                        </div>
-                        
-                        <div className="overall-card">
-                          <div className="card-icon">❓</div>
-                          <div className="card-content">
-                            <h5>Not Marked</h5>
-                            <p className="card-value">{totalStats.missed}</p>
+                            <h5>Absent</h5>
+                            <p className="card-value">{totalStats.absent}</p>
                           </div>
                         </div>
                       </>
