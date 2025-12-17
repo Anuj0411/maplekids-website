@@ -1,0 +1,46 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow public read access to events collection
+    match /events/{document} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    // Allow public read access to photos collection
+    match /photos/{document} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    // Students collection - only authenticated users can read/write
+    match /students/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Financial records - only authenticated users can read/write
+    match /financialRecords/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Users collection - only authenticated users can read/write
+    match /users/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Attendance records - only authenticated users can read/write
+    match /attendance/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Academic reports - only authenticated users can read/write
+    match /academicReports/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Remarks - only authenticated users can read/write
+    match /remarks/{document} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

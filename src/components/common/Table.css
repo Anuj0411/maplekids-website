@@ -1,0 +1,89 @@
+/* Universal Table Styles - Professional, Yellow Theme, Responsive */
+.universal-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  background: var(--background-primary);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-light);
+  margin-bottom: var(--space-8);
+}
+
+.universal-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 700px;
+  font-size: 1rem;
+  background: var(--background-primary);
+}
+
+.universal-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--background-secondary);
+  color: var(--text-primary);
+  font-weight: 600;
+  padding: var(--space-3) var(--space-3);
+  border-bottom: 2px solid var(--primary-yellow);
+  z-index: 2;
+  font-size: 0.95rem;
+  letter-spacing: 0.005em;
+}
+
+.universal-table tbody tr {
+  transition: background var(--transition-fast);
+}
+
+.universal-table tbody tr:nth-child(even) {
+  background: var(--background-secondary);
+}
+
+.universal-table tbody tr:nth-child(odd) {
+  background: var(--background-primary);
+}
+
+.universal-table tbody tr:hover {
+  background: rgba(251, 191, 36, 0.15);
+}
+
+.universal-table td, .universal-table th {
+  padding: var(--space-3) var(--space-3);
+  border: none;
+  vertical-align: middle;
+}
+
+.universal-table td {
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+.universal-table .actions-col {
+  text-align: center;
+  min-width: 120px;
+}
+
+.universal-table .empty-row {
+  text-align: center;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: var(--space-8) 0;
+}
+
+@media (max-width: 900px) {
+  .universal-table {
+    min-width: 600px;
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .universal-table {
+    min-width: 400px;
+    font-size: 0.9rem;
+  }
+  .universal-table-wrapper {
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+  }
+}

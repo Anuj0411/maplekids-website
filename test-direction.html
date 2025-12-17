@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Direction Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f0f0f0;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .direction-test {
+            border: 2px solid #007bff;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .direction-test h3 {
+            margin-top: 0;
+        }
+        .direction-test p {
+            margin: 10px 0;
+        }
+        .status {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Direction Test</h1>
+        <p>This page tests the direction attribute behavior for different languages.</p>
+        
+        <div class="status">
+            <h3>Current Status:</h3>
+            <p>Document Direction: <span id="current-dir">Not set</span></p>
+            <p>Document Language: <span id="current-lang">Not set</span></p>
+        </div>
+        
+        <div class="test-button-container">
+            <button class="test-button" onclick="setDirection('ltr', 'en')">Set LTR + English</button>
+            <button class="test-button" onclick="setDirection('rtl', 'hi')">Set RTL + Hindi</button>
+            <button class="test-button" onclick="setDirection('ltr', 'hi')">Set LTR + Hindi</button>
+            <button class="test-button" onclick="clearDirection()">Clear Direction</button>
+        </div>
+        
+        <div class="direction-test" id="test-content">
+            <h3>Test Content</h3>
+            <p>This is a test paragraph to see how text flows.</p>
+            <p>English: Hello World!</p>
+            <p>Hindi: नमस्ते दुनिया!</p>
+            <p>Numbers: 1, 2, 3, 4, 5</p>
+            <p>Mixed: Hello नमस्ते World दुनिया!</p>
+        </div>
+        
+        <div class="status">
+            <h3>Instructions:</h3>
+            <ol>
+                <li>Click "Set LTR + English" - text should flow left to right</li>
+                <li>Click "Set RTL + Hindi" - text should flow right to left (reversed)</li>
+                <li>Click "Set LTR + Hindi" - text should flow left to right (same as English)</li>
+                <li>Test your app with Hindi selected - it should behave like "LTR + Hindi"</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        function setDirection(dir, lang) {
+            document.documentElement.setAttribute('dir', dir);
+            document.documentElement.setAttribute('lang', lang);
+            updateStatus();
+        }
+        
+        function clearDirection() {
+            document.documentElement.removeAttribute('dir');
+            document.documentElement.removeAttribute('lang');
+            updateStatus();
+        }
+        
+        function updateStatus() {
+            const dir = document.documentElement.getAttribute('dir') || 'Not set';
+            const lang = document.documentElement.getAttribute('lang') || 'Not set';
+            
+            document.getElementById('current-dir').textContent = dir;
+            document.getElementById('current-lang').textContent = lang;
+        }
+        
+        // Update status on load
+        updateStatus();
+    </script>
+</body>
+</html>
