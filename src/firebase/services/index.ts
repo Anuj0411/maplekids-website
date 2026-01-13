@@ -1,0 +1,19 @@
+/**
+ * Firebase Services
+ * Centralized export for all service modules
+ */
+
+// Auth Service
+export { authService } from './auth.service';
+
+// User Service
+export { userService } from './user.service';
+
+// Student Service
+export { studentService } from './student.service';
+
+// Re-export for backward compatibility
+// Components can import from '@/firebase/services' and get all services
+export * from './auth.service';
+export * from './user.service';
+export * from './student.service';

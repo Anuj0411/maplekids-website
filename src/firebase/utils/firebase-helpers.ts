@@ -20,7 +20,7 @@ import {
 	Timestamp,
 } from 'firebase/firestore';
 import { db } from '../config';
-import { handleFirebaseError } from './error-handler';
+import { handleError as handleFirebaseError } from './errorHandler';
 
 /**
  * Creates a new document in a collection
