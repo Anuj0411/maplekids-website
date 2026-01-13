@@ -11,6 +11,7 @@ import {
 	serverTimestamp,
 	setDoc,
 	getDoc,
+	onSnapshot,
 } from 'firebase/firestore';
 import {
 	createUserWithEmailAndPassword,
@@ -159,6 +160,7 @@ export const userService = {
 
 			// If it's a student, also create a student record
 			if (userData.role === 'student' && userData.class && userData.rollNumber) {
+				console.log('✅ Student role detected. Creating student record in students collection...');
 				const studentData = {
 					firstName: userData.firstName,
 					lastName: userData.lastName,
@@ -172,9 +174,17 @@ export const userService = {
 					createdAt: serverTimestamp(),
 					createdBy: adminUid, // Use stored admin UID
 				};
-				console.log('Saving student document to Firestore:', studentData);
+				console.log('📝 Saving student document to students/{rollNumber}:', studentData);
 				await setDoc(doc(db, 'students', userData.rollNumber), studentData);
-				console.log('Student document saved successfully');
+				console.log('✅ Student document saved successfully to students collection');
+				console.log('📊 SYNC COMPLETE: User saved to both collections:');
+				console.log(`   - users/${documentId}`);
+				console.log(`   - students/${userData.rollNumber}`);
+			} else if (userData.role === 'student') {
+				console.warn('⚠️ WARNING: Student user created but NOT added to students collection!');
+				console.warn('   Missing required fields:');
+				console.warn(`   - class: ${userData.class || 'MISSING'}`);
+				console.warn(`   - rollNumber: ${userData.rollNumber || 'MISSING'}`);
 			}
 
 			// Sign out the newly created user
@@ -339,12 +349,62 @@ export const studentService = {
 		}
 	},
 
+	// Subscribe to students by class (real-time updates)
+	subscribeToStudentsByClass(
+		className: string, 
+		callback: (students: Student[]) => void
+	): () => void {
+		try {
+			const q = query(
+				collection(db, 'students'),
+				where('class', '==', className),
+				orderBy('firstName')
+			);
+			
+			// Set up real-time listener
+			const unsubscribe = onSnapshot(q, (querySnapshot) => {
+				const students = querySnapshot.docs.map((doc: any) => ({
+					id: doc.id,
+					...doc.data(),
+				})) as Student[];
+				callback(students);
+			}, (error) => {
+				console.error('Error in student subscription:', error);
+			});
+			
+			return unsubscribe;
+		} catch (error) {
+			console.error('Error setting up student subscription:', error);
+			// Return a no-op unsubscribe function
+			return () => {};
+		}
+	},
+
 	// Get student by roll number
 	async getStudentByRollNumber(rollNumber: string): Promise<Student | null> {
 		try {
 			const q = query(
 				collection(db, 'students'),
 				where('rollNumber', '==', rollNumber)
+			);
+			const querySnapshot = await getDocs(q);
+			
+			if (!querySnapshot.empty) {
+				const doc = querySnapshot.docs[0];
+				return { id: doc.id, ...doc.data() } as Student;
+			}
+			return null;
+		} catch (error) {
+			throw error;
+		}
+	},
+
+	// Get student by authUid (Firebase Auth UID)
+	async getStudentByAuthUid(authUid: string): Promise<Student | null> {
+		try {
+			const q = query(
+				collection(db, 'students'),
+				where('authUid', '==', authUid)
 			);
 			const querySnapshot = await getDocs(q);
 			

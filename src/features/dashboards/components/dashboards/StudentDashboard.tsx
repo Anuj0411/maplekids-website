@@ -171,14 +171,14 @@ const StudentDashboard: React.FC = () => {
       setLoading(true);
       console.log('StudentDashboard: Loading student data for user:', currentUser?.uid);
       
-      // Find student record by authUid (Firebase Auth UID) or userId (roll number)
-      const students = await studentService.getAllStudents();
-      console.log('StudentDashboard: Loaded students:', students.length);
-      
-      const studentRecord = students.find(s => 
-        s.authUid === currentUser?.uid || s.userId === currentUser?.uid
-      );
-      
+      if (!currentUser?.uid) {
+        console.log('StudentDashboard: No current user UID available');
+        setLoading(false);
+        return;
+      }
+
+      // Find student record by authUid (Firebase Auth UID) - more efficient, single query
+      const studentRecord = await studentService.getStudentByAuthUid(currentUser.uid);
       console.log('StudentDashboard: Found student record:', studentRecord);
       
       if (studentRecord) {

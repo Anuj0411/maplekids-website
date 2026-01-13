@@ -29,61 +29,64 @@ const BulkAttendanceForm: React.FC<BulkAttendanceFormProps> = ({
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>('');
 
-  // Load students for the selected class
+  // Load students for the selected class with real-time updates
   useEffect(() => {
-    const loadStudents = async () => {
-      if (selectedClass === 'all') {
-        setStudents([]);
-        setStudentAttendance([]);
-        return;
-      }
+    if (selectedClass === 'all') {
+      setStudents([]);
+      setStudentAttendance([]);
+      return;
+    }
 
-      setLoading(true);
-      setError('');
-      
-      try {
-        const allStudents = await studentService.getAllStudents();
-        const classStudents = allStudents.filter(student => student.class === selectedClass);
-        setStudents(classStudents);
-
-        // Initialize attendance data
-        const attendanceData: StudentAttendance[] = classStudents.map(student => ({
-          studentId: student.rollNumber || '', // Use roll number as studentId
-          rollNumber: student.rollNumber || '',
-          name: `${student.firstName} ${student.lastName}`,
-          status: 'unmarked',
-          remarks: ''
-        }));
-
-        // Load existing attendance for the date
+    setLoading(true);
+    setError('');
+    
+    // Set up real-time listener for students in the selected class
+    const unsubscribe = studentService.subscribeToStudentsByClass(
+      selectedClass,
+      async (classStudents) => {
         try {
-          const existingAttendance = await attendanceService.getAttendanceByClassAndDate(selectedClass, selectedDate);
-          if (existingAttendance && existingAttendance.students) {
-            // Update attendance data with existing records
-            attendanceData.forEach(attendance => {
-              const existingRecord = existingAttendance.students.find(
-                s => s.studentId === attendance.studentId
-              );
-              if (existingRecord) {
-                attendance.status = existingRecord.status;
-                attendance.remarks = existingRecord.remarks || '';
-              }
-            });
+          setStudents(classStudents);
+
+          // Initialize attendance data
+          const attendanceData: StudentAttendance[] = classStudents.map(student => ({
+            studentId: student.rollNumber || '', // Use roll number as studentId
+            rollNumber: student.rollNumber || '',
+            name: `${student.firstName} ${student.lastName}`,
+            status: 'unmarked',
+            remarks: ''
+          }));
+
+          // Load existing attendance for the date
+          try {
+            const existingAttendance = await attendanceService.getAttendanceByClassAndDate(selectedClass, selectedDate);
+            if (existingAttendance && existingAttendance.students) {
+              // Update attendance data with existing records
+              attendanceData.forEach(attendance => {
+                const existingRecord = existingAttendance.students.find(
+                  s => s.studentId === attendance.studentId
+                );
+                if (existingRecord) {
+                  attendance.status = existingRecord.status;
+                  attendance.remarks = existingRecord.remarks || '';
+                }
+              });
+            }
+          } catch (attendanceError) {
+            console.log('No existing attendance found for this date');
           }
-        } catch (attendanceError) {
-          console.log('No existing attendance found for this date');
+
+          setStudentAttendance(attendanceData);
+          setLoading(false);
+        } catch (err) {
+          console.error('Error processing students:', err);
+          setError('Failed to load students');
+          setLoading(false);
         }
-
-        setStudentAttendance(attendanceData);
-      } catch (err) {
-        console.error('Error loading students:', err);
-        setError('Failed to load students');
-      } finally {
-        setLoading(false);
       }
-    };
+    );
 
-    loadStudents();
+    // Cleanup listener on unmount or when dependencies change
+    return () => unsubscribe();
   }, [selectedClass, selectedDate]);
 
   const updateStudentStatus = (studentId: string, status: 'present' | 'absent' | 'late' | 'unmarked') => {

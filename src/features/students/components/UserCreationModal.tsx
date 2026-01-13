@@ -181,7 +181,9 @@ const UserCreationModal: React.FC<UserCreationModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!(await validateForm())) {
+    const isValid = await validateForm();
+    
+    if (!isValid) {
       return;
     }
 

@@ -19,7 +19,23 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "noImplicitAny": false
+    "noImplicitAny": false,
+    "baseUrl": "src",
+    "paths": {
+      "@/*": ["./*"],
+      "@/components/*": ["components/*"],
+      "@/features/*": ["features/*"],
+      "@/hooks/*": ["hooks/*"],
+      "@/utils/*": ["utils/*"],
+      "@/types/*": ["types/*"],
+      "@/constants/*": ["constants/*"],
+      "@/firebase/*": ["firebase/*"],
+      "@/services/*": ["services/*"],
+      "@/styles/*": ["styles/*"],
+      "@/assets/*": ["assets/*"],
+      "@/pages/*": ["pages/*"],
+      "@/i18n/*": ["i18n/*"]
+    }
   },
   "include": [
     "src"
