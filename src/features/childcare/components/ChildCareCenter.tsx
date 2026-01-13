@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import './ChildCareCenter.css';
-import Header from '../../../components/common/Header';
-import Modal from '../../../components/common/Modal';
+import Header from '@/components/common/Header';
+import Modal from '@/components/common/Modal';
 
 interface MCHATQuestion {
   id: number;

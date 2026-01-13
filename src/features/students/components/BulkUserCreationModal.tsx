@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Card, Modal } from '../../../components/common';
-import { userService } from '../../../firebase/services';
+import { Button, Card, Modal } from '@/components/common';
+import { userService } from '@/firebase/services';
 import './BulkUserCreationModal.css';
 
 interface BulkUser {

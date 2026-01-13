@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import Modal from '../../../components/common/Modal';
+import Modal from '@/components/common/Modal';
 import './WhatsAppEnquiryForm.css';
 
 interface WhatsAppEnquiryFormProps {

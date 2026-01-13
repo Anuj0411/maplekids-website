@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import '../../../styles/Forms.css';
-import { financialService, studentService, Student } from '../../../firebase/services';
-import { FormField, Button } from '../../../components/common';
+import '@/styles/Forms.css';
+import { financialService, studentService, Student } from '@/firebase/services';
+import { FormField, Button } from '@/components/common';
 
 interface FinancialFormData {
   type: 'income' | 'expense';

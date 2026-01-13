@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import '../../../styles/Forms.css';
-import { FormField, Button } from '../../../components/common';
-import { eventService } from '../../../firebase/services';
+import '@/styles/Forms.css';
+import { FormField, Button } from '@/components/common';
+import { eventService } from '@/firebase/services';
 
 interface EventFormData {
   title: string;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { studentService, Student } from '../../../firebase/services';
-import { Button, Card } from '../../../components/common';
-import { db } from '../../../firebase/config';
+import { studentService, Student } from '@/firebase/services';
+import { Button, Card } from '@/components/common';
+import { db } from '@/firebase/config';
 import { collection, addDoc, updateDoc, doc, getDocs, query, where, serverTimestamp, deleteDoc } from 'firebase/firestore';
 import './RemarksManager.css';
 

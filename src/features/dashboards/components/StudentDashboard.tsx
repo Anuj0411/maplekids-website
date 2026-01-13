@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../../../auth/AuthContext';
-import { studentService, attendanceService, Student, Attendance } from '../../../../firebase/services';
-import { Button, Card } from '../../../../components/common';
+import { useAuth } from '@/features/auth/AuthContext';
+import { studentService, attendanceService, Student, Attendance } from '@/firebase/services';
+import { Button, Card } from '@/components/common';
 import { signOut } from 'firebase/auth';
-import { auth, db } from '../../../../firebase/config';
+import { auth, db } from '@/firebase/config';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import './StudentDashboard.css';
 

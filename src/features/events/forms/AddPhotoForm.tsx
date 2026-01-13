@@ -1,9 +1,9 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import '../../../styles/Forms.css';
-import { photoService } from '../../../firebase/services';
-import { FormField, Button } from '../../../components/common';
+import '@/styles/Forms.css';
+import { photoService } from '@/firebase/services';
+import { FormField, Button } from '@/components/common';
 
 interface PhotoFormData {
   title: string;

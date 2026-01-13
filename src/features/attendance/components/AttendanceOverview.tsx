@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { attendanceService } from '../../../firebase/services';
-import { Button } from '../../../components/common';
+import { attendanceService } from '@/firebase/services';
+import { Button } from '@/components/common';
 import './AttendanceOverview.css';
 
 interface AttendanceStats {

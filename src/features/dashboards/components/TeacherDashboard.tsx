@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import '../../../../styles/Dashboard.css';
-import { authService, studentService, attendanceService, Student } from '../../../../firebase/services';
-import { Button } from '../../../../components/common';
-import BulkAttendanceForm from '../../../attendance/components/BulkAttendanceForm';
-import AcademicReportsManager from '../../../reports/components/AcademicReportsManager';
-import RemarksManager from '../../../reports/components/RemarksManager';
+import '@/styles/Dashboard.css';
+import { authService, studentService, attendanceService, Student } from '@/firebase/services';
+import { Button } from '@/components/common';
+import BulkAttendanceForm from '@/features/attendance/components/BulkAttendanceForm';
+import AcademicReportsManager from '@/features/reports/components/AcademicReportsManager';
+import RemarksManager from '@/features/reports/components/RemarksManager';
 
 // Use User type from services.ts
-type User = import("../../../../firebase/services").User;
+type User = import("@/firebase/services").User;
 
 // Use Student from services.ts
 
@@ -17,7 +17,7 @@ type User = import("../../../../firebase/services").User;
 const TeacherDashboard: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [students, setStudents] = useState<Student[]>([]);
-  const [attendance, setAttendance] = useState<import("../../../../firebase/services").Attendance[]>([]);
+  const [attendance, setAttendance] = useState<import("@/firebase/services").Attendance[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>('all');
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [activeTab, setActiveTab] = useState<'attendance' | 'reports' | 'remarks'>('attendance');

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { authService, studentService, attendanceService, Student } from '../../../firebase/services';
-import { Button } from '../../../components/common';
+import { authService, studentService, attendanceService, Student } from '@/firebase/services';
+import { Button } from '@/components/common';
 import './BulkAttendanceForm.css';
 
 interface BulkAttendanceFormProps {

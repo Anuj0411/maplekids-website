@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { userService, studentService } from '../../../firebase/services';
-import { Button, FormField, Modal } from '../../../components/common';
+import { userService, studentService } from '@/firebase/services';
+import { Button, FormField, Modal } from '@/components/common';
 import './UserCreationModal.css';
 
 interface UserCreationModalProps {

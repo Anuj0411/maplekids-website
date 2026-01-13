@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Button, Card, Modal } from '../../../components/common';
+import { Button, Card, Modal } from '@/components/common';
 
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';

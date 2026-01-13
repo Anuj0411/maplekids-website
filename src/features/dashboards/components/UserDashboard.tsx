@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Dashboard.css';
-import { authService } from '../../../../firebase/services';
-import { Button } from '../../../../components/common';
+import { authService } from '@/firebase/services';
+import { Button } from '@/components/common';
 
-type User = import("../../../../firebase/services").User;
+type User = import("@/firebase/services").User;
 
 const UserDashboard: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);

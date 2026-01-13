@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { eventService, photoService } from '../../../../firebase/services';
+import { eventService, photoService } from '@/firebase/services';
 import './GuestDashboard.css';
 
 // Use Event and Photo types from services.ts

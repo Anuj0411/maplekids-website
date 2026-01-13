@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import '../../../../styles/Dashboard.css';
-import { authService, studentService, financialService, eventService, userService, Student } from '../../../../firebase/services';
-import { Button, Table } from '../../../../components/common';
-import AttendanceOverview from '../../../attendance/components/AttendanceOverview';
-import UserCreationModal from '../../../students/components/UserCreationModal';
-import ExcelBulkUserCreationModal from '../../../students/components/ExcelBulkUserCreationModal';
-import AdminAnnouncementManager from '../../../announcements/components/AdminAnnouncementManager';
-import { Announcement } from '../../../announcements/services/announcementService';
+import '@/styles/Dashboard.css';
+import { authService, studentService, financialService, eventService, userService, Student } from '@/firebase/services';
+import { Button, Table } from '@/components/common';
+import AttendanceOverview from '@/features/attendance/components/AttendanceOverview';
+import UserCreationModal from '@/features/students/components/UserCreationModal';
+import ExcelBulkUserCreationModal from '@/features/students/components/ExcelBulkUserCreationModal';
+import AdminAnnouncementManager from '@/features/announcements/components/AdminAnnouncementManager';
+import { Announcement } from '@/features/announcements/services/announcementService';
 
 // Use the exact interfaces from Firebase services to avoid type mismatches
 interface User {

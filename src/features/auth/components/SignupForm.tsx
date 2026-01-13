@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { authService } from '../../../firebase/services';
+import { authService } from '@/firebase/services';
 import './SignupForm.css';
-import { FormField, Button } from '../../../components/common';
+import { FormField, Button } from '@/components/common';
 
 interface FormData {
   firstName: string;
