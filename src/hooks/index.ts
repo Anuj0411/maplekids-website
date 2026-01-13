@@ -6,3 +6,6 @@
 
 // Auth hooks
 export * from './auth';
+
+// Data hooks
+export * from './data';
