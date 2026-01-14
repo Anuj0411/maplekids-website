@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import '@/styles/Forms.css';
 import { FormField, Button } from '@/components/common';
-import { eventService } from '@/firebase/services';
+import { useEvents } from '@/hooks/data/useEvents';
 import { useForm } from '@/hooks/form/useForm';
 import { useFormValidation } from '@/hooks/form/useFormValidation';
 
@@ -17,10 +17,10 @@ interface EventFormData {
 
 const EditEventForm: React.FC = () => {
   const { eventId } = useParams<{ eventId: string }>();
-  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+  const { events, updateEvent, loading } = useEvents();
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
-  const navigate = useNavigate();
 
   // Custom validator for future dates
   const validateFutureDate = (dateValue: string): string | undefined => {
@@ -60,7 +60,7 @@ const EditEventForm: React.FC = () => {
           throw new Error('Event ID is required');
         }
 
-        await eventService.updateEvent(eventId, {
+        await updateEvent(eventId, {
           title: values.title,
           description: values.description,
           date: values.date,
@@ -82,45 +82,35 @@ const EditEventForm: React.FC = () => {
     }
   });
 
+  // Load event data from hook when available
   useEffect(() => {
-    const loadEvent = async () => {
-      if (!eventId) {
-        setErrorMessage('Event ID is required');
-        setIsLoading(false);
-        return;
-      }
+    if (!eventId) {
+      setErrorMessage('Event ID is required');
+      return;
+    }
 
-      try {
-        const events = await eventService.getAllEvents();
-        const event = events.find(e => e.id === eventId);
-        
-        if (event) {
-          // Use setFieldValue to populate form
-          setFieldValue('title', event.title);
-          setFieldValue('description', event.description);
-          setFieldValue('date', event.date);
-          setFieldValue('time', event.time);
-          setFieldValue('location', event.location);
-          setFieldValue('isActive', event.isActive);
-        } else {
-          setErrorMessage('Event not found');
-        }
-      } catch (error) {
-        console.error('Error loading event:', error);
-        setErrorMessage('Failed to load event data');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    if (events.length === 0) return;
 
-    loadEvent();
-  }, [eventId, setFieldValue]);
+    const event = events.find(e => e.id === eventId);
+    
+    if (event) {
+      // Use setFieldValue to populate form
+      setFieldValue('title', event.title);
+      setFieldValue('description', event.description);
+      setFieldValue('date', event.date);
+      setFieldValue('time', event.time);
+      setFieldValue('location', event.location);
+      setFieldValue('isActive', event.isActive);
+    } else {
+      setErrorMessage('Event not found');
+    }
+  }, [eventId, events, setFieldValue]);
 
   const handleCancel = () => {
     navigate('/admin-dashboard');
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="form-container">
         <div className="form-card">
