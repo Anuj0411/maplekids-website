@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import Modal from '@/components/common/Modal';
+import { useForm } from '@/hooks/form/useForm';
+import { useFormValidation } from '@/hooks/form/useFormValidation';
 import './WhatsAppEnquiryForm.css';
 
 interface WhatsAppEnquiryFormProps {
@@ -26,23 +28,7 @@ const WhatsAppEnquiryForm: React.FC<WhatsAppEnquiryFormProps> = ({
   schoolName = 'MapleKids Play School'
 }) => {
   const { t } = useTranslation();
-  const [formData, setFormData] = useState<FormData>({
-    parentName: '',
-    name: '',
-    class: '',
-    age: '',
-    contact: '',
-    message: ''
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+  const validation = useFormValidation();
 
   const generateWhatsAppMessage = (data: FormData) => {
     const message = `Hello! I'm interested in enrolling my child at ${schoolName}.
@@ -65,53 +51,45 @@ Thank you!`;
     return encodeURIComponent(message);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Basic validation
-    if (!formData.parentName.trim() || !formData.name.trim() || !formData.class.trim() || !formData.age.trim() || !formData.contact.trim()) {
-      alert(t('whatsappEnquiry.form.validation.fillAllFields'));
-      return;
+  const { values, handleChange, handleSubmit, isSubmitting, reset } = useForm<FormData>({
+    initialValues: {
+      parentName: '',
+      name: '',
+      class: '',
+      age: '',
+      contact: '',
+      message: ''
+    },
+    validate: (values) => ({
+      parentName: validation.rules.required(t('whatsappEnquiry.form.validation.parentNameRequired', { defaultValue: 'Parent name is required' }))(values.parentName),
+      name: validation.rules.required(t('whatsappEnquiry.form.validation.childNameRequired', { defaultValue: 'Child name is required' }))(values.name),
+      class: validation.rules.required(t('whatsappEnquiry.form.validation.classRequired', { defaultValue: 'Class is required' }))(values.class),
+      age: validation.rules.required(t('whatsappEnquiry.form.validation.ageRequired', { defaultValue: 'Age is required' }))(values.age),
+      contact: validation.composeValidators(
+        validation.rules.required(t('whatsappEnquiry.form.validation.contactRequired', { defaultValue: 'Contact number is required' })),
+        validation.rules.phone(t('whatsappEnquiry.form.validation.invalidPhone'))
+      )(values.contact),
+    }),
+    onSubmit: async (values) => {
+      try {
+        const message = generateWhatsAppMessage(values);
+        const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
+        
+        // Open WhatsApp in new tab
+        window.open(whatsappUrl, '_blank');
+        
+        // Reset form and close modal after a short delay
+        reset();
+        setTimeout(() => {
+          onClose();
+        }, 1000);
+        
+      } catch (error) {
+        console.error('Error opening WhatsApp:', error);
+        alert(t('common.error') + ': Unable to open WhatsApp. Please try again.');
+      }
     }
-
-    // Phone number validation
-    const phoneRegex = /^[6-9]\d{9}$/;
-    if (!phoneRegex.test(formData.contact.replace(/\D/g, ''))) {
-      alert(t('whatsappEnquiry.form.validation.invalidPhone'));
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      const message = generateWhatsAppMessage(formData);
-      const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
-      
-      // Open WhatsApp in new tab
-      window.open(whatsappUrl, '_blank');
-      
-      // Reset form
-      setFormData({
-        parentName: '',
-        name: '',
-        class: '',
-        age: '',
-        contact: '',
-        message: ''
-      });
-      
-      // Close modal after a short delay
-      setTimeout(() => {
-        onClose();
-        setIsSubmitting(false);
-      }, 1000);
-      
-    } catch (error) {
-      console.error('Error opening WhatsApp:', error);
-      alert(t('common.error') + ': Unable to open WhatsApp. Please try again.');
-      setIsSubmitting(false);
-    }
-  };
+  });
 
   const handleClose = () => {
     if (!isSubmitting) {
@@ -139,8 +117,8 @@ Thank you!`;
               type="text"
               id="parentName"
               name="parentName"
-              value={formData.parentName}
-              onChange={handleInputChange}
+              value={values.parentName}
+              onChange={handleChange}
               placeholder={t('whatsappEnquiry.form.parentNamePlaceholder')}
               required
               disabled={isSubmitting}
@@ -154,8 +132,8 @@ Thank you!`;
                 type="text"
                 id="name"
                 name="name"
-                value={formData.name}
-                onChange={handleInputChange}
+                value={values.name}
+                onChange={handleChange}
                 placeholder={t('whatsappEnquiry.form.childNamePlaceholder')}
                 required
                 disabled={isSubmitting}
@@ -168,8 +146,8 @@ Thank you!`;
                 type="text"
                 id="class"
                 name="class"
-                value={formData.class}
-                onChange={handleInputChange}
+                value={values.class}
+                onChange={handleChange}
                 placeholder={t('whatsappEnquiry.form.classPlaceholder')}
                 required
                 disabled={isSubmitting}
@@ -184,8 +162,8 @@ Thank you!`;
                 type="text"
                 id="age"
                 name="age"
-                value={formData.age}
-                onChange={handleInputChange}
+                value={values.age}
+                onChange={handleChange}
                 placeholder={t('whatsappEnquiry.form.agePlaceholder')}
                 required
                 disabled={isSubmitting}
@@ -198,8 +176,8 @@ Thank you!`;
                 type="tel"
                 id="contact"
                 name="contact"
-                value={formData.contact}
-                onChange={handleInputChange}
+                value={values.contact}
+                onChange={handleChange}
                 placeholder={t('whatsappEnquiry.form.contactPlaceholder')}
                 required
                 disabled={isSubmitting}
@@ -213,8 +191,8 @@ Thank you!`;
             <textarea
               id="message"
               name="message"
-              value={formData.message}
-              onChange={handleInputChange}
+              value={values.message}
+              onChange={handleChange}
               placeholder={t('whatsappEnquiry.form.messagePlaceholder')}
               rows={3}
               disabled={isSubmitting}

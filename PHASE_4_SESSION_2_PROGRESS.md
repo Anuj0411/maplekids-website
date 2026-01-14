@@ -16,7 +16,7 @@
 ## Components to Migrate
 
 ### Attendance Components
-1. [X] **BulkAttendanceForm.tsx** (434 lines → 424 lines, -10 lines)
+1. [X] **BulkAttendanceForm.tsx** (434 lines → 424 lines, -10 lines, -2.3%)
    - Hooks: useStudents, useCurrentUser
    - Replaced manual student subscription with useStudents hook
    - Replaced authService.getCurrentUserData() with useCurrentUser hook
@@ -26,6 +26,15 @@
    - Hooks: useAttendance, useLocalStorage, useToggle
    - Status: Complex - has multiple view modes (daily, date range, monthly)
    - May need custom logic for statistics
+
+### Form Components  
+3. [X] **WhatsAppEnquiryForm.tsx** (261 lines → 239 lines, -22 lines, -8.4%)
+   - Hooks: useForm, useFormValidation
+   - Replaced manual form state (6 fields) with useForm hook
+   - Replaced manual validation with composed validators
+   - Phone validation with validation.rules.phone
+   - Removed manual isSubmitting state
+   - Clean form reset with reset() function
 
 ### Student Components
 3. [ ] **BulkUserCreationModal.tsx** (586 lines)
@@ -47,16 +56,17 @@
 
 | Metric | Value |
 |--------|-------|
-| Components Migrated | 1/8 (12.5%) |
-| Lines Removed | 10 |
-| Average Reduction | 2.3% |
-| Hooks Used | 2 (useStudents, useCurrentUser) |
+| Components Migrated | 2/8 (25%) |
+| Lines Removed | 32 (10 + 22) |
+| Average Reduction | 5.4% |
+| Hooks Used | 4 (useStudents, useCurrentUser, useForm, useFormValidation) |
 | TypeScript Errors | 0 |
 | Status | In Progress |
 
 ### Detailed Breakdown
 - **BulkAttendanceForm**: 434 → 424 lines (-10, -2.3%)
-- **Total Impact**: 434 → 424 lines (-10 lines)
+- **WhatsAppEnquiryForm**: 261 → 239 lines (-22, -8.4%)
+- **Total Impact**: 695 → 663 lines (-32 lines, -4.6% average)
 
 ---
 
