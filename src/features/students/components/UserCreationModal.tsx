@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { userService, studentService } from '@/firebase/services';
 import { Button, FormField, Modal } from '@/components/common';
+import { useUsers } from '@/hooks/data/useUsers';
+import { useStudents } from '@/hooks/data/useStudents';
 import './UserCreationModal.css';
 
 interface UserCreationModalProps {
@@ -47,6 +48,9 @@ const UserCreationModal: React.FC<UserCreationModalProps> = ({
   onClose,
   onUserCreated
 }) => {
+  const { addUser } = useUsers({ autoFetch: false });
+  const { students } = useStudents({ autoFetch: true });
+  
   const [formData, setFormData] = useState<FormData>({
     firstName: '',
     lastName: '',
@@ -70,7 +74,6 @@ const UserCreationModal: React.FC<UserCreationModalProps> = ({
 
   const checkRollNumberExists = async (rollNumber: string): Promise<boolean> => {
     try {
-      const students = await studentService.getAllStudents();
       return students.some(student => student.rollNumber === rollNumber);
     } catch (error) {
       console.error('Error checking roll number:', error);
@@ -210,7 +213,7 @@ const UserCreationModal: React.FC<UserCreationModalProps> = ({
         })
       };
 
-      await userService.createUser(formData.email, formData.password, userData);
+      await addUser(formData.email, formData.password, userData);
       
       // Reset form
       setFormData({

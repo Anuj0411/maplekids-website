@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { studentService, Student } from '@/firebase/services';
 import { Button, Card } from '@/components/common';
+import { useStudents } from '@/hooks/data/useStudents';
+import type { Student } from '@/firebase/types';
 import { db } from '@/firebase/config';
 import { collection, addDoc, updateDoc, doc, getDocs, query, where, serverTimestamp, deleteDoc } from 'firebase/firestore';
 import './AcademicReportsManager.css';
@@ -32,6 +33,8 @@ interface AcademicReportsManagerProps {
 const AcademicReportsManager: React.FC<AcademicReportsManagerProps> = ({ selectedClass, onClose }) => {
   console.log('AcademicReportsManager: Component initialized with selectedClass:', selectedClass);
   
+  const { students: allStudents, loading: studentsLoading } = useStudents({ autoFetch: true });
+  
   const [students, setStudents] = useState<Student[]>([]);
   const [reports, setReports] = useState<AcademicReport[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,10 +59,8 @@ const AcademicReportsManager: React.FC<AcademicReportsManagerProps> = ({ selecte
       setLoading(true);
       console.log('Loading data for class:', selectedClass);
       
-      // Load students for the selected class
-      console.log('Loading students...');
-      const allStudents = await studentService.getAllStudents();
-      console.log('Loaded students:', allStudents.length);
+      // Filter students for the selected class (from hook)
+      console.log('Filtering students from hook, total students:', allStudents.length);
       
       const classStudents = selectedClass === 'all' 
         ? allStudents 
@@ -277,7 +278,7 @@ const AcademicReportsManager: React.FC<AcademicReportsManagerProps> = ({ selecte
     );
   }
 
-  if (loading) {
+  if (loading || studentsLoading) {
     return (
       <div className="academic-reports-manager">
         <div className="loading">Loading academic reports...</div>

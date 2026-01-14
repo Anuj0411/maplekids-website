@@ -1,15 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { attendanceService } from '@/firebase/services';
 import { Button } from '@/components/common';
+import { useAttendance } from '@/hooks/data/useAttendance';
+import type { AttendanceStats, DateRangeStats } from '@/hooks/data/useAttendance';
 import './AttendanceOverview.css';
-
-interface AttendanceStats {
-  total: number;
-  present: number;
-  absent: number;
-  late: number;
-  missed: number;
-}
 
 interface AttendanceOverviewProps {
   selectedDate: string;
@@ -17,13 +10,6 @@ interface AttendanceOverviewProps {
 }
 
 type ViewMode = 'daily' | 'dateRange' | 'monthly';
-
-interface DateRangeStats {
-  dailyStats: { [date: string]: { [className: string]: AttendanceStats } };
-  summaryStats: { [className: string]: AttendanceStats & { daysWithAttendance: number } };
-  totalDays: number;
-  workingDays?: number;
-}
 
 const AttendanceOverview: React.FC<AttendanceOverviewProps> = ({ 
   selectedDate, 
@@ -34,6 +20,13 @@ const AttendanceOverview: React.FC<AttendanceOverviewProps> = ({
   const [dateRangeStats, setDateRangeStats] = useState<DateRangeStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Get statistics functions from useAttendance hook
+  const {
+    getAttendanceStatistics,
+    getAttendanceStatisticsByDateRange,
+    getAttendanceStatisticsByMonth
+  } = useAttendance({ autoFetch: false });
   
   // Date range state
   const [startDate, setStartDate] = useState('');
@@ -48,7 +41,7 @@ const AttendanceOverview: React.FC<AttendanceOverviewProps> = ({
     setLoading(true);
     setError(null);
     try {
-      const stats = await attendanceService.getAttendanceStatistics(date);
+      const stats = await getAttendanceStatistics(date);
       setAttendanceStats(stats);
       setDateRangeStats(null);
     } catch (err) {
@@ -57,13 +50,13 @@ const AttendanceOverview: React.FC<AttendanceOverviewProps> = ({
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [getAttendanceStatistics]);
 
   const loadDateRangeStats = useCallback(async (start: string, end: string) => {
     setLoading(true);
     setError(null);
     try {
-      const stats = await attendanceService.getAttendanceStatisticsByDateRange(start, end);
+      const stats = await getAttendanceStatisticsByDateRange(start, end);
       setDateRangeStats(stats);
       setAttendanceStats({});
     } catch (err) {
@@ -72,13 +65,13 @@ const AttendanceOverview: React.FC<AttendanceOverviewProps> = ({
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [getAttendanceStatisticsByDateRange]);
 
   const loadMonthlyStats = useCallback(async (year: number, month: number) => {
     setLoading(true);
     setError(null);
     try {
-      const stats = await attendanceService.getAttendanceStatisticsByMonth(year, month);
+      const stats = await getAttendanceStatisticsByMonth(year, month);
       setDateRangeStats(stats);
       setAttendanceStats({});
     } catch (err) {
@@ -87,7 +80,7 @@ const AttendanceOverview: React.FC<AttendanceOverviewProps> = ({
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [getAttendanceStatisticsByMonth]);
 
   useEffect(() => {
     if (viewMode === 'daily') {
@@ -303,8 +296,8 @@ const AttendanceOverview: React.FC<AttendanceOverviewProps> = ({
                     if (!rangeStats) return null;
                     stats = rangeStats;
                     additionalInfo = viewMode === 'monthly' 
-                      ? ` (${rangeStats.daysWithAttendance}/${dateRangeStats?.workingDays || 0} working days)`
-                      : ` (${rangeStats.daysWithAttendance}/${dateRangeStats?.totalDays || 0} days)`;
+                      ? ` (${dateRangeStats?.workingDays || 0} working days)`
+                      : ` (${dateRangeStats?.totalDays || 0} days)`;
                   }
                   
                   const percentage = getAttendancePercentage(stats);

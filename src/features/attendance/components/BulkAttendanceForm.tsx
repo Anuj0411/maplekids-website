@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { attendanceService } from '@/firebase/services';
 import { Button } from '@/components/common';
 import { useStudents } from '@/hooks/data/useStudents';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
+import { useAttendance } from '@/hooks/data/useAttendance';
 import './BulkAttendanceForm.css';
 
 interface BulkAttendanceFormProps {
@@ -29,6 +29,7 @@ const BulkAttendanceForm: React.FC<BulkAttendanceFormProps> = ({
     className: selectedClass !== 'all' ? selectedClass : undefined
   });
   const { userData: currentUser } = useCurrentUser();
+  const { getAttendanceByClassAndDate, markAttendance } = useAttendance({ autoFetch: false });
   
   // Component state
   const [studentAttendance, setStudentAttendance] = useState<StudentAttendance[]>([]);
@@ -57,7 +58,7 @@ const BulkAttendanceForm: React.FC<BulkAttendanceFormProps> = ({
 
       // Load existing attendance for the date
       try {
-        const existingAttendance = await attendanceService.getAttendanceByClassAndDate(selectedClass, selectedDate);
+        const existingAttendance = await getAttendanceByClassAndDate(selectedClass, selectedDate);
         if (existingAttendance && existingAttendance.students) {
           // Update attendance data with existing records
           attendanceData.forEach(attendance => {
@@ -78,7 +79,7 @@ const BulkAttendanceForm: React.FC<BulkAttendanceFormProps> = ({
     };
 
     initializeAttendance();
-  }, [students, selectedClass, selectedDate]);
+  }, [students, selectedClass, selectedDate, getAttendanceByClassAndDate]);
 
   const updateStudentStatus = (studentId: string, status: 'present' | 'absent' | 'late' | 'unmarked') => {
     setStudentAttendance(prev => 
@@ -150,7 +151,7 @@ const BulkAttendanceForm: React.FC<BulkAttendanceFormProps> = ({
       };
 
       // Save attendance
-      await attendanceService.markAttendance(attendanceData);
+      await markAttendance(attendanceData);
       
       setSuccess(`Attendance saved successfully for ${markedStudents.length} students`);
       onAttendanceSaved();

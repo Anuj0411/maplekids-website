@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import '@/styles/Forms.css';
 import { FormField, Button } from '@/components/common';
 import { studentService, photoService } from '@/firebase/services';
+import { useStudents } from '@/hooks/data/useStudents';
 import { useForm } from '@/hooks/form';
 import { useFormValidation } from '@/hooks/form/useFormValidation';
 
@@ -29,6 +30,7 @@ const validateAge = (ageValue: any): string | undefined => {
 const EditStudentForm: React.FC = () => {
   const { rollNumber } = useParams<{ rollNumber: string }>();
   const validation = useFormValidation();
+  const { students } = useStudents({ autoFetch: true });
   
   const {
     values,
@@ -112,7 +114,7 @@ const EditStudentForm: React.FC = () => {
       }
 
       try {
-        const student = await studentService.getStudentByRollNumber(rollNumber);
+        const student = students.find(s => s.rollNumber === rollNumber);
         if (student) {
           // Load all form fields using setFieldValue
           setFieldValue('firstName', student.firstName);
@@ -140,7 +142,7 @@ const EditStudentForm: React.FC = () => {
     };
 
     loadStudent();
-  }, [rollNumber, setFieldValue]);
+  }, [rollNumber, setFieldValue, students]);
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

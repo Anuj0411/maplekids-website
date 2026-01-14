@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import '@/styles/Forms.css';
 import { FormField, Button } from '@/components/common';
-import { userService } from '@/firebase/services';
+import { useUsers } from '@/hooks/data/useUsers';
 import { useForm } from '@/hooks/form';
 import { useFormValidation } from '@/hooks/form/useFormValidation';
 
@@ -18,6 +18,7 @@ interface UserFormData {
 const EditUserForm: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
   const validation = useFormValidation();
+  const { updateUser: updateUserHook, users } = useUsers({ autoFetch: true });
   
   const {
     values,
@@ -70,7 +71,7 @@ const EditUserForm: React.FC = () => {
         role: values.role
       };
 
-      await userService.updateUser(userId, updateData);
+      await updateUserHook(userId, updateData);
       setSubmitSuccess(true);
       setTimeout(() => {
         navigate('/admin-dashboard');
@@ -94,7 +95,6 @@ const EditUserForm: React.FC = () => {
       }
 
       try {
-        const users = await userService.getAllUsers();
         const user = users.find(u => u.id === userId);
         
         if (user) {
@@ -116,7 +116,7 @@ const EditUserForm: React.FC = () => {
     };
 
     loadUser();
-  }, [userId, setFieldValue]);
+  }, [userId, setFieldValue, users]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
