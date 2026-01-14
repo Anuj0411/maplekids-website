@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { authService, studentService, attendanceService, Student } from '@/firebase/services';
+import { attendanceService } from '@/firebase/services';
 import { Button } from '@/components/common';
+import { useStudents } from '@/hooks/data/useStudents';
+import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import './BulkAttendanceForm.css';
 
 interface BulkAttendanceFormProps {
@@ -22,72 +24,61 @@ const BulkAttendanceForm: React.FC<BulkAttendanceFormProps> = ({
   selectedDate,
   onAttendanceSaved
 }) => {
-  const [students, setStudents] = useState<Student[]>([]);
+  // Use custom hooks for data
+  const { students, loading } = useStudents({
+    className: selectedClass !== 'all' ? selectedClass : undefined
+  });
+  const { userData: currentUser } = useCurrentUser();
+  
+  // Component state
   const [studentAttendance, setStudentAttendance] = useState<StudentAttendance[]>([]);
-  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>('');
 
-  // Load students for the selected class with real-time updates
+  // Initialize and update attendance data when students or date changes
   useEffect(() => {
-    if (selectedClass === 'all') {
-      setStudents([]);
+    if (selectedClass === 'all' || students.length === 0) {
       setStudentAttendance([]);
       return;
     }
 
-    setLoading(true);
-    setError('');
-    
-    // Set up real-time listener for students in the selected class
-    const unsubscribe = studentService.subscribeToStudentsByClass(
-      selectedClass,
-      async (classStudents) => {
-        try {
-          setStudents(classStudents);
+    const initializeAttendance = async () => {
+      setError('');
+      
+      // Initialize attendance data from students
+      const attendanceData: StudentAttendance[] = students.map(student => ({
+        studentId: student.rollNumber || '',
+        rollNumber: student.rollNumber || '',
+        name: `${student.firstName} ${student.lastName}`,
+        status: 'unmarked',
+        remarks: ''
+      }));
 
-          // Initialize attendance data
-          const attendanceData: StudentAttendance[] = classStudents.map(student => ({
-            studentId: student.rollNumber || '', // Use roll number as studentId
-            rollNumber: student.rollNumber || '',
-            name: `${student.firstName} ${student.lastName}`,
-            status: 'unmarked',
-            remarks: ''
-          }));
-
-          // Load existing attendance for the date
-          try {
-            const existingAttendance = await attendanceService.getAttendanceByClassAndDate(selectedClass, selectedDate);
-            if (existingAttendance && existingAttendance.students) {
-              // Update attendance data with existing records
-              attendanceData.forEach(attendance => {
-                const existingRecord = existingAttendance.students.find(
-                  s => s.studentId === attendance.studentId
-                );
-                if (existingRecord) {
-                  attendance.status = existingRecord.status;
-                  attendance.remarks = existingRecord.remarks || '';
-                }
-              });
+      // Load existing attendance for the date
+      try {
+        const existingAttendance = await attendanceService.getAttendanceByClassAndDate(selectedClass, selectedDate);
+        if (existingAttendance && existingAttendance.students) {
+          // Update attendance data with existing records
+          attendanceData.forEach(attendance => {
+            const existingRecord = existingAttendance.students.find(
+              s => s.studentId === attendance.studentId
+            );
+            if (existingRecord) {
+              attendance.status = existingRecord.status;
+              attendance.remarks = existingRecord.remarks || '';
             }
-          } catch (attendanceError) {
-            console.log('No existing attendance found for this date');
-          }
-
-          setStudentAttendance(attendanceData);
-          setLoading(false);
-        } catch (err) {
-          console.error('Error processing students:', err);
-          setError('Failed to load students');
-          setLoading(false);
+          });
         }
+      } catch (attendanceError) {
+        console.log('No existing attendance found for this date');
       }
-    );
 
-    // Cleanup listener on unmount or when dependencies change
-    return () => unsubscribe();
-  }, [selectedClass, selectedDate]);
+      setStudentAttendance(attendanceData);
+    };
+
+    initializeAttendance();
+  }, [students, selectedClass, selectedDate]);
 
   const updateStudentStatus = (studentId: string, status: 'present' | 'absent' | 'late' | 'unmarked') => {
     setStudentAttendance(prev => 
@@ -121,17 +112,16 @@ const BulkAttendanceForm: React.FC<BulkAttendanceFormProps> = ({
       return;
     }
 
+    if (!currentUser) {
+      setError('User not authenticated');
+      return;
+    }
+
     setSaving(true);
     setError('');
     setSuccess('');
 
     try {
-      // Get current user info
-      const currentUser = await authService.getCurrentUserData();
-      if (!currentUser) {
-        throw new Error('User not authenticated');
-      }
-
       // Filter out unmarked students
       const markedStudents = studentAttendance.filter(student => student.status !== 'unmarked');
       
