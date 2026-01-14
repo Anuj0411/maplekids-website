@@ -70,11 +70,189 @@ export const useEvents = (options: UseEventsOptions = {}) => {
 		fetchEvents();
 	}, [fetchEvents]);
 
+	/**
+	 * Add a new event
+	 */
+	const addEvent = useCallback(async (eventData: Omit<Event, 'id' | 'createdAt'>) => {
+		try {
+			setLoading(true);
+			setError(null);
+			
+			console.log('useEvents: Adding event:', eventData);
+			const newEvent = await eventService.addEvent(eventData);
+			
+			// Optimistically update local state
+			setEvents(prev => [...prev, newEvent]);
+			console.log('useEvents: Event added successfully');
+			
+			return newEvent;
+		} catch (err: any) {
+			const errorMessage = err.message || 'Error adding event';
+			setError(errorMessage);
+			console.error('useEvents: Error adding event:', err);
+			throw err;
+		} finally {
+			setLoading(false);
+		}
+	}, []);
+
+	/**
+	 * Update an existing event
+	 */
+	const updateEvent = useCallback(async (id: string, eventData: Partial<Event>) => {
+		try {
+			setLoading(true);
+			setError(null);
+			
+			console.log('useEvents: Updating event:', id, eventData);
+			await eventService.updateEvent(id, eventData);
+			
+			// Optimistically update local state
+			setEvents(prev => 
+				prev.map(event => 
+					event.id === id ? { ...event, ...eventData } : event
+				)
+			);
+			console.log('useEvents: Event updated successfully');
+		} catch (err: any) {
+			const errorMessage = err.message || 'Error updating event';
+			setError(errorMessage);
+			console.error('useEvents: Error updating event:', err);
+			throw err;
+		} finally {
+			setLoading(false);
+		}
+	}, []);
+
+	/**
+	 * Delete an event
+	 */
+	const deleteEvent = useCallback(async (id: string) => {
+		try {
+			setLoading(true);
+			setError(null);
+			
+			console.log('useEvents: Deleting event:', id);
+			await eventService.deleteEvent(id);
+			
+			// Optimistically update local state
+			setEvents(prev => prev.filter(event => event.id !== id));
+			console.log('useEvents: Event deleted successfully');
+		} catch (err: any) {
+			const errorMessage = err.message || 'Error deleting event';
+			setError(errorMessage);
+			console.error('useEvents: Error deleting event:', err);
+			throw err;
+		} finally {
+			setLoading(false);
+		}
+	}, []);
+
+	/**
+	 * Toggle event active status
+	 */
+	const toggleEventStatus = useCallback(async (id: string) => {
+		const event = events.find(e => e.id === id);
+		if (!event) {
+			console.error('useEvents: Event not found:', id);
+			return;
+		}
+
+		try {
+			setLoading(true);
+			setError(null);
+			
+			const newStatus = !event.isActive;
+			console.log('useEvents: Toggling event status:', id, 'to', newStatus);
+			
+			await eventService.updateEvent(id, { isActive: newStatus });
+			
+			// Optimistically update local state
+			setEvents(prev => 
+				prev.map(e => 
+					e.id === id ? { ...e, isActive: newStatus } : e
+				)
+			);
+			console.log('useEvents: Event status toggled successfully');
+		} catch (err: any) {
+			const errorMessage = err.message || 'Error toggling event status';
+			setError(errorMessage);
+			console.error('useEvents: Error toggling event status:', err);
+			throw err;
+		} finally {
+			setLoading(false);
+		}
+	}, [events]);
+
+	/**
+	 * Get only active events
+	 */
+	const getActiveEvents = useCallback(() => {
+		return events.filter(event => event.isActive);
+	}, [events]);
+
+	/**
+	 * Get upcoming events (future dates + active)
+	 */
+	const getUpcomingEvents = useCallback(() => {
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+		
+		return events
+			.filter(event => event.isActive && new Date(event.date) >= today)
+			.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+	}, [events]);
+
+	/**
+	 * Get past events
+	 */
+	const getPastEvents = useCallback(() => {
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+		
+		return events
+			.filter(event => new Date(event.date) < today)
+			.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+	}, [events]);
+
+	/**
+	 * Get events by date range
+	 */
+	const getEventsByDateRange = useCallback((startDate: string, endDate: string) => {
+		const start = new Date(startDate);
+		const end = new Date(endDate);
+		start.setHours(0, 0, 0, 0);
+		end.setHours(23, 59, 59, 999);
+		
+		return events.filter(event => {
+			const eventDate = new Date(event.date);
+			return eventDate >= start && eventDate <= end;
+		});
+	}, [events]);
+
 	return {
+		// Data
 		events,
+		activeEvents: getActiveEvents(),
+		upcomingEvents: getUpcomingEvents(),
+		pastEvents: getPastEvents(),
+		
+		// State
 		loading,
 		error,
+		
+		// Actions (CRUD)
+		addEvent,
+		updateEvent,
+		deleteEvent,
+		toggleEventStatus,
 		refetch,
 		fetchEvents,
+		
+		// Filters/Helpers
+		getActiveEvents,
+		getUpcomingEvents,
+		getPastEvents,
+		getEventsByDateRange,
 	};
 };
