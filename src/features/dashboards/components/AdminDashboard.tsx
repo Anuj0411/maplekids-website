@@ -1,70 +1,34 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '@/styles/Dashboard.css';
-import { authService, studentService, financialService, eventService, userService, Student } from '@/firebase/services';
+import { authService, studentService, userService, financialService, eventService } from '@/firebase/services';
+import type { Student } from '@/firebase/types';
 import { Button, Table } from '@/components/common';
 import AttendanceOverview from '@/features/attendance/components/AttendanceOverview';
 import UserCreationModal from '@/features/students/components/UserCreationModal';
 import ExcelBulkUserCreationModal from '@/features/students/components/ExcelBulkUserCreationModal';
 import AdminAnnouncementManager from '@/features/announcements/components/AdminAnnouncementManager';
 import { Announcement } from '@/features/announcements/services/announcementService';
-
-// Use the exact interfaces from Firebase services to avoid type mismatches
-interface User {
-  id?: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: string;
-}
-
-// Removed unused UserData interface. Use User from services.ts
-
-
-
-interface FinancialRecord {
-  id?: string; // Changed from string to string | undefined to match Firebase service
-  type: 'income' | 'expense';
-  category: string;
-  amount: number;
-  description: string;
-  date: string;
-  receiptNumber?: string;
-  studentName?: string;
-  studentClass?: string;
-  month?: string;
-  academicYear?: string;
-}
-
-
-interface Event {
-  id?: string;
-  title: string;
-  description: string;
-  date: string;
-  time: string;
-  location: string;
-  isActive: boolean;
-  createdAt?: any; // Made optional to match Firebase service
-}
+import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
+import { useDashboardData, DashboardUser as User, DashboardFinancialRecord as FinancialRecord } from '@/hooks/data/useDashboardData';
 
 const AdminDashboard: React.FC = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [users, setUsers] = useState<User[]>([]);
-  const [students, setStudents] = useState<Student[]>([]);
-  const [financialRecords, setFinancialRecords] = useState<FinancialRecord[]>([]);
-  const [events, setEvents] = useState<Event[]>([]);
+  // Use custom hooks for authentication and dashboard data
+  const { userData: user } = useCurrentUser();
+  const { 
+    users, 
+    students, 
+    financialRecords, 
+    events, 
+    stats, 
+    refetch: refetchDashboard,
+    filterStudentsByClass,
+    filterFinancialsByClass 
+  } = useDashboardData();
+
+  // UI state
   const [activeTab, setActiveTab] = useState('overview');
   const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
-  const [stats, setStats] = useState({
-    totalUsers: 0,
-    students: 0,
-    admins: 0,
-    teachers: 0,
-    totalStudents: 0,
-    totalIncome: 0,
-    totalExpense: 0
-  });
   
   // Financial records filtering
   const [financialFilters, setFinancialFilters] = useState({
@@ -75,7 +39,6 @@ const AdminDashboard: React.FC = () => {
     endDate: '',
     studentClass: 'play' // Default to 'play' class
   });
-  const [filteredFinancialRecords, setFilteredFinancialRecords] = useState<FinancialRecord[]>([]);
 
   // Students filtering
   const [studentFilters, setStudentFilters] = useState({
@@ -84,83 +47,37 @@ const AdminDashboard: React.FC = () => {
     rollNumber: '',
     age: ''
   });
-  const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
+
+  // Derived filtered data using hook's filter functions
+  const filteredStudents = filterStudentsByClass(studentFilters.class).filter(student => {
+    const nameMatch = !studentFilters.name || 
+      `${student.firstName} ${student.lastName}`.toLowerCase().includes(studentFilters.name.toLowerCase());
+    const rollMatch = !studentFilters.rollNumber || 
+      student.rollNumber.toLowerCase().includes(studentFilters.rollNumber.toLowerCase());
+    const ageMatch = !studentFilters.age || 
+      student.age?.toString() === studentFilters.age;
+    return nameMatch && rollMatch && ageMatch;
+  });
+
+  const filteredFinancialRecords = filterFinancialsByClass(financialFilters.studentClass).filter(record => {
+    const nameMatch = !financialFilters.studentName || 
+      (record.studentName && record.studentName.toLowerCase().includes(financialFilters.studentName.toLowerCase()));
+    const typeMatch = !financialFilters.type || record.type === financialFilters.type;
+    const categoryMatch = !financialFilters.category || record.category === financialFilters.category;
+    const startDateMatch = !financialFilters.startDate || record.date >= financialFilters.startDate;
+    const endDateMatch = !financialFilters.endDate || record.date <= financialFilters.endDate;
+    return nameMatch && typeMatch && categoryMatch && startDateMatch && endDateMatch;
+  });
   const [isUserCreationModalOpen, setIsUserCreationModalOpen] = useState(false);
   const [isExcelBulkUserCreationModalOpen, setIsExcelBulkUserCreationModalOpen] = useState(false);
   const navigate = useNavigate();
 
+  // Check user role and redirect if not admin
   useEffect(() => {
-    // Get current user from Firebase Auth
-    const fetchUser = async () => {
-      const userData = await authService.getCurrentUserData();
-      if (!userData) {
-        navigate('/signin');
-        return;
-      }
-      if (userData.role !== 'admin') {
-        navigate('/user-dashboard');
-        return;
-      }
-      setUser(userData);
-      loadAllData();
-    };
-    fetchUser();
-  }, [navigate]);
-
-
-  const loadAllData = async () => {
-    try {
-      // Load all data from Firebase services
-      const [studentsData, financialData, eventsData, usersData] = await Promise.all([
-        studentService.getAllStudents(),
-        financialService.getAllFinancialRecords(),
-        eventService.getAllEvents(),
-        userService.getAllUsers()
-      ]);
-      
-      // Filter students to only show those who exist in the users collection
-      const activeStudents = studentsData.filter(student => {
-        return usersData.some(user => 
-          user.role === 'student' && 
-          user.email === student.email
-        );
-      });
-      
-      setStudents(activeStudents);
-      setFilteredStudents(activeStudents.filter(s => s.class === 'play')); // Initialize with 'play' class only
-      setFinancialRecords(financialData);
-      setFilteredFinancialRecords(financialData.filter(record => record.studentClass === 'play')); // Initialize with 'play' class only
-      setEvents(eventsData);
-      setUsers(usersData);
-      
-      // Calculate financial stats
-      const totalIncome = financialData
-        .filter((record: any) => record.type === 'income')
-        .reduce((sum: number, record: any) => sum + (record.amount || 0), 0);
-      
-      const totalExpense = financialData
-        .filter((record: any) => record.type === 'expense')
-        .reduce((sum: number, record: any) => sum + (record.amount || 0), 0);
-      
-      // Update stats
-      const studentCount = activeStudents.length;
-      const adminCount = usersData.filter((u: any) => u.role === 'admin').length;
-      const teacherCount = usersData.filter((u: any) => u.role === 'teacher').length;
-      
-      setStats((prev) => ({
-        ...prev,
-        totalUsers: usersData.length,
-        students: studentCount,
-        admins: adminCount,
-        teachers: teacherCount,
-        totalStudents: studentsData.length,
-        totalIncome,
-        totalExpense
-      }));
-    } catch (error) {
-      console.error('Error loading data:', error);
+    if (user && user.role !== 'admin') {
+      navigate('/user-dashboard');
     }
-  };
+  }, [user, navigate]);
 
   const handleSignOut = async () => {
     // Sign out using Firebase Auth
@@ -198,7 +115,7 @@ const AdminDashboard: React.FC = () => {
     if (window.confirm('Are you sure you want to delete this user? This will remove them from both the database and authentication system.')) {
       try {
         await userService.deleteUserCompletely(userId);
-        loadAllData();
+        await refetchDashboard();
         alert('User deleted successfully from both database and authentication system.');
       } catch (error) {
         console.error('Error deleting user:', error);
@@ -217,7 +134,7 @@ const AdminDashboard: React.FC = () => {
         } else {
           await studentService.deleteStudent(studentId);
         }
-        loadAllData();
+        await refetchDashboard();
       } catch (error) {
         console.error('Error deleting student:', error);
         alert('Failed to delete student. Please try again.');
@@ -239,7 +156,7 @@ const AdminDashboard: React.FC = () => {
   const deleteFinancialRecord = async (recordId: string) => {
     if (window.confirm('Are you sure you want to delete this record?')) {
       await financialService.deleteFinancialRecord(recordId);
-      loadAllData();
+      await refetchDashboard();
     }
   };
 
@@ -247,7 +164,7 @@ const AdminDashboard: React.FC = () => {
   const deleteEvent = async (eventId: string) => {
     if (window.confirm('Are you sure you want to delete this event?')) {
       await eventService.deleteEvent(eventId);
-      loadAllData();
+      await refetchDashboard();
     }
   };
 
@@ -255,7 +172,7 @@ const AdminDashboard: React.FC = () => {
     const event = events.find(e => e.id === eventId);
     if (event) {
       await eventService.updateEvent(eventId, { isActive: !event.isActive });
-      loadAllData();
+      await refetchDashboard();
     }
   };
 
@@ -291,7 +208,6 @@ const AdminDashboard: React.FC = () => {
       endDate: '',
       studentClass: 'play' // Reset to 'play' class
     });
-    setFilteredFinancialRecords(financialRecords.filter(record => record.studentClass === 'play'));
   };
 
   // Clear student filters
@@ -302,7 +218,6 @@ const AdminDashboard: React.FC = () => {
       rollNumber: '',
       age: ''
     });
-    setFilteredStudents(students.filter(s => s.class === 'play'));
   };
 
   // Handle filter input changes
@@ -311,12 +226,6 @@ const AdminDashboard: React.FC = () => {
       ...prev,
       [name]: value
     }));
-    
-    // Auto-apply filters for text inputs and class changes (real-time search)
-    if (name === 'studentName' || name === 'studentClass') {
-      const newFilters = { ...financialFilters, [name]: value };
-      applyFilters(newFilters);
-    }
     
     // Clear category when type changes to avoid invalid combinations
     if (name === 'type') {
@@ -329,41 +238,9 @@ const AdminDashboard: React.FC = () => {
 
   // Apply filters with given filter object
   const applyFilters = useCallback((filters: typeof financialFilters) => {
-    let filtered = financialRecords;
-
-    // Always filter by class first
-    if (filters.studentClass) {
-      filtered = filtered.filter(record => record.studentClass === filters.studentClass);
-    }
-
-    if (filters.studentName) {
-      filtered = filtered.filter(record => 
-        record.studentName?.toLowerCase().includes(filters.studentName.toLowerCase())
-      );
-    }
-
-    if (filters.type) {
-      filtered = filtered.filter(record => record.type === filters.type);
-    }
-
-    if (filters.category) {
-      filtered = filtered.filter(record => record.category === filters.category);
-    }
-
-    if (filters.startDate) {
-      filtered = filtered.filter(record => 
-        new Date(record.date) >= new Date(filters.startDate)
-      );
-    }
-
-    if (filters.endDate) {
-      filtered = filtered.filter(record => 
-        new Date(record.date) <= new Date(filters.endDate)
-      );
-    }
-
-    setFilteredFinancialRecords(filtered);
-  }, [financialRecords]);
+    // Filters are now automatically applied through derived state
+    // This function is kept for backwards compatibility with other parts of the component
+  }, []);
 
   // Apply current filters
   const applyFinancialFilters = () => {
@@ -372,35 +249,9 @@ const AdminDashboard: React.FC = () => {
 
   // Apply student filters with given filter object
   const applyStudentFiltersWithFilters = useCallback((filters: typeof studentFilters) => {
-    let filtered = students;
-
-    if (filters.name) {
-      filtered = filtered.filter(student => 
-        student.firstName?.toLowerCase().includes(filters.name.toLowerCase()) ||
-        student.lastName?.toLowerCase().includes(filters.name.toLowerCase()) ||
-        `${student.firstName} ${student.lastName}`.toLowerCase().includes(filters.name.toLowerCase())
-      );
-    }
-
-    if (filters.class) {
-      filtered = filtered.filter(student => student.class === filters.class);
-    }
-
-    if (filters.rollNumber) {
-      filtered = filtered.filter(student => 
-        student.rollNumber?.toLowerCase().includes(filters.rollNumber.toLowerCase())
-      );
-    }
-
-    if (filters.age) {
-      const age = parseInt(filters.age);
-      if (!isNaN(age)) {
-        filtered = filtered.filter(student => student.age === age);
-      }
-    }
-
-    setFilteredStudents(filtered);
-  }, [students]);
+    // Filters are now automatically applied through derived state
+    // This function is kept for backwards compatibility
+  }, []);
 
   // Apply current student filters
   const applyStudentFilters = () => {
@@ -1158,8 +1009,8 @@ const AdminDashboard: React.FC = () => {
       <UserCreationModal
         isOpen={isUserCreationModalOpen}
         onClose={() => setIsUserCreationModalOpen(false)}
-        onUserCreated={() => {
-          loadAllData(); // This will reload both users and students
+        onUserCreated={async () => {
+          await refetchDashboard(); // This will reload both users and students
           setIsUserCreationModalOpen(false);
         }}
       />
@@ -1168,8 +1019,8 @@ const AdminDashboard: React.FC = () => {
       <ExcelBulkUserCreationModal
         isOpen={isExcelBulkUserCreationModalOpen}
         onClose={() => setIsExcelBulkUserCreationModalOpen(false)}
-        onUsersCreated={() => {
-          loadAllData(); // This will reload both users and students
+        onUsersCreated={async () => {
+          await refetchDashboard(); // This will reload both users and students
           setIsExcelBulkUserCreationModalOpen(false);
         }}
       />

@@ -1,49 +1,28 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/features/auth/AuthContext';
-import { studentService, attendanceService, Student, Attendance } from '@/firebase/services';
 import { Button, Card } from '@/components/common';
 import { signOut } from 'firebase/auth';
-import { auth, db } from '@/firebase/config';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { auth } from '@/firebase/config';
+import { useStudentDashboardData } from '@/hooks/data/useStudentDashboardData';
 import './StudentDashboard.css';
 
-interface SubjectResult {
-  subject: string;
-  marks: number;
-  maxMarks: number;
-  grade: string;
-  remarks: string;
-}
-
-interface AcademicReport {
-  id?: string;
-  studentId: string;
-  studentName: string;
-  class: string;
-  subjects: SubjectResult[];
-  term: string;
-  createdAt: any;
-  createdBy: string;
-}
-
 const StudentDashboard: React.FC = () => {
-  const { userData, currentUser } = useAuth();
-  const [student, setStudent] = useState<Student | null>(null);
-  const [attendance, setAttendance] = useState<Attendance[]>([]);
-  const [academicReports, setAcademicReports] = useState<AcademicReport[]>([]);
-  const [remarks, setRemarks] = useState<{
-    id?: string;
-    studentId: string;
-    studentName: string;
-    class: string;
-    subject: string;
-    remark: string;
-    type: 'positive' | 'negative' | 'neutral';
-    date: string;
-    createdAt: any;
-    createdBy: string;
-  }[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { currentUser } = useAuth();
+  
+  // Use custom hook for student dashboard data
+  const {
+    student,
+    attendance,
+    academicReports,
+    remarks,
+    loading,
+    refetchReports,
+    refetchRemarks
+  } = useStudentDashboardData({
+    authUid: currentUser?.uid
+  });
+  
+  // UI state only
   const [activeTab, setActiveTab] = useState('overview');
   
   // Attendance pagination and filtering state
@@ -55,162 +34,16 @@ const StudentDashboard: React.FC = () => {
   // Report card expansion state
   const [expandedReports, setExpandedReports] = useState<Set<string>>(new Set());
   
-
-  const loadAcademicReports = useCallback(async () => {
-    if (!student) {
-      console.log('StudentDashboard: No student record available for loading reports');
-      return;
-    }
-
-    try {
-      console.log('StudentDashboard: Loading academic reports for studentId:', student.rollNumber);
-      const reportsQuery = query(
-        collection(db, 'academicReports'),
-        where('studentId', '==', student.rollNumber)
-      );
-      const reportsSnapshot = await getDocs(reportsQuery);
-      console.log('StudentDashboard: Academic reports query result:', reportsSnapshot.docs.length, 'documents');
-      
-      const reportsData = reportsSnapshot.docs.map(doc => {
-        const data = doc.data();
-        console.log('StudentDashboard: Report data:', data);
-        return {
-          id: doc.id,
-          ...data
-        };
-      }) as AcademicReport[];
-      
-      // Sort by createdAt in descending order (newest first)
-      reportsData.sort((a, b) => {
-        if (!a.createdAt || !b.createdAt) return 0;
-        return b.createdAt.toDate().getTime() - a.createdAt.toDate().getTime();
-      });
-      
-      setAcademicReports(reportsData);
-      console.log('StudentDashboard: Set academic reports:', reportsData.length);
-    } catch (error) {
-      console.error('Error loading academic reports:', error);
-    }
-  }, [student]);
-
-  const loadRemarks = useCallback(async () => {
-    if (!student) {
-      console.log('StudentDashboard: No student record available for loading remarks');
-      return;
-    }
-
-    try {
-      console.log('StudentDashboard: Loading remarks for studentId:', student.rollNumber);
-      const remarksQuery = query(
-        collection(db, 'remarks'),
-        where('studentId', '==', student.rollNumber)
-      );
-      const remarksSnapshot = await getDocs(remarksQuery);
-      console.log('StudentDashboard: Remarks query result:', remarksSnapshot.docs.length, 'documents');
-      
-      const remarksData = remarksSnapshot.docs.map(doc => {
-        const data = doc.data();
-        console.log('StudentDashboard: Remark data:', data);
-        return {
-          id: doc.id,
-          ...data
-        } as {
-          id: string;
-          studentId: string;
-          studentName: string;
-          class: string;
-          subject: string;
-          remark: string;
-          type: 'positive' | 'negative' | 'neutral';
-          date: string;
-          createdAt: any;
-          createdBy: string;
-        };
-      });
-      
-      // Sort by createdAt in descending order (newest first)
-      remarksData.sort((a, b) => {
-        if (!a.createdAt || !b.createdAt) return 0;
-        return b.createdAt.toDate().getTime() - a.createdAt.toDate().getTime();
-      });
-      
-      setRemarks(remarksData);
-      console.log('StudentDashboard: Set remarks:', remarksData.length);
-    } catch (error) {
-      console.error('Error loading remarks:', error);
-    }
-  }, [student]);
-
+  // Refetch data when tab changes
   useEffect(() => {
-    if (userData && userData.role === 'student') {
-      loadStudentData();
+    if (activeTab === 'report' && student) {
+      console.log('StudentDashboard: Reports tab activated, refreshing data');
+      refetchReports();
+    } else if (activeTab === 'remarks' && student) {
+      console.log('StudentDashboard: Remarks tab activated, refreshing data');
+      refetchRemarks();
     }
-  }, [userData]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (activeTab === 'report') {
-      console.log('StudentDashboard: Reports tab activated, academicReports.length:', academicReports.length);
-      // Reload academic reports when switching to reports tab
-      if (student) {
-        console.log('StudentDashboard: Reloading academic reports for fresh data');
-        loadAcademicReports();
-      }
-    } else if (activeTab === 'remarks') {
-      console.log('StudentDashboard: Remarks tab activated, remarks.length:', remarks.length);
-      // Reload remarks when switching to remarks tab
-      if (student) {
-        console.log('StudentDashboard: Reloading remarks for fresh data');
-        loadRemarks();
-      }
-    }
-  }, [activeTab, student, loadAcademicReports, loadRemarks, academicReports.length, remarks.length]);
-
-
-  const loadStudentData = async () => {
-    try {
-      setLoading(true);
-      console.log('StudentDashboard: Loading student data for user:', currentUser?.uid);
-      
-      if (!currentUser?.uid) {
-        console.log('StudentDashboard: No current user UID available');
-        setLoading(false);
-        return;
-      }
-
-      // Find student record by authUid (Firebase Auth UID) - more efficient, single query
-      const studentRecord = await studentService.getStudentByAuthUid(currentUser.uid);
-      console.log('StudentDashboard: Found student record:', studentRecord);
-      
-      if (studentRecord) {
-        setStudent(studentRecord);
-        console.log('StudentDashboard: Student roll number:', studentRecord.rollNumber);
-        
-        // Load attendance data for this student using roll number
-        const attendanceData = await attendanceService.getAttendanceByStudent(studentRecord.rollNumber);
-        console.log('StudentDashboard: Loaded attendance data:', attendanceData.length, 'records');
-        setAttendance(attendanceData);
-        
-        // Load academic reports for this student
-        await loadAcademicReports();
-        
-        // Load remarks for this student
-        await loadRemarks();
-      } else {
-        console.log('StudentDashboard: No student record found for user:', currentUser?.uid);
-      }
-    } catch (error) {
-      console.error('Error loading student data:', error);
-      console.error('Error details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-
-
+  }, [activeTab, student, refetchReports, refetchRemarks]);
 
   const getAttendanceStats = () => {
     const totalDays = attendance.length;
@@ -579,7 +412,7 @@ const StudentDashboard: React.FC = () => {
                 <h3>📋 Academic Report Card</h3>
                 <Button
                   variant="secondary"
-                  onClick={loadAcademicReports}
+                  onClick={refetchReports}
                   className="refresh-btn"
                 >
                   🔄 Refresh Reports
@@ -732,7 +565,7 @@ const StudentDashboard: React.FC = () => {
                 <h3>💬 Teacher Remarks & Feedback</h3>
                 <Button
                   variant="secondary"
-                  onClick={loadRemarks}
+                  onClick={refetchRemarks}
                   style={{ padding: '8px 16px' }}
                 >
                   🔄 Refresh Remarks

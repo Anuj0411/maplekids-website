@@ -1,21 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { studentService, Student } from '@/firebase/services';
+import React, { useState } from 'react';
 import { Button, Card } from '@/components/common';
-import { db } from '@/firebase/config';
-import { collection, addDoc, updateDoc, doc, getDocs, query, where, serverTimestamp, deleteDoc } from 'firebase/firestore';
+import { useStudents } from '@/hooks/data/useStudents';
+import { useRemarks, Remark } from '@/hooks/data/useRemarks';
+import { useForm } from '@/hooks/form/useForm';
+import { useFormValidation } from '@/hooks/form/useFormValidation';
 import './RemarksManager.css';
 
-interface Remark {
-  id?: string;
+interface RemarkFormData {
   studentId: string;
-  studentName: string;
-  class: string;
   subject: string;
   remark: string;
   type: 'positive' | 'negative' | 'neutral';
   date: string;
-  createdAt: any;
-  createdBy: string;
 }
 
 interface RemarksManagerProps {
@@ -24,124 +20,82 @@ interface RemarksManagerProps {
 }
 
 const RemarksManager: React.FC<RemarksManagerProps> = ({ selectedClass, onClose }) => {
-  const [students, setStudents] = useState<Student[]>([]);
-  const [remarks, setRemarks] = useState<Remark[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingRemark, setEditingRemark] = useState<Remark | null>(null);
-  const [formData, setFormData] = useState({
-    studentId: '',
-    subject: '',
-    remark: '',
-    type: 'positive' as 'positive' | 'negative' | 'neutral',
-    date: new Date().toISOString().split('T')[0]
-  });
 
   const subjects = ['English', 'Mathematics', 'Science', 'Social Studies', 'Art & Craft', 'Physical Education', 'Music', 'Computer Science', 'General'];
 
-  useEffect(() => {
-    loadData();
-  }, [selectedClass]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Use custom hooks
+  const { students, loading: studentsLoading } = useStudents({
+    className: selectedClass === 'all' ? undefined : selectedClass,
+  });
+  
+  const { remarks, loading: remarksLoading, addRemark, updateRemark, deleteRemark } = useRemarks({
+    classFilter: selectedClass,
+  });
 
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      
-      // Load students for the selected class
-      const allStudents = await studentService.getAllStudents();
-      const classStudents = selectedClass === 'all' 
-        ? allStudents 
-        : allStudents.filter(s => s.class === selectedClass);
-      setStudents(classStudents);
+  const validation = useFormValidation();
 
-      // Load remarks
-      const remarksQuery = selectedClass === 'all' 
-        ? query(collection(db, 'remarks'))
-        : query(collection(db, 'remarks'), where('class', '==', selectedClass));
-      
-      const remarksSnapshot = await getDocs(remarksQuery);
-      const remarksData = remarksSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Remark[];
-      
-      // Sort by date (newest first)
-      remarksData.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      setRemarks(remarksData);
-    } catch (error) {
-      console.error('Error loading remarks:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    try {
-      const student = students.find(s => s.rollNumber === formData.studentId);
+  const { values, errors, handleChange, handleSubmit, isSubmitting, setFieldValue, reset } = useForm<RemarkFormData>({
+    initialValues: {
+      studentId: '',
+      subject: '',
+      remark: '',
+      type: 'positive',
+      date: new Date().toISOString().split('T')[0]
+    },
+    validate: (values) => ({
+      studentId: validation.rules.required('Please select a student')(values.studentId),
+      subject: validation.rules.required('Please select a subject')(values.subject),
+      remark: validation.composeValidators(
+        validation.rules.required('Remark is required'),
+        validation.rules.minLength(10, 'Remark must be at least 10 characters long')
+      )(values.remark),
+      date: validation.rules.required('Date is required')(values.date),
+    }),
+    onSubmit: async (values) => {
+      const student = students.find(s => s.rollNumber === values.studentId);
       if (!student) {
         alert('Student not found');
         return;
       }
 
       const remarkData = {
-        studentId: formData.studentId,
+        studentId: values.studentId,
         studentName: `${student.firstName} ${student.lastName}`,
         class: student.class,
-        subject: formData.subject,
-        remark: formData.remark,
-        type: formData.type,
-        date: formData.date,
-        createdAt: serverTimestamp(),
+        subject: values.subject,
+        remark: values.remark,
+        type: values.type,
+        date: values.date,
         createdBy: 'teacher' // This should be the actual teacher ID
       };
 
       if (editingRemark) {
-        // Update existing remark
-        await updateDoc(doc(db, 'remarks', editingRemark.id!), remarkData);
+        await updateRemark(editingRemark.id!, remarkData);
       } else {
-        // Add new remark
-        await addDoc(collection(db, 'remarks'), remarkData);
+        await addRemark(remarkData);
       }
 
-      // Reset form and reload data
-      setFormData({
-        studentId: '',
-        subject: '',
-        remark: '',
-        type: 'positive',
-        date: new Date().toISOString().split('T')[0]
-      });
-      setShowAddForm(false);
-      setEditingRemark(null);
-      loadData();
-      
-    } catch (error) {
-      console.error('Error saving remark:', error);
-      alert('Error saving remark. Please try again.');
+      handleCancel();
     }
-  };
+  });
 
   const handleEdit = (remark: Remark) => {
     setEditingRemark(remark);
-    setFormData({
-      studentId: remark.studentId,
-      subject: remark.subject,
-      remark: remark.remark,
-      type: remark.type,
-      date: remark.date
-    });
+    setFieldValue('studentId', remark.studentId);
+    setFieldValue('subject', remark.subject);
+    setFieldValue('remark', remark.remark);
+    setFieldValue('type', remark.type);
+    setFieldValue('date', remark.date);
     setShowAddForm(true);
   };
 
   const handleDelete = async (remarkId: string) => {
     if (window.confirm('Are you sure you want to delete this remark?')) {
       try {
-        await deleteDoc(doc(db, 'remarks', remarkId));
-        loadData();
+        await deleteRemark(remarkId);
       } catch (error) {
-        console.error('Error deleting remark:', error);
         alert('Error deleting remark. Please try again.');
       }
     }
@@ -150,13 +104,7 @@ const RemarksManager: React.FC<RemarksManagerProps> = ({ selectedClass, onClose 
   const handleCancel = () => {
     setShowAddForm(false);
     setEditingRemark(null);
-    setFormData({
-      studentId: '',
-      subject: '',
-      remark: '',
-      type: 'positive',
-      date: new Date().toISOString().split('T')[0]
-    });
+    reset();
   };
 
   const getTypeIcon = (type: string) => {
@@ -169,6 +117,8 @@ const RemarksManager: React.FC<RemarksManagerProps> = ({ selectedClass, onClose 
   };
 
 
+
+  const loading = studentsLoading || remarksLoading;
 
   if (loading) {
     return (
@@ -207,8 +157,9 @@ const RemarksManager: React.FC<RemarksManagerProps> = ({ selectedClass, onClose 
               <div className="form-group">
                 <label>Student</label>
                 <select
-                  value={formData.studentId}
-                  onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
+                  name="studentId"
+                  value={values.studentId}
+                  onChange={handleChange}
                   required
                 >
                   <option value="">Select Student</option>
@@ -218,12 +169,14 @@ const RemarksManager: React.FC<RemarksManagerProps> = ({ selectedClass, onClose 
                     </option>
                   ))}
                 </select>
+                {errors.studentId && <span className="error-message">{errors.studentId}</span>}
               </div>
               <div className="form-group">
                 <label>Subject</label>
                 <select
-                  value={formData.subject}
-                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                  name="subject"
+                  value={values.subject}
+                  onChange={handleChange}
                   required
                 >
                   <option value="">Select Subject</option>
@@ -231,6 +184,7 @@ const RemarksManager: React.FC<RemarksManagerProps> = ({ selectedClass, onClose 
                     <option key={subject} value={subject}>{subject}</option>
                   ))}
                 </select>
+                {errors.subject && <span className="error-message">{errors.subject}</span>}
               </div>
             </div>
 
@@ -238,8 +192,9 @@ const RemarksManager: React.FC<RemarksManagerProps> = ({ selectedClass, onClose 
               <div className="form-group">
                 <label>Type</label>
                 <select
-                  value={formData.type}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value as 'positive' | 'negative' | 'neutral' })}
+                  name="type"
+                  value={values.type}
+                  onChange={handleChange}
                 >
                   <option value="positive">😊 Positive</option>
                   <option value="neutral">😐 Neutral</option>
@@ -250,27 +205,31 @@ const RemarksManager: React.FC<RemarksManagerProps> = ({ selectedClass, onClose 
                 <label>Date</label>
                 <input
                   type="date"
-                  value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  name="date"
+                  value={values.date}
+                  onChange={handleChange}
                   required
                 />
+                {errors.date && <span className="error-message">{errors.date}</span>}
               </div>
             </div>
 
             <div className="form-group">
               <label>Remark</label>
               <textarea
-                value={formData.remark}
-                onChange={(e) => setFormData({ ...formData, remark: e.target.value })}
+                name="remark"
+                value={values.remark}
+                onChange={handleChange}
                 placeholder="Enter your remark about the student..."
                 rows={4}
                 required
               />
+              {errors.remark && <span className="error-message">{errors.remark}</span>}
             </div>
 
             <div className="form-actions">
-              <Button type="submit" variant="primary">
-                {editingRemark ? 'Update Remark' : 'Add Remark'}
+              <Button type="submit" variant="primary" disabled={isSubmitting}>
+                {isSubmitting ? 'Saving...' : editingRemark ? 'Update Remark' : 'Add Remark'}
               </Button>
               <Button type="button" variant="secondary" onClick={handleCancel}>
                 Cancel
