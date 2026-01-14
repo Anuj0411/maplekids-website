@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '@/styles/Forms.css';
-import { financialService, Student } from '@/firebase/services';
+import { Student } from '@/firebase/services';
 import { FormField, Button } from '@/components/common';
 import { useForm } from '@/hooks/form/useForm';
 import { useFormValidation } from '@/hooks/form/useFormValidation';
 import { useStudents } from '@/hooks/data/useStudents';
+import { useFinancialRecords } from '@/hooks/data/useFinancialRecords';
 
 interface FinancialFormData {
   type: 'income' | 'expense';
@@ -24,8 +25,9 @@ const AddFinancialRecordForm: React.FC = () => {
   const navigate = useNavigate();
   const validation = useFormValidation();
   
-  // Use custom hook for students data
+  // Use custom hooks for students and financial records
   const { students, loading: isLoadingStudents } = useStudents();
+  const { addRecord, stats } = useFinancialRecords({ autoFetch: true });
   const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
 
   const incomeCategories = [
@@ -114,8 +116,8 @@ const AddFinancialRecordForm: React.FC = () => {
     },
     onSubmit: async (values) => {
       try {
-        // Save to Firebase
-        await financialService.addFinancialRecord({
+        // Save to Firebase using useFinancialRecords hook
+        await addRecord({
           type: values.type,
           category: values.category,
           amount: values.amount,
@@ -162,6 +164,37 @@ const AddFinancialRecordForm: React.FC = () => {
         <div className="form-header">
           <h1>💰 Add Financial Record</h1>
           <p>Record income or expense transactions for the school</p>
+        </div>
+
+        {/* Financial Statistics Summary */}
+        <div className="form-section" style={{ backgroundColor: '#f8f9fa', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem' }}>
+          <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>📊 Current Financial Overview</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+            <div style={{ textAlign: 'center', padding: '0.75rem', backgroundColor: 'white', borderRadius: '6px' }}>
+              <div style={{ fontSize: '0.875rem', color: '#666', marginBottom: '0.25rem' }}>Total Income</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#28a745' }}>
+                ₹{stats.totalIncome.toLocaleString()}
+              </div>
+            </div>
+            <div style={{ textAlign: 'center', padding: '0.75rem', backgroundColor: 'white', borderRadius: '6px' }}>
+              <div style={{ fontSize: '0.875rem', color: '#666', marginBottom: '0.25rem' }}>Total Expense</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#dc3545' }}>
+                ₹{stats.totalExpense.toLocaleString()}
+              </div>
+            </div>
+            <div style={{ textAlign: 'center', padding: '0.75rem', backgroundColor: 'white', borderRadius: '6px' }}>
+              <div style={{ fontSize: '0.875rem', color: '#666', marginBottom: '0.25rem' }}>Net Balance</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: stats.balance >= 0 ? '#28a745' : '#dc3545' }}>
+                ₹{stats.balance.toLocaleString()}
+              </div>
+            </div>
+            <div style={{ textAlign: 'center', padding: '0.75rem', backgroundColor: 'white', borderRadius: '6px' }}>
+              <div style={{ fontSize: '0.875rem', color: '#666', marginBottom: '0.25rem' }}>Total Records</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#007bff' }}>
+                {stats.recordCount}
+              </div>
+            </div>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="form">

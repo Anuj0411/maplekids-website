@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '@/styles/Forms.css';
 import { FormField, Button } from '@/components/common';
-import { eventService } from '@/firebase/services';
+import { useEvents } from '@/hooks/data/useEvents';
 import { useForm } from '@/hooks/form/useForm';
 import { useFormValidation } from '@/hooks/form/useFormValidation';
 
@@ -18,6 +18,7 @@ interface EventFormData {
 const AddEventForm: React.FC = () => {
   const navigate = useNavigate();
   const validation = useFormValidation();
+  const { addEvent } = useEvents({ autoFetch: false });
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [generalError, setGeneralError] = useState<string>('');
 
@@ -61,8 +62,8 @@ const AddEventForm: React.FC = () => {
       try {
         console.log('Creating event with data:', values);
         
-        // Save to Firebase using eventService
-        const createdEvent = await eventService.addEvent({
+        // Save to Firebase using useEvents hook
+        const createdEvent = await addEvent({
           title: values.title,
           description: values.description,
           date: values.date,
