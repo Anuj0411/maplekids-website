@@ -134,8 +134,18 @@ export const useForm = <T extends Record<string, any>>({
 		if (!validate) return {};
 		
 		const validationErrors = validate(values);
-		setErrors(validationErrors);
-		return validationErrors;
+		
+		// Filter out undefined/null errors
+		const filteredErrors = Object.keys(validationErrors).reduce((acc, key) => {
+			const error = validationErrors[key as keyof T];
+			if (error) {
+				acc[key as keyof T] = error;
+			}
+			return acc;
+		}, {} as Partial<Record<keyof T, string>>);
+		
+		setErrors(filteredErrors);
+		return filteredErrors;
 	}, [validate, values]);
 
 	/**

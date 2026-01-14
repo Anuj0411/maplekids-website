@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import '@/styles/Forms.css';
 import { FormField, Button } from '@/components/common';
 import { studentService, photoService } from '@/firebase/services';
+import { useForm } from '@/hooks/form';
+import { useFormValidation } from '@/hooks/form/useFormValidation';
 
 interface StudentFormData {
   firstName: string;
@@ -13,33 +15,89 @@ interface StudentFormData {
   parentPhone: string;
   address: string;
   admissionDate: string;
-  photo?: string;
-  rollNumber?: string;
 }
 
-interface FormErrors {
-  [key: string]: string;
-}
+// Custom age validator
+const validateAge = (ageValue: any): string | undefined => {
+  const age = Number(ageValue);
+  if (age < 2 || age > 8) {
+    return 'Age must be between 2 and 8 years';
+  }
+  return undefined;
+};
 
 const EditStudentForm: React.FC = () => {
   const { rollNumber } = useParams<{ rollNumber: string }>();
-  const [formData, setFormData] = useState<StudentFormData>({
-    firstName: '',
-    lastName: '',
-    class: 'play',
-    age: 3,
-    parentName: '',
-    parentPhone: '',
-    address: '',
-    admissionDate: new Date().toISOString().split('T')[0],
-    photo: '',
-    rollNumber: ''
+  const validation = useFormValidation();
+  
+  const {
+    values,
+    errors,
+    handleChange,
+    setFieldValue,
+    handleSubmit: formHandleSubmit
+  } = useForm<StudentFormData>({
+    initialValues: {
+      firstName: '',
+      lastName: '',
+      class: 'play',
+      age: 3,
+      parentName: '',
+      parentPhone: '',
+      address: '',
+      admissionDate: new Date().toISOString().split('T')[0]
+    },
+    validate: (values) => ({
+      firstName: validation.composeValidators(
+        validation.rules.required('First name is required'),
+        validation.rules.minLength(2, 'First name must be at least 2 characters')
+      )(values.firstName),
+      lastName: validation.composeValidators(
+        validation.rules.required('Last name is required'),
+        validation.rules.minLength(2, 'Last name must be at least 2 characters')
+      )(values.lastName),
+      age: validateAge(values.age),
+      parentName: validation.rules.required('Parent/Guardian name is required')(values.parentName),
+      parentPhone: validation.composeValidators(
+        validation.rules.required('Phone number is required'),
+        validation.rules.phone('Please enter a valid 10-digit phone number')
+      )(values.parentPhone),
+      address: validation.composeValidators(
+        validation.rules.required('Address is required'),
+        validation.rules.minLength(10, 'Address must be at least 10 characters')
+      )(values.address),
+      admissionDate: validation.rules.required('Admission date is required')(values.admissionDate)
+    }),
+    onSubmit: async (values) => {
+      if (!rollNumber) {
+        throw new Error('Roll number is required');
+      }
+
+      let photoUrl = photoData;
+      
+      // If a new photo is selected (starts with data:), upload it to Firebase Storage
+      if (photoData && photoData.startsWith('data:')) {
+        const file = dataURLtoFile(photoData, 'student-photo.jpg');
+        photoUrl = await photoService.uploadPhoto(file);
+      }
+
+      // Update student using roll number
+      await studentService.updateStudentByRollNumber(rollNumber, {
+        ...values,
+        photo: photoUrl
+      });
+
+      setSuccessMessage(`Student "${values.firstName} ${values.lastName}" updated successfully.`);
+      setTimeout(() => {
+        navigate('/admin-dashboard');
+      }, 2000);
+    }
   });
 
-  const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [photoPreview, setPhotoPreview] = useState<string>('');
+  const [photoData, setPhotoData] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -56,20 +114,19 @@ const EditStudentForm: React.FC = () => {
       try {
         const student = await studentService.getStudentByRollNumber(rollNumber);
         if (student) {
-          setFormData({
-            firstName: student.firstName,
-            lastName: student.lastName,
-            class: student.class,
-            age: student.age,
-            parentName: student.parentName,
-            parentPhone: student.parentPhone,
-            address: student.address,
-            admissionDate: student.admissionDate,
-            photo: student.photo || '',
-            rollNumber: student.rollNumber
-          });
+          // Load all form fields using setFieldValue
+          setFieldValue('firstName', student.firstName);
+          setFieldValue('lastName', student.lastName);
+          setFieldValue('class', student.class);
+          setFieldValue('age', student.age);
+          setFieldValue('parentName', student.parentName);
+          setFieldValue('parentPhone', student.parentPhone);
+          setFieldValue('address', student.address);
+          setFieldValue('admissionDate', student.admissionDate);
+          
           if (student.photo) {
             setPhotoPreview(student.photo);
+            setPhotoData(student.photo);
           }
         } else {
           setErrorMessage('Student not found');
@@ -83,66 +140,7 @@ const EditStudentForm: React.FC = () => {
     };
 
     loadStudent();
-  }, [rollNumber]);
-
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
-
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = 'First name is required';
-    } else if (formData.firstName.length < 2) {
-      newErrors.firstName = 'First name must be at least 2 characters';
-    }
-
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = 'Last name is required';
-    } else if (formData.lastName.length < 2) {
-      newErrors.lastName = 'Last name must be at least 2 characters';
-    }
-
-    if (formData.age < 2 || formData.age > 8) {
-      newErrors.age = 'Age must be between 2 and 8 years';
-    }
-
-    if (!formData.parentName.trim()) {
-      newErrors.parentName = 'Parent/Guardian name is required';
-    }
-
-    if (!formData.parentPhone.trim()) {
-      newErrors.parentPhone = 'Phone number is required';
-    } else if (!/^\d{10}$/.test(formData.parentPhone.replace(/\D/g, ''))) {
-      newErrors.parentPhone = 'Please enter a valid 10-digit phone number';
-    }
-
-    if (!formData.address.trim()) {
-      newErrors.address = 'Address is required';
-    } else if (formData.address.length < 10) {
-      newErrors.address = 'Address must be at least 10 characters';
-    }
-
-    if (!formData.admissionDate) {
-      newErrors.admissionDate = 'Admission date is required';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
-  };
+  }, [rollNumber, setFieldValue]);
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -151,7 +149,7 @@ const EditStudentForm: React.FC = () => {
       reader.onload = (e) => {
         const result = e.target?.result as string;
         setPhotoPreview(result);
-        setFormData(prev => ({ ...prev, photo: result }));
+        setPhotoData(result);
       };
       reader.readAsDataURL(file);
     }
@@ -159,43 +157,11 @@ const EditStudentForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-
     setIsSubmitting(true);
-    
+    setErrorMessage('');
+
     try {
-      if (!rollNumber) {
-        throw new Error('Roll number is required');
-      }
-
-      let photoUrl = formData.photo;
-      
-      // If a new photo is selected (starts with data:), upload it to Firebase Storage
-      if (formData.photo && formData.photo.startsWith('data:')) {
-        const file = dataURLtoFile(formData.photo, 'student-photo.jpg');
-        photoUrl = await photoService.uploadPhoto(file);
-      }
-
-      // Update student using roll number
-      await studentService.updateStudentByRollNumber(rollNumber, {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        class: formData.class,
-        age: formData.age,
-        parentName: formData.parentName,
-        parentPhone: formData.parentPhone,
-        address: formData.address,
-        admissionDate: formData.admissionDate,
-        photo: photoUrl
-      });
-
-      setSuccessMessage(`Student "${formData.firstName} ${formData.lastName}" updated successfully.`);
-      setTimeout(() => {
-        navigate('/admin-dashboard');
-      }, 2000);
+      await formHandleSubmit();
     } catch (error) {
       console.error('Error updating student:', error);
       setErrorMessage('Failed to update student. Please try again.');
@@ -232,7 +198,7 @@ const EditStudentForm: React.FC = () => {
     );
   }
 
-  if (errorMessage && !formData.firstName) {
+  if (errorMessage && !values.firstName) {
     return (
       <div className="form-container">
         <div className="form-card">
@@ -261,8 +227,8 @@ const EditStudentForm: React.FC = () => {
               <FormField
                 label="First Name"
                 name="firstName"
-                value={formData.firstName}
-                onChange={handleInputChange}
+                value={values.firstName}
+                onChange={handleChange}
                 type="text"
                 placeholder="Enter first name"
                 error={errors.firstName}
@@ -271,8 +237,8 @@ const EditStudentForm: React.FC = () => {
               <FormField
                 label="Last Name"
                 name="lastName"
-                value={formData.lastName}
-                onChange={handleInputChange}
+                value={values.lastName}
+                onChange={handleChange}
                 type="text"
                 placeholder="Enter last name"
                 error={errors.lastName}
@@ -284,8 +250,8 @@ const EditStudentForm: React.FC = () => {
               <FormField
                 label="Class"
                 name="class"
-                value={formData.class}
-                onChange={handleInputChange}
+                value={values.class}
+                onChange={handleChange}
                 as="select"
                 options={[
                   { value: 'play', label: 'Play Group' }, 
@@ -299,8 +265,8 @@ const EditStudentForm: React.FC = () => {
               <FormField
                 label="Age"
                 name="age"
-                value={formData.age}
-                onChange={handleInputChange}
+                value={values.age}
+                onChange={handleChange}
                 type="number"
                 min="2"
                 max="8"
@@ -314,8 +280,8 @@ const EditStudentForm: React.FC = () => {
               <FormField
                 label="Admission Date"
                 name="admissionDate"
-                value={formData.admissionDate}
-                onChange={handleInputChange}
+                value={values.admissionDate}
+                onChange={handleChange}
                 type="date"
                 max={new Date().toISOString().split('T')[0]}
                 error={errors.admissionDate}
@@ -330,8 +296,8 @@ const EditStudentForm: React.FC = () => {
               <FormField
                 label="Parent/Guardian Name"
                 name="parentName"
-                value={formData.parentName}
-                onChange={handleInputChange}
+                value={values.parentName}
+                onChange={handleChange}
                 type="text"
                 placeholder="Enter parent/guardian name"
                 error={errors.parentName}
@@ -340,8 +306,8 @@ const EditStudentForm: React.FC = () => {
               <FormField
                 label="Phone Number"
                 name="parentPhone"
-                value={formData.parentPhone}
-                onChange={handleInputChange}
+                value={values.parentPhone}
+                onChange={handleChange}
                 type="tel"
                 placeholder="Enter 10-digit phone number"
                 error={errors.parentPhone}
@@ -353,8 +319,8 @@ const EditStudentForm: React.FC = () => {
               <FormField
                 label="Address"
                 name="address"
-                value={formData.address}
-                onChange={handleInputChange}
+                value={values.address}
+                onChange={handleChange}
                 as="textarea"
                 placeholder="Enter complete address"
                 rows={3}
@@ -389,7 +355,7 @@ const EditStudentForm: React.FC = () => {
                     className="remove-photo"
                     onClick={() => {
                       setPhotoPreview('');
-                      setFormData(prev => ({ ...prev, photo: '' }));
+                      setPhotoData('');
                     }}
                   >
                     ❌ Remove

@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import '@/styles/Forms.css';
 import { FormField, Button } from '@/components/common';
 import { userService } from '@/firebase/services';
+import { useForm } from '@/hooks/form';
+import { useFormValidation } from '@/hooks/form/useFormValidation';
 
 interface UserFormData {
   firstName: string;
@@ -13,22 +15,69 @@ interface UserFormData {
   role: 'admin' | 'teacher' | 'student';
 }
 
-interface FormErrors {
-  [key: string]: string;
-}
-
 const EditUserForm: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
-  const [formData, setFormData] = useState<UserFormData>({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    address: '',
-    role: 'student'
+  const validation = useFormValidation();
+  
+  const {
+    values,
+    errors,
+    handleChange,
+    setFieldValue,
+    handleSubmit: formHandleSubmit
+  } = useForm<UserFormData>({
+    initialValues: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      address: '',
+      role: 'student'
+    },
+    validate: (values) => ({
+      firstName: validation.composeValidators(
+        validation.rules.required('First name is required'),
+        validation.rules.minLength(2, 'First name must be at least 2 characters')
+      )(values.firstName),
+      lastName: validation.composeValidators(
+        validation.rules.required('Last name is required'),
+        validation.rules.minLength(2, 'Last name must be at least 2 characters')
+      )(values.lastName),
+      email: validation.composeValidators(
+        validation.rules.required('Email is required'),
+        validation.rules.email('Please enter a valid email address')
+      )(values.email),
+      phone: validation.composeValidators(
+        validation.rules.required('Phone number is required'),
+        validation.rules.phone('Please enter a valid 10-digit phone number')
+      )(values.phone),
+      address: validation.composeValidators(
+        validation.rules.required('Address is required'),
+        validation.rules.minLength(10, 'Address must be at least 10 characters')
+      )(values.address)
+    }),
+    onSubmit: async (values) => {
+      if (!userId) {
+        throw new Error('User ID is missing');
+      }
+
+      const updateData = {
+        firstName: values.firstName.trim(),
+        lastName: values.lastName.trim(),
+        email: values.email.trim(),
+        phone: values.phone.trim(),
+        address: values.address.trim(),
+        role: values.role
+      };
+
+      await userService.updateUser(userId, updateData);
+      setSubmitSuccess(true);
+      setTimeout(() => {
+        navigate('/admin-dashboard');
+      }, 2000);
+    }
   });
 
-  const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [submitSuccess, setSubmitSuccess] = useState(false);
@@ -49,14 +98,12 @@ const EditUserForm: React.FC = () => {
         const user = users.find(u => u.id === userId);
         
         if (user) {
-          setFormData({
-            firstName: user.firstName,
-            lastName: user.lastName,
-            email: user.email,
-            phone: user.phone,
-            address: user.address,
-            role: user.role
-          });
+          setFieldValue('firstName', user.firstName);
+          setFieldValue('lastName', user.lastName);
+          setFieldValue('email', user.email);
+          setFieldValue('phone', user.phone);
+          setFieldValue('address', user.address);
+          setFieldValue('role', user.role);
         } else {
           setErrorMessage('User not found');
         }
@@ -69,102 +116,18 @@ const EditUserForm: React.FC = () => {
     };
 
     loadUser();
-  }, [userId]);
-
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
-
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = 'First name is required';
-    } else if (formData.firstName.trim().length < 2) {
-      newErrors.firstName = 'First name must be at least 2 characters';
-    }
-
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = 'Last name is required';
-    } else if (formData.lastName.trim().length < 2) {
-      newErrors.lastName = 'Last name must be at least 2 characters';
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
-    }
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Phone number is required';
-    } else if (!/^[0-9]{10}$/.test(formData.phone.replace(/\s/g, ''))) {
-      newErrors.phone = 'Please enter a valid 10-digit phone number';
-    }
-
-    if (!formData.address.trim()) {
-      newErrors.address = 'Address is required';
-    } else if (formData.address.trim().length < 10) {
-      newErrors.address = 'Address must be at least 10 characters';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: undefined }));
-    }
-
-    // Clear general error message
-    if (errorMessage) {
-      setErrorMessage('');
-    }
-  };
+  }, [userId, setFieldValue]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-
-    if (!userId) {
-      setErrorMessage('User ID is missing');
-      return;
-    }
-
     setIsSubmitting(true);
     setErrorMessage('');
 
     try {
-      const updateData = {
-        firstName: formData.firstName.trim(),
-        lastName: formData.lastName.trim(),
-        email: formData.email.trim(),
-        phone: formData.phone.trim(),
-        address: formData.address.trim(),
-        // Only include role in update if it's not a student
-        ...(formData.role !== 'student' && { role: formData.role })
-      };
-
-      await userService.updateUser(userId, updateData);
-      
-      setSubmitSuccess(true);
-      
-      // Redirect to admin dashboard after 2 seconds
-      setTimeout(() => {
-        navigate('/admin-dashboard');
-      }, 2000);
-
-    } catch (error: any) {
-      console.error('Update error:', error);
-      setErrorMessage('An error occurred while updating the user. Please try again.');
+      await formHandleSubmit();
+    } catch (error) {
+      console.error('Error updating user:', error);
+      setErrorMessage('Failed to update user. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -236,8 +199,8 @@ const EditUserForm: React.FC = () => {
               <FormField
                 label="First Name *"
                 name="firstName"
-                value={formData.firstName}
-                onChange={handleInputChange}
+                value={values.firstName}
+                onChange={handleChange}
                 type="text"
                 placeholder="Enter first name"
                 error={errors.firstName}
@@ -246,8 +209,8 @@ const EditUserForm: React.FC = () => {
               <FormField
                 label="Last Name *"
                 name="lastName"
-                value={formData.lastName}
-                onChange={handleInputChange}
+                value={values.lastName}
+                onChange={handleChange}
                 type="text"
                 placeholder="Enter last name"
                 error={errors.lastName}
@@ -259,8 +222,8 @@ const EditUserForm: React.FC = () => {
               <FormField
                 label="Email Address *"
                 name="email"
-                value={formData.email}
-                onChange={handleInputChange}
+                value={values.email}
+                onChange={handleChange}
                 type="email"
                 placeholder="Enter email address"
                 error={errors.email}
@@ -273,8 +236,8 @@ const EditUserForm: React.FC = () => {
               <FormField
                 label="Phone Number *"
                 name="phone"
-                value={formData.phone}
-                onChange={handleInputChange}
+                value={values.phone}
+                onChange={handleChange}
                 type="tel"
                 placeholder="Enter 10-digit phone number"
                 error={errors.phone}
@@ -286,8 +249,8 @@ const EditUserForm: React.FC = () => {
               <FormField
                 label="Address *"
                 name="address"
-                value={formData.address}
-                onChange={handleInputChange}
+                value={values.address}
+                onChange={handleChange}
                 as="textarea"
                 placeholder="Enter complete address"
                 rows={3}
@@ -299,7 +262,7 @@ const EditUserForm: React.FC = () => {
           </div>
 
           {/* Only show Access Level section for non-student users */}
-          {formData.role !== 'student' && (
+          {values.role !== 'student' && (
             <div className="form-section">
               <h3>Access Level</h3>
               
@@ -308,15 +271,15 @@ const EditUserForm: React.FC = () => {
                 <select
                   id="role"
                   name="role"
-                  value={formData.role}
-                  onChange={handleInputChange}
+                  value={values.role}
+                  onChange={handleChange}
                   className={`form-select ${errors.role ? 'error' : ''}`}
                 >
                   <option value="teacher">Teacher - Educational Access</option>
                   <option value="admin">Admin - Full Access</option>
                 </select>
                 {errors.role && <span className="error-text">{errors.role}</span>}
-                <small className="help-text">{getRoleDescription(formData.role)}</small>
+                <small className="help-text">{getRoleDescription(values.role)}</small>
               </div>
             </div>
           )}
