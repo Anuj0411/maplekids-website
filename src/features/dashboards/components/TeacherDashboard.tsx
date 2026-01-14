@@ -1,100 +1,46 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '@/styles/Dashboard.css';
-import { authService, studentService, attendanceService, Student } from '@/firebase/services';
+import { authService } from '@/firebase/services';
 import { Button } from '@/components/common';
 import BulkAttendanceForm from '@/features/attendance/components/BulkAttendanceForm';
 import AcademicReportsManager from '@/features/reports/components/AcademicReportsManager';
 import RemarksManager from '@/features/reports/components/RemarksManager';
-
-// Use User type from services.ts
-type User = import("@/firebase/services").User;
-
-// Use Student from services.ts
-
-// Remove local Attendance interface. Use imported Attendance type from services.ts
+import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
+import { useUserRole } from '@/hooks/auth/useUserRole';
+import { useStudents } from '@/hooks/data/useStudents';
+import { useAttendance } from '@/hooks/data/useAttendance';
 
 const TeacherDashboard: React.FC = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [students, setStudents] = useState<Student[]>([]);
-  const [attendance, setAttendance] = useState<import("@/firebase/services").Attendance[]>([]);
+  // Use custom hooks for auth and data
+  const { userData: user } = useCurrentUser();
+  const { isTeacher } = useUserRole();
+  const { students } = useStudents();
+  
+  // UI state
   const [selectedClass, setSelectedClass] = useState<string>('all');
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [activeTab, setActiveTab] = useState<'attendance' | 'reports' | 'remarks'>('attendance');
   const navigate = useNavigate();
 
+  // Use attendance hook with date filter only (class filtering is done on students)
+  const { 
+    attendance, 
+    refetch: refetchAttendance
+  } = useAttendance({
+    date: selectedDate ? new Date(selectedDate) : undefined
+  });
+
+  // Check user role on mount and redirect if not teacher
   useEffect(() => {
-    // Get current user from Firebase Auth
-    const fetchUser = async () => {
-      try {
-        console.log('TeacherDashboard: Fetching user data...');
-        const userData = await authService.getCurrentUserData();
-        if (!userData) {
-          console.log('TeacherDashboard: No user data, redirecting to signin');
-          navigate('/signin');
-          return;
-        }
-        if (userData.role !== 'teacher') {
-          console.log('TeacherDashboard: User is not a teacher, redirecting to user dashboard');
-          navigate('/user-dashboard');
-          return;
-        }
-        console.log('TeacherDashboard: User authenticated as teacher:', userData);
-        setUser(userData);
-        
-        // Load students and attendance data
-        console.log('TeacherDashboard: Loading students data...');
-        const studentsData = await studentService.getAllStudents();
-        console.log('TeacherDashboard: Loaded students:', studentsData.length);
-        setStudents(studentsData);
-        
-        // Only load attendance for specific classes, not for 'all'
-        if (selectedClass !== 'all') {
-          console.log('TeacherDashboard: Loading attendance for class:', selectedClass);
-          try {
-            const attendanceData = await attendanceService.getAttendanceByClassAndDate(selectedClass, selectedDate);
-            console.log('TeacherDashboard: Loaded attendance data:', attendanceData);
-            setAttendance(attendanceData ? [attendanceData] : []);
-          } catch (attendanceError) {
-            console.error('Error loading attendance:', attendanceError);
-            setAttendance([]);
-          }
-        } else {
-          console.log('TeacherDashboard: Selected class is "all", setting attendance to empty');
-          setAttendance([]);
-        }
-      } catch (error) {
-        console.error('Error fetching user data:', error);
-        console.error('Error details:', {
-          message: error instanceof Error ? error.message : 'Unknown error',
-          stack: error instanceof Error ? error.stack : undefined
-        });
-        navigate('/signin');
-      }
-    };
-    fetchUser();
-  }, [navigate, selectedClass, selectedDate]);
-
-  const loadAttendanceData = async () => {
-    if (selectedClass !== 'all') {
-      try {
-        const attendanceData = await attendanceService.getAttendanceByClassAndDate(selectedClass, selectedDate);
-        setAttendance(attendanceData ? [attendanceData] : []);
-      } catch (attendanceError) {
-        console.error('Error loading attendance:', attendanceError);
-        setAttendance([]);
-      }
-    } else {
-      setAttendance([]);
+    console.log('TeacherDashboard: Checking user role...');
+    if (user && !isTeacher) {
+      console.log('TeacherDashboard: User is not a teacher, redirecting to user dashboard');
+      navigate('/user-dashboard');
     }
-  };
+  }, [user, isTeacher, navigate]);
 
-
-
-
-
-  // Removed unused loadStudents and loadAttendance functions
-
+  // Handle sign out
   const handleSignOut = async () => {
     await authService.signOut();
     navigate('/');
@@ -241,9 +187,7 @@ const TeacherDashboard: React.FC = () => {
               selectedDate={selectedDate}
               onAttendanceSaved={() => {
                 // Reload attendance data after saving
-                if (selectedClass !== 'all') {
-                  loadAttendanceData();
-                }
+                refetchAttendance();
               }}
             />
           </>

@@ -2,175 +2,115 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { authService } from '@/firebase/services';
+import { useForm, useFormValidation } from '@/hooks';
 import './SignupForm.css';
 import { FormField, Button } from '@/components/common';
-
-interface FormData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-  phone: string;
-  address: string;
-  role: 'admin' | 'teacher' | 'general' | 'guest';
-}
-
-interface FormErrors {
-  firstName?: string;
-  lastName?: string;
-  email?: string;
-  password?: string;
-  confirmPassword?: string;
-  phone?: string;
-  address?: string;
-  role?: string;
-}
 
 const SignupForm: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const [formData, setFormData] = useState<FormData>({
-    firstName: '',
-    lastName: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    phone: '',
-    address: '',
-    role: 'guest'
-  });
-
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [firebaseError, setFirebaseError] = useState<string>('');
-  // Removed unused step tracking - simplified form flow
   const [progress, setProgress] = useState(0);
+  const validation = useFormValidation();
+
+  // Use our custom form hook
+  const { values, errors, handleChange, handleSubmit, isSubmitting } = useForm({
+    initialValues: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      phone: '',
+      address: '',
+      role: 'guest' as 'admin' | 'teacher' | 'general' | 'guest'
+    },
+    validate: (values) => ({
+      firstName: validation.composeValidators(
+        validation.rules.required(t('validation.required')),
+        validation.rules.minLength(2, t('validation.minLength', { min: 2 }))
+      )(values.firstName),
+      
+      lastName: validation.composeValidators(
+        validation.rules.required(t('validation.required')),
+        validation.rules.minLength(2, t('validation.minLength', { min: 2 }))
+      )(values.lastName),
+      
+      email: validation.composeValidators(
+        validation.rules.required(t('validation.required')),
+        validation.rules.email(t('validation.email'))
+      )(values.email),
+      
+      password: validation.composeValidators(
+        validation.rules.required(t('validation.required')),
+        validation.rules.minLength(6, t('validation.minLength', { min: 6 }))
+      )(values.password),
+      
+      confirmPassword: values.password !== values.confirmPassword
+        ? t('validation.passwordMismatch')
+        : validation.rules.required(t('validation.required'))(values.confirmPassword),
+      
+      phone: validation.composeValidators(
+        validation.rules.required(t('validation.required')),
+        validation.rules.phone(t('validation.phoneInvalid'))
+      )(values.phone),
+      
+      address: validation.composeValidators(
+        validation.rules.required(t('validation.required')),
+        validation.rules.minLength(10, t('validation.addressMin'))
+      )(values.address),
+    }),
+    onSubmit: async (values) => {
+      setFirebaseError('');
+
+      try {
+        const userData = {
+          firstName: values.firstName.trim(),
+          lastName: values.lastName.trim(),
+          email: values.email.trim(),
+          phone: values.phone.trim(),
+          address: values.address.trim(),
+          role: values.role
+        };
+
+        await authService.signUp(values.email, values.password, userData);
+        
+        setSubmitSuccess(true);
+        
+        // Redirect to signin after 3 seconds
+        setTimeout(() => {
+          navigate('/signin');
+        }, 3000);
+
+      } catch (error: any) {
+        console.error('Signup error:', error);
+        
+        if (error.code === 'auth/email-already-in-use') {
+          setFirebaseError('An account with this email already exists. Please sign in instead.');
+        } else if (error.code === 'auth/weak-password') {
+          setFirebaseError('Password is too weak. Please choose a stronger password.');
+        } else if (error.code === 'auth/invalid-email') {
+          setFirebaseError('Please enter a valid email address.');
+        } else {
+          setFirebaseError('An error occurred during signup. Please try again.');
+        }
+      }
+    }
+  });
 
   // Calculate progress based on filled fields
   useEffect(() => {
-    const filledFields = Object.values(formData).filter(value => value !== '').length;
-    const totalFields = Object.keys(formData).length;
+    const filledFields = Object.values(values).filter(value => value !== '').length;
+    const totalFields = Object.keys(values).length;
     setProgress((filledFields / totalFields) * 100);
-  }, [formData]);
+  }, [values]);
 
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
-
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = t('validation.required');
-    } else if (formData.firstName.trim().length < 2) {
-      newErrors.firstName = t('validation.minLength', { min: 2 });
-    }
-
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = t('validation.required');
-    } else if (formData.lastName.trim().length < 2) {
-      newErrors.lastName = t('validation.minLength', { min: 2 });
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = t('validation.required');
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = t('validation.email');
-    }
-
-    if (!formData.password) {
-      newErrors.password = t('validation.required');
-    } else if (formData.password.length < 6) {
-      newErrors.password = t('validation.minLength', { min: 6 });
-    }
-
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = t('validation.required');
-    } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = t('validation.passwordMismatch');
-    }
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = t('validation.required');
-    } else if (!/^[0-9]{10}$/.test(formData.phone.replace(/\s/g, ''))) {
-      newErrors.phone = t('validation.phoneInvalid');
-    }
-
-    if (!formData.address.trim()) {
-      newErrors.address = t('validation.required');
-    } else if (formData.address.trim().length < 10) {
-      newErrors.address = t('validation.addressMin');
-    }
-
-    // Role is always 'guest' for new users, no validation needed
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
+  // Clear Firebase error when user starts typing
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value, type } = e.target;
-    const checked = (e.target as HTMLInputElement).checked;
-    
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-
-    // Clear error when user starts typing
-    if (errors[name as keyof FormErrors]) {
-      setErrors(prev => ({ ...prev, [name]: undefined }));
-    }
-
-    // Clear Firebase error when user starts typing
+    handleChange(e);
     if (firebaseError) {
       setFirebaseError('');
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-
-    setIsSubmitting(true);
-    setFirebaseError('');
-
-    try {
-      // Create user with Firebase Auth
-      const userData = {
-        firstName: formData.firstName.trim(),
-        lastName: formData.lastName.trim(),
-        email: formData.email.trim(),
-        phone: formData.phone.trim(),
-        address: formData.address.trim(),
-        role: formData.role
-      };
-
-      await authService.signUp(formData.email, formData.password, userData);
-      
-      setSubmitSuccess(true);
-      
-      // Redirect to signin after 3 seconds
-      setTimeout(() => {
-        navigate('/signin');
-      }, 3000);
-
-    } catch (error: any) {
-      console.error('Signup error:', error);
-      
-      // Handle specific Firebase errors
-      if (error.code === 'auth/email-already-in-use') {
-        setFirebaseError('An account with this email already exists. Please sign in instead.');
-      } else if (error.code === 'auth/weak-password') {
-        setFirebaseError('Password is too weak. Please choose a stronger password.');
-      } else if (error.code === 'auth/invalid-email') {
-        setFirebaseError('Please enter a valid email address.');
-      } else {
-        setFirebaseError('An error occurred during signup. Please try again.');
-      }
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -182,7 +122,7 @@ const SignupForm: React.FC = () => {
     return { strength: 100, color: '#00dd00', text: 'Strong' };
   };
 
-  const passwordStrength = getPasswordStrength(formData.password);
+  const passwordStrength = getPasswordStrength(values.password);
 
   if (submitSuccess) {
     return (
@@ -190,12 +130,12 @@ const SignupForm: React.FC = () => {
         <div className="success-content">
           <div className="success-icon">🎉</div>
           <h2>Account Created Successfully!</h2>
-          <p>Welcome to Maplekids Play School, <strong>{formData.firstName} {formData.lastName}</strong>!</p>
-          <p>Your account has been created with the role: <strong>{formData.role.toUpperCase()}</strong></p>
+          <p>Welcome to Maplekids Play School, <strong>{values.firstName} {values.lastName}</strong>!</p>
+          <p>Your account has been created with the role: <strong>{values.role.toUpperCase()}</strong></p>
           <div className="success-details">
-            <span>📧 Email: {formData.email}</span>
-            <span>📞 Phone: {formData.phone}</span>
-            <span>🏠 Address: {formData.address}</span>
+            <span>📧 Email: {values.email}</span>
+            <span>📞 Phone: {values.phone}</span>
+            <span>🏠 Address: {values.address}</span>
           </div>
           <p className="redirect-message">Redirecting to sign in page...</p>
           <Link to="/signin" className="btn-primary">
@@ -248,7 +188,7 @@ const SignupForm: React.FC = () => {
               <FormField
                 label={`${t('common.firstName')} *`}
                 name="firstName"
-                value={formData.firstName}
+                value={values.firstName}
                 onChange={handleInputChange}
                 type="text"
                 placeholder="Enter your first name"
@@ -258,7 +198,7 @@ const SignupForm: React.FC = () => {
               <FormField
                 label={`${t('common.lastName')} *`}
                 name="lastName"
-                value={formData.lastName}
+                value={values.lastName}
                 onChange={handleInputChange}
                 type="text"
                 placeholder="Enter your last name"
@@ -271,7 +211,7 @@ const SignupForm: React.FC = () => {
               <FormField
                 label={`${t('common.email')} *`}
                 name="email"
-                value={formData.email}
+                value={values.email}
                 onChange={handleInputChange}
                 type="email"
                 placeholder="Enter your email address"
@@ -284,7 +224,7 @@ const SignupForm: React.FC = () => {
               <FormField
                 label={`${t('common.phone')} *`}
                 name="phone"
-                value={formData.phone}
+                value={values.phone}
                 onChange={handleInputChange}
                 type="tel"
                 placeholder="Enter your 10-digit phone number"
@@ -297,7 +237,7 @@ const SignupForm: React.FC = () => {
               <FormField
                 label={`${t('common.address')} *`}
                 name="address"
-                value={formData.address}
+                value={values.address}
                 onChange={handleInputChange}
                 as="textarea"
                 placeholder="Enter your complete address"
@@ -320,7 +260,7 @@ const SignupForm: React.FC = () => {
                 <FormField
                   label={`${t('common.password')} *`}
                   name="password"
-                  value={formData.password}
+                  value={values.password}
                   onChange={handleInputChange}
                   type="password"
                   placeholder="Create a strong password"
@@ -345,7 +285,7 @@ const SignupForm: React.FC = () => {
               <FormField
                 label={`${t('common.confirmPassword')} *`}
                 name="confirmPassword"
-                value={formData.confirmPassword}
+                value={values.confirmPassword}
                 onChange={handleInputChange}
                 type="password"
                 placeholder="Confirm your password"

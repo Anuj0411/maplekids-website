@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../AuthContext';
+import { useAuth } from '@/hooks/auth/useAuth';
+import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -13,7 +14,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requiredRole, 
   redirectTo = '/signin' 
 }) => {
-  const { currentUser, userData, loading } = useAuth();
+  const { user: currentUser } = useAuth();
+  const { userData, loading } = useCurrentUser();
 
   if (loading) {
     return (

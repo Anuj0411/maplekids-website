@@ -1,47 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { eventService, photoService } from '@/firebase/services';
+import { useEvents } from '@/hooks/data/useEvents';
+import { usePhotos } from '@/hooks/data/usePhotos';
 import './GuestDashboard.css';
-
-// Use Event and Photo types from services.ts
-type Event = any;
-type Photo = any;
 
 const GuestDashboard: React.FC = () => {
   const { t } = useTranslation();
-  const [events, setEvents] = useState<Event[]>([]);
-  const [photos, setPhotos] = useState<Photo[]>([]);
+  
+  // Use custom hooks for data fetching
+  const { events, loading: eventsLoading } = useEvents();
+  const { photos, loading: photosLoading } = usePhotos();
+  
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [eventsData, photosData] = await Promise.all([
-          eventService.getAllEvents(),
-          photoService.getAllPhotos()
-        ]);
-        
-        setEvents(eventsData.slice(0, 6)); // Show only 6 events
-        setPhotos(photosData.slice(0, 8)); // Show only 8 photos
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
+  // Show loading state while either is loading
+  const loading = eventsLoading || photosLoading;
 
   const nextPhoto = () => {
-    setActivePhotoIndex((prev) => (prev + 1) % photos.length);
+    setActivePhotoIndex((prev) => (prev + 1) % displayPhotos.length);
   };
 
   const prevPhoto = () => {
-    setActivePhotoIndex((prev) => (prev - 1 + photos.length) % photos.length);
+    setActivePhotoIndex((prev) => (prev - 1 + displayPhotos.length) % displayPhotos.length);
   };
+
+  // Limit the number of events and photos displayed
+  const displayEvents = events.slice(0, 6); // Show only 6 events
+  const displayPhotos = photos.slice(0, 8); // Show only 8 photos
 
   if (loading) {
     return (
@@ -77,7 +62,7 @@ const GuestDashboard: React.FC = () => {
           <div className="stat-card">
             <div className="stat-icon">📅</div>
             <div className="stat-content">
-              <h3>{events.length}</h3>
+              <h3>{displayEvents.length}</h3>
               <p>{t('dashboard.guest.stats.totalEvents')}</p>
             </div>
           </div>
@@ -85,7 +70,7 @@ const GuestDashboard: React.FC = () => {
           <div className="stat-card">
             <div className="stat-icon">🖼️</div>
             <div className="stat-content">
-              <h3>{photos.length}</h3>
+              <h3>{displayPhotos.length}</h3>
               <p>{t('dashboard.guest.stats.totalPhotos')}</p>
             </div>
           </div>
@@ -108,7 +93,7 @@ const GuestDashboard: React.FC = () => {
         </div>
         
         <div className="events-grid">
-          {events.map((event, index) => (
+          {displayEvents.map((event, index) => (
             <div key={event.id || index} className="event-card">
               <div className="event-icon">🎉</div>
               <div className="event-content">
@@ -134,9 +119,9 @@ const GuestDashboard: React.FC = () => {
         
         <div className="gallery-container">
           <div className="main-photo">
-            {photos.length > 0 && (
+            {displayPhotos.length > 0 && (
               <img 
-                src={photos[activePhotoIndex]?.imageUrl} 
+                src={displayPhotos[activePhotoIndex]?.imageUrl} 
                 alt="School"
                 className="main-photo-img"
               />
@@ -148,7 +133,7 @@ const GuestDashboard: React.FC = () => {
           </div>
           
           <div className="photo-thumbnails">
-            {photos.map((photo, index) => (
+            {displayPhotos.map((photo, index) => (
               <div 
                 key={photo.id || index}
                 className={`thumbnail ${index === activePhotoIndex ? 'active' : ''}`}

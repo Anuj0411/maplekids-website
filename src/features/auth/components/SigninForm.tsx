@@ -1,119 +1,80 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '@/firebase/services';
+import { useForm, useFormValidation } from '@/hooks';
 import './SigninForm.css';
-
-interface FormData {
-  email: string;
-  password: string;
-}
-
-interface FormErrors {
-  email?: string;
-  password?: string;
-}
 
 const SigninForm: React.FC = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState<FormData>({
-    email: '',
-    password: ''
+  const [firebaseError, setFirebaseError] = useState<string>('');
+  const validation = useFormValidation();
+
+  // Use our custom form hook
+  const { values, errors, handleChange, handleSubmit, isSubmitting } = useForm({
+    initialValues: {
+      email: '',
+      password: ''
+    },
+    validate: (values) => ({
+      email: validation.composeValidators(
+        validation.rules.required('Email is required'),
+        validation.rules.email('Please enter a valid email address')
+      )(values.email),
+      password: validation.rules.required('Password is required')(values.password),
+    }),
+    onSubmit: async (values) => {
+      setFirebaseError('');
+
+      try {
+        // Sign in with Firebase
+        await authService.signIn(values.email, values.password);
+        
+        // Get user data to determine role and redirect
+        const userData = await authService.getCurrentUserData();
+        
+        if (userData) {
+          // Redirect based on user role
+          switch (userData.role) {
+            case 'admin':
+              navigate('/admin-dashboard');
+              break;
+            case 'teacher':
+              navigate('/teacher-dashboard');
+              break;
+            case 'student':
+              navigate('/student-dashboard');
+              break;
+            default:
+              navigate('/student-dashboard');
+          }
+        } else {
+          navigate('/student-dashboard');
+        }
+
+      } catch (error: any) {
+        console.error('Signin error:', error);
+        
+        // Handle specific Firebase errors
+        if (error.code === 'auth/user-not-found') {
+          setFirebaseError('No account found with this email. Please sign up first.');
+        } else if (error.code === 'auth/wrong-password') {
+          setFirebaseError('Incorrect password. Please try again.');
+        } else if (error.code === 'auth/invalid-email') {
+          setFirebaseError('Please enter a valid email address.');
+        } else if (error.code === 'auth/too-many-requests') {
+          setFirebaseError('Too many failed attempts. Please try again later.');
+        } else {
+          setFirebaseError('An error occurred during sign in. Please try again.');
+        }
+      }
+    }
   });
 
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [firebaseError, setFirebaseError] = useState<string>('');
-
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
-
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
-    }
-
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
+  // Clear Firebase error when user starts typing
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-
-    // Clear error when user starts typing
-    if (errors[name as keyof FormErrors]) {
-      setErrors(prev => ({ ...prev, [name]: undefined }));
-    }
-
-    // Clear Firebase error when user starts typing
+    handleChange(e);
     if (firebaseError) {
       setFirebaseError('');
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-
-    setIsSubmitting(true);
-    setFirebaseError('');
-
-    try {
-      // Sign in with Firebase
-      await authService.signIn(formData.email, formData.password);
-      
-      // Get user data to determine role and redirect
-      const userData = await authService.getCurrentUserData();
-      
-      if (userData) {
-        // Redirect based on user role
-        switch (userData.role) {
-          case 'admin':
-            navigate('/admin-dashboard');
-            break;
-          case 'teacher':
-            navigate('/teacher-dashboard');
-            break;
-          case 'student':
-            navigate('/student-dashboard');
-            break;
-          default:
-            navigate('/student-dashboard'); // Default to student dashboard
-        }
-      } else {
-        // Fallback redirect
-        navigate('/student-dashboard');
-      }
-
-    } catch (error: any) {
-      console.error('Signin error:', error);
-      
-      // Handle specific Firebase errors
-      if (error.code === 'auth/user-not-found') {
-        setFirebaseError('No account found with this email. Please sign up first.');
-      } else if (error.code === 'auth/wrong-password') {
-        setFirebaseError('Incorrect password. Please try again.');
-      } else if (error.code === 'auth/invalid-email') {
-        setFirebaseError('Please enter a valid email address.');
-      } else if (error.code === 'auth/too-many-requests') {
-        setFirebaseError('Too many failed attempts. Please try again later.');
-      } else {
-        setFirebaseError('An error occurred during sign in. Please try again.');
-      }
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -139,7 +100,7 @@ const SigninForm: React.FC = () => {
               type="email"
               id="email"
               name="email"
-              value={formData.email}
+              value={values.email}
               onChange={handleInputChange}
               className={errors.email ? 'error' : ''}
               placeholder="Enter your email address"
@@ -154,7 +115,7 @@ const SigninForm: React.FC = () => {
               type="password"
               id="password"
               name="password"
-              value={formData.password}
+              value={values.password}
               onChange={handleInputChange}
               className={errors.password ? 'error' : ''}
               placeholder="Enter your password"
