@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Card, Modal } from '@/components/common';
-import { userService } from '@/firebase/services';
+import { useUsers } from '@/hooks/data/useUsers';
 import './BulkUserCreationModal.css';
 
 interface BulkUser {
@@ -24,6 +24,7 @@ interface BulkUserCreationModalProps {
 }
 
 const BulkUserCreationModal: React.FC<BulkUserCreationModalProps> = ({ isOpen, onClose, onUsersCreated }) => {
+  const { addUser } = useUsers({ autoFetch: false });
   const [step, setStep] = useState<'type' | 'template' | 'review' | 'creating' | 'success'>('type');
   const [userType, setUserType] = useState<'student' | 'teacher'>('student');
   const [quantity, setQuantity] = useState<number>(5);
@@ -174,7 +175,7 @@ const BulkUserCreationModal: React.FC<BulkUserCreationModalProps> = ({ isOpen, o
             })
           };
 
-          await userService.createUser(user.email, user.password, userData);
+          await addUser(user.email, user.password, userData);
           results.successful++;
         } catch (error: any) {
           results.failed++;

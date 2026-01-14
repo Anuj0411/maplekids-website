@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Button, Card, Modal } from '@/components/common';
-
+import { useUsers } from '@/hooks/data/useUsers';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import './ExcelBulkUserCreationModal.css';
@@ -31,6 +31,7 @@ interface ExcelBulkUserCreationModalProps {
 }
 
 const ExcelBulkUserCreationModal: React.FC<ExcelBulkUserCreationModalProps> = ({ isOpen, onClose, onUsersCreated }) => {
+  const { addUser } = useUsers({ autoFetch: false });
   const [step, setStep] = useState<'type' | 'download' | 'upload' | 'review' | 'creating' | 'success'>('type');
   const [userType, setUserType] = useState<'student' | 'teacher'>('student');
   const [users, setUsers] = useState<ExcelUser[]>([]);
@@ -42,14 +43,6 @@ const ExcelBulkUserCreationModal: React.FC<ExcelBulkUserCreationModalProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const classes = ['play', 'nursery', 'lkg', 'ukg', '1st'];
-
-  // Convert MM/DD/YYYY to ISO date string for database storage
-  const convertDateFormat = (dateString: string): string => {
-    if (!dateString) return '';
-    const [month, day, year] = dateString.split('/').map(Number);
-    const date = new Date(year, month - 1, day);
-    return date.toISOString().split('T')[0]; // Returns YYYY-MM-DD format
-  };
 
   // Format date for display (ensures proper MM/DD/YYYY format)
   const formatDateForDisplay = (dateString: string): string => {
@@ -466,80 +459,6 @@ const ExcelBulkUserCreationModal: React.FC<ExcelBulkUserCreationModalProps> = ({
     }));
   };
 
-  const createUserForBulk = async (email: string, password: string, userData: any) => {
-    const { auth, db } = await import('../../../firebase/config');
-    const { createUserWithEmailAndPassword, signOut } = await import('firebase/auth');
-    const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
-
-    try {
-      console.log('Creating user with data:', { email, role: userData.role, rollNumber: userData.rollNumber });
-      
-      const currentAdmin = auth.currentUser;
-      if (!currentAdmin) {
-        throw new Error('No admin user is currently signed in');
-      }
-      const adminUid = currentAdmin.uid;
-
-      console.log('Creating Firebase Auth account...');
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const firebaseUser = userCredential.user;
-      console.log('Firebase Auth account created:', firebaseUser.uid);
-
-      const documentId = userData.role === 'student' && userData.rollNumber 
-        ? userData.rollNumber 
-        : firebaseUser.uid;
-
-      const userDocData = {
-        ...userData,
-        uid: firebaseUser.uid,
-        email: email,
-        createdAt: serverTimestamp(),
-        createdBy: adminUid,
-        needsAuthCreation: false,
-      };
-      
-      console.log('Saving user document to Firestore:', {
-        ...userDocData,
-        password: '[HIDDEN]'
-      });
-      await setDoc(doc(db, 'users', documentId), userDocData);
-      console.log('User document saved successfully');
-
-      if (userData.role === 'student' && userData.class && userData.rollNumber) {
-        const studentData = {
-          firstName: userData.firstName,
-          lastName: userData.lastName,
-          email: email,
-          phone: userData.phone,
-          address: userData.address,
-          class: userData.class,
-          rollNumber: userData.rollNumber,
-          age: userData.age,
-          fatherName: userData.fatherName,
-          motherName: userData.motherName,
-          admissionDate: convertDateFormat(userData.admissionDate), // Convert to YYYY-MM-DD format
-          userId: userData.rollNumber,
-          authUid: firebaseUser.uid,
-          createdAt: serverTimestamp(),
-          createdBy: adminUid,
-        };
-        console.log('Saving student document to Firestore:', studentData);
-        await setDoc(doc(db, 'students', userData.rollNumber), studentData);
-        console.log('Student document saved successfully');
-      }
-
-      // Sign out the newly created user
-      await signOut(auth);
-      console.log('Signed out newly created user');
-      
-      console.log('User created successfully with Firebase Auth account and Firestore records.');
-      
-    } catch (error) {
-      console.error('Error creating user:', error);
-      throw error;
-    }
-  };
-
   const handleCreateUsers = async () => {
     const allValid = users.every(user => user.isValid);
     if (!allValid) {
@@ -598,7 +517,7 @@ const ExcelBulkUserCreationModal: React.FC<ExcelBulkUserCreationModalProps> = ({
           };
 
           console.log('User data being sent:', { ...userData, password: '[HIDDEN]' });
-          await createUserForBulk(user.email, user.password, userData);
+          await addUser(user.email, user.password, userData);
           console.log(`✅ Successfully created ${userType}: ${user.email}`);
           results.successful++;
           
