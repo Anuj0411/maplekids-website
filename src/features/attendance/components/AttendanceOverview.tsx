@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { attendanceService } from '@/firebase/services';
 import { Button } from '@/components/common';
 import './AttendanceOverview.css';
@@ -42,48 +42,52 @@ const AttendanceOverview: React.FC<AttendanceOverviewProps> = ({
   // Monthly view state
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
-    
-  const loadAttendanceStats = async (date: string) => {
+
+  // Consolidated data fetching with useCallback for memoization
+  const loadAttendanceStats = useCallback(async (date: string) => {
     setLoading(true);
     setError(null);
     try {
       const stats = await attendanceService.getAttendanceStatistics(date);
       setAttendanceStats(stats);
+      setDateRangeStats(null);
     } catch (err) {
       console.error('Error loading attendance stats:', err);
       setError('Failed to load attendance statistics');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const loadDateRangeStats = async (start: string, end: string) => {
+  const loadDateRangeStats = useCallback(async (start: string, end: string) => {
     setLoading(true);
     setError(null);
     try {
       const stats = await attendanceService.getAttendanceStatisticsByDateRange(start, end);
       setDateRangeStats(stats);
+      setAttendanceStats({});
     } catch (err) {
       console.error('Error loading date range stats:', err);
       setError('Failed to load date range statistics');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const loadMonthlyStats = async (year: number, month: number) => {
+  const loadMonthlyStats = useCallback(async (year: number, month: number) => {
     setLoading(true);
     setError(null);
     try {
       const stats = await attendanceService.getAttendanceStatisticsByMonth(year, month);
       setDateRangeStats(stats);
+      setAttendanceStats({});
     } catch (err) {
       console.error('Error loading monthly stats:', err);
       setError('Failed to load monthly statistics');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (viewMode === 'daily') {
@@ -93,7 +97,7 @@ const AttendanceOverview: React.FC<AttendanceOverviewProps> = ({
     } else if (viewMode === 'monthly') {
       loadMonthlyStats(selectedYear, selectedMonth);
     }
-  }, [selectedDate, viewMode, startDate, endDate, selectedYear, selectedMonth]);
+  }, [selectedDate, viewMode, startDate, endDate, selectedYear, selectedMonth, loadAttendanceStats, loadDateRangeStats, loadMonthlyStats]);
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onDateChange(e.target.value);

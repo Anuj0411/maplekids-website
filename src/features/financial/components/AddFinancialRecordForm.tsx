@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '@/styles/Forms.css';
-import { financialService, studentService, Student } from '@/firebase/services';
+import { financialService, Student } from '@/firebase/services';
 import { FormField, Button } from '@/components/common';
+import { useForm } from '@/hooks/form/useForm';
+import { useFormValidation } from '@/hooks/form/useFormValidation';
+import { useStudents } from '@/hooks/data/useStudents';
 
 interface FinancialFormData {
   type: 'income' | 'expense';
@@ -17,76 +20,13 @@ interface FinancialFormData {
   academicYear?: string;
 }
 
-interface FormErrors {
-  [key: string]: string;
-}
-
 const AddFinancialRecordForm: React.FC = () => {
-  const [formData, setFormData] = useState<FinancialFormData>({
-    type: 'income',
-    category: '',
-    amount: 0,
-    description: '',
-    date: new Date().toISOString().split('T')[0],
-    receiptNumber: '',
-    studentName: '',
-    studentClass: '',
-    month: '',
-    academicYear: ''
-  });
-
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [students, setStudents] = useState<Student[]>([]);
-  const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
-  const [isLoadingStudents, setIsLoadingStudents] = useState(false);
-
   const navigate = useNavigate();
-
-  // Load students when component mounts
-  useEffect(() => {
-    const loadStudents = async () => {
-      try {
-        setIsLoadingStudents(true);
-        const studentsData = await studentService.getAllStudents();
-        setStudents(studentsData);
-      } catch (error) {
-        console.error('Error loading students:', error);
-      } finally {
-        setIsLoadingStudents(false);
-      }
-    };
-
-    loadStudents();
-  }, []);
-
-  // Filter students when class changes
-  useEffect(() => {
-    if (formData.studentClass && students.length > 0) {
-      const filtered = students.filter(student => student.class === formData.studentClass);
-      setFilteredStudents(filtered);
-      
-      // Clear student name if it's not in the filtered list
-      if (formData.studentName && !filtered.some(s => s.firstName + ' ' + s.lastName === formData.studentName)) {
-        setFormData(prev => ({ ...prev, studentName: '' }));
-      }
-    } else {
-      setFilteredStudents([]);
-    }
-  }, [formData.studentClass, formData.studentName, students]);
-
-  const initialFormData: FinancialFormData = {
-    type: 'income',
-    category: '',
-    amount: 0,
-    description: '',
-    date: new Date().toISOString().split('T')[0],
-    receiptNumber: '',
-    studentName: '',
-    studentClass: '',
-    month: '',
-    academicYear: ''
-  };
+  const validation = useFormValidation();
+  
+  // Use custom hook for students data
+  const { students, loading: isLoadingStudents } = useStudents();
+  const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
 
   const incomeCategories = [
     'Tuition Fees',
@@ -126,98 +66,89 @@ const AddFinancialRecordForm: React.FC = () => {
     'Other Expenses'
   ];
 
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
-
-    if (!formData.category.trim()) {
-      newErrors.category = 'Category is required';
+  // Custom validator for student-related income categories
+  const validateStudentInfo = (values: FinancialFormData) => {
+    const studentRelatedCategories = ['Tuition Fees', 'Admission Fees', 'Transportation Fees', 'Van Fees'];
+    if (values.type === 'income' && studentRelatedCategories.includes(values.category)) {
+      return {
+        studentClass: validation.rules.required('Student class is required for this income category')(values.studentClass),
+        studentName: validation.rules.required('Student name is required for this income category')(values.studentName),
+      };
     }
+    return {};
+  };
 
-    if (formData.amount <= 0) {
-      newErrors.amount = 'Amount must be greater than 0';
-    }
+  const { values, errors, handleChange, handleSubmit, isSubmitting } = useForm<FinancialFormData>({
+    initialValues: {
+      type: 'income',
+      category: '',
+      amount: 0,
+      description: '',
+      date: new Date().toISOString().split('T')[0],
+      receiptNumber: '',
+      studentName: '',
+      studentClass: '',
+      month: '',
+      academicYear: ''
+    },
+    validate: (values) => {
+      const baseErrors: Record<string, string | undefined> = {
+        category: validation.rules.required('Category is required')(values.category),
+        amount: values.amount <= 0 ? 'Amount must be greater than 0' : undefined,
+        description: validation.composeValidators(
+          validation.rules.required('Description is required'),
+          validation.rules.minLength(10, 'Description must be at least 10 characters')
+        )(values.description),
+        date: validation.rules.required('Date is required')(values.date),
+      };
 
-    if (!formData.description.trim()) {
-      newErrors.description = 'Description is required';
-    } else if (formData.description.length < 10) {
-      newErrors.description = 'Description must be at least 10 characters';
-    }
-
-    if (!formData.date) {
-      newErrors.date = 'Date is required';
-    }
-
-    if (formData.type === 'income' && !formData.receiptNumber.trim()) {
-      newErrors.receiptNumber = 'Receipt number is required for income records';
-    }
-
-    // Validate student information for income records with student-related categories
-    if (formData.type === 'income' && ['Tuition Fees', 'Admission Fees', 'Transportation Fees', 'Van Fees'].includes(formData.category)) {
-      if (!formData.studentClass.trim()) {
-        newErrors.studentClass = 'Student class is required for this income category';
+      // Conditional validation for income type
+      if (values.type === 'income') {
+        baseErrors.receiptNumber = validation.rules.required('Receipt number is required for income records')(values.receiptNumber);
       }
-      if (!formData.studentName.trim()) {
-        newErrors.studentName = 'Student name is required for this income category';
+
+      // Add student-specific validation
+      const studentErrors = validateStudentInfo(values);
+
+      return { ...baseErrors, ...studentErrors };
+    },
+    onSubmit: async (values) => {
+      try {
+        // Save to Firebase
+        await financialService.addFinancialRecord({
+          type: values.type,
+          category: values.category,
+          amount: values.amount,
+          description: values.description,
+          date: values.date,
+          receiptNumber: values.receiptNumber,
+          studentName: values.studentName,
+          studentClass: values.studentClass,
+          month: values.month,
+          academicYear: values.academicYear
+        });
+
+        // Redirect after successful submission
+        setTimeout(() => {
+          navigate('/admin-dashboard');
+        }, 2000);
+        
+      } catch (error) {
+        console.error('Error adding financial record:', error);
+        // Optionally show error in UI
       }
     }
+  });
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === 'amount' ? parseFloat(value) || 0 : value
-    }));
-
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
+  // Filter students when class changes
+  useEffect(() => {
+    if (values.studentClass && students.length > 0) {
+      const filtered = students.filter(student => student.class === values.studentClass);
+      setFilteredStudents(filtered);
+    } else {
+      setFilteredStudents([]);
     }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      // Save to Firebase instead of localStorage
-      await financialService.addFinancialRecord({
-        type: formData.type,
-        category: formData.category,
-        amount: formData.amount,
-        description: formData.description,
-        date: formData.date,
-        receiptNumber: formData.receiptNumber,
-        studentName: formData.studentName,
-        studentClass: formData.studentClass,
-        month: formData.month,
-        academicYear: formData.academicYear
-      });
-
-      setFormData(initialFormData);
-      // Redirect after successful submission
-      setTimeout(() => {
-        navigate('/admin-dashboard');
-      }, 2000);
-      
-    } catch (error) {
-      console.error('Error adding financial record:', error);
-  // Optionally show error in UI
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  }, [values.studentClass, students]);
 
   const handleCancel = () => {
     navigate('/admin-dashboard');
@@ -241,8 +172,8 @@ const AddFinancialRecordForm: React.FC = () => {
                 <FormField
                   label="Record Type *"
                   name="type"
-                  value={formData.type}
-                  onChange={handleInputChange}
+                  value={values.type}
+                  onChange={handleChange}
                   as="select"
                   options={[{ value: 'income', label: '💰 Income' }, { value: 'expense', label: '💸 Expense' }]}
                   className="form-select"
@@ -253,10 +184,10 @@ const AddFinancialRecordForm: React.FC = () => {
                 <FormField
                   label="Category *"
                   name="category"
-                  value={formData.category}
-                  onChange={handleInputChange}
+                  value={values.category}
+                  onChange={handleChange}
                   as="select"
-                  options={formData.type === 'income' ? incomeCategories.map(cat => ({ value: cat, label: cat })) : expenseCategories.map(cat => ({ value: cat, label: cat }))}
+                  options={values.type === 'income' ? incomeCategories.map(cat => ({ value: cat, label: cat })) : expenseCategories.map(cat => ({ value: cat, label: cat }))}
                   error={errors.category}
                   className={errors.category ? 'error' : ''}
                 />
@@ -271,8 +202,8 @@ const AddFinancialRecordForm: React.FC = () => {
                 <FormField
                   label="Amount (₹) *"
                   name="amount"
-                  value={formData.amount}
-                  onChange={handleInputChange}
+                  value={values.amount}
+                  onChange={handleChange}
                   type="number"
                   min="0.01"
                   step="0.01"
@@ -286,8 +217,8 @@ const AddFinancialRecordForm: React.FC = () => {
                 <FormField
                   label="Date *"
                   name="date"
-                  value={formData.date}
-                  onChange={handleInputChange}
+                  value={values.date}
+                  onChange={handleChange}
                   type="date"
                   max={new Date().toISOString().split('T')[0]}
                   error={errors.date}
@@ -300,8 +231,8 @@ const AddFinancialRecordForm: React.FC = () => {
               <FormField
                 label="Description *"
                 name="description"
-                value={formData.description}
-                onChange={handleInputChange}
+                value={values.description}
+                onChange={handleChange}
                 as="textarea"
                 placeholder="Provide detailed description of the transaction"
                 rows={3}
@@ -312,7 +243,7 @@ const AddFinancialRecordForm: React.FC = () => {
           </div>
 
           {/* Additional fields for tuition fees and detailed records */}
-          {(formData.type === 'income' && ['Tuition Fees', 'Admission Fees', 'Transportation Fees', 'Van Fees'].includes(formData.category)) && (
+          {(values.type === 'income' && ['Tuition Fees', 'Admission Fees', 'Transportation Fees', 'Van Fees'].includes(values.category)) && (
             <div className="form-section">
               <h3>👨‍🎓 Student Information</h3>
               <div className="form-row">
@@ -320,8 +251,8 @@ const AddFinancialRecordForm: React.FC = () => {
                   <FormField
                     label="Student Class *"
                     name="studentClass"
-                    value={formData.studentClass || ''}
-                    onChange={handleInputChange}
+                    value={values.studentClass || ''}
+                    onChange={handleChange}
                     as="select"
                     options={[
                       { value: '', label: 'Select Class First' },
@@ -342,8 +273,8 @@ const AddFinancialRecordForm: React.FC = () => {
                   <FormField
                     label="Student Name *"
                     name="studentName"
-                    value={formData.studentName || ''}
-                    onChange={handleInputChange}
+                    value={values.studentName || ''}
+                    onChange={handleChange}
                     as="select"
                     options={[
                       { value: '', label: filteredStudents.length === 0 ? 'Select Class First' : 'Select Student' },
@@ -352,16 +283,16 @@ const AddFinancialRecordForm: React.FC = () => {
                         label: `${student.firstName} ${student.lastName} (Roll: ${student.rollNumber})`
                       }))
                     ]}
-                    disabled={!formData.studentClass || isLoadingStudents}
+                    disabled={!values.studentClass || isLoadingStudents}
                     error={errors.studentName}
                     required
                   />
                   {isLoadingStudents && (
                     <small className="form-help">Loading students...</small>
                   )}
-                  {formData.studentClass && filteredStudents.length === 0 && !isLoadingStudents && (
+                  {values.studentClass && filteredStudents.length === 0 && !isLoadingStudents && (
                     <small className="form-help text-warning">
-                      No students found in {formData.studentClass} class
+                      No students found in {values.studentClass} class
                     </small>
                   )}
                 </div>
@@ -371,8 +302,8 @@ const AddFinancialRecordForm: React.FC = () => {
                   <FormField
                     label="Month"
                     name="month"
-                    value={formData.month || ''}
-                    onChange={handleInputChange}
+                    value={values.month || ''}
+                    onChange={handleChange}
                     as="select"
                     options={[
                       { value: '', label: 'Select Month' },
@@ -395,8 +326,8 @@ const AddFinancialRecordForm: React.FC = () => {
                   <FormField
                     label="Academic Year"
                     name="academicYear"
-                    value={formData.academicYear || ''}
-                    onChange={handleInputChange}
+                    value={values.academicYear || ''}
+                    onChange={handleChange}
                     type="text"
                     placeholder="e.g., 2024-25"
                   />
@@ -409,17 +340,17 @@ const AddFinancialRecordForm: React.FC = () => {
             <h3>🧾 Receipt Information</h3>
             <div className="form-group">
               <FormField
-                label={formData.type === 'income' ? 'Receipt Number *' : 'Reference Number (Optional)'}
+                label={values.type === 'income' ? 'Receipt Number *' : 'Reference Number (Optional)'}
                 name="receiptNumber"
-                value={formData.receiptNumber}
-                onChange={handleInputChange}
+                value={values.receiptNumber}
+                onChange={handleChange}
                 type="text"
-                placeholder={formData.type === 'income' ? 'Enter receipt number' : 'Enter reference number'}
+                placeholder={values.type === 'income' ? 'Enter receipt number' : 'Enter reference number'}
                 error={errors.receiptNumber}
                 className={errors.receiptNumber ? 'error' : ''}
               />
               <small className="form-help">
-                {formData.type === 'income' 
+                {values.type === 'income' 
                   ? 'Receipt number is required for income records to track payments'
                   : 'Reference number helps track expense records and invoices'
                 }
@@ -432,38 +363,38 @@ const AddFinancialRecordForm: React.FC = () => {
             <div className="summary-grid">
               <div className="summary-item">
                 <span className="summary-label">Type:</span>
-                <span className={`summary-value ${formData.type}`}>
-                  {formData.type === 'income' ? '💰 Income' : '💸 Expense'}
+                <span className={`summary-value ${values.type}`}>
+                  {values.type === 'income' ? '💰 Income' : '💸 Expense'}
                 </span>
               </div>
               <div className="summary-item">
                 <span className="summary-label">Category:</span>
-                <span className="summary-value">{formData.category || 'Not selected'}</span>
+                <span className="summary-value">{values.category || 'Not selected'}</span>
               </div>
               <div className="summary-item">
                 <span className="summary-label">Amount:</span>
-                <span className="summary-value amount">₹{formData.amount.toLocaleString()}</span>
+                <span className="summary-value amount">₹{values.amount.toLocaleString()}</span>
               </div>
               <div className="summary-item">
                 <span className="summary-label">Date:</span>
-                <span className="summary-value">{formData.date ? new Date(formData.date).toLocaleDateString() : 'Not selected'}</span>
+                <span className="summary-value">{values.date ? new Date(values.date).toLocaleDateString() : 'Not selected'}</span>
               </div>
-              {formData.studentName && (
+              {values.studentName && (
                 <div className="summary-item">
                   <span className="summary-label">Student:</span>
-                  <span className="summary-value">{formData.studentName} ({formData.studentClass})</span>
+                  <span className="summary-value">{values.studentName} ({values.studentClass})</span>
                 </div>
               )}
-              {formData.month && (
+              {values.month && (
                 <div className="summary-item">
                   <span className="summary-label">Month:</span>
-                  <span className="summary-value">{formData.month}</span>
+                  <span className="summary-value">{values.month}</span>
                 </div>
               )}
-              {formData.academicYear && (
+              {values.academicYear && (
                 <div className="summary-item">
                   <span className="summary-label">Academic Year:</span>
-                  <span className="summary-value">{formData.academicYear}</span>
+                  <span className="summary-value">{values.academicYear}</span>
                 </div>
               )}
             </div>

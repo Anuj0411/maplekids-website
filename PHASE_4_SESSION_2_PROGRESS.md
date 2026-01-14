@@ -36,6 +36,14 @@
    - Removed manual isSubmitting state
    - Clean form reset with reset() function
 
+4. [X] **AddEventForm.tsx** (319 lines → 285 lines, -34 lines, -10.7%)
+   - Hooks: useForm, useFormValidation
+   - Replaced manual form state (6 fields) with useForm hook
+   - Replaced ~36 lines of validation logic with composed validators
+   - Custom future date validator
+   - Simplified error handling
+   - Removed FormErrors interface (now inferred)
+
 ### Student Components
 3. [ ] **BulkUserCreationModal.tsx** (586 lines)
    - Hooks: useModal, useForm, useFormValidation
@@ -56,9 +64,9 @@
 
 | Metric | Value |
 |--------|-------|
-| Components Migrated | 2/8 (25%) |
-| Lines Removed | 32 (10 + 22) |
-| Average Reduction | 5.4% |
+| Components Migrated | 3/8 (37.5%) |
+| Lines Removed | 66 (10 + 22 + 34) |
+| Average Reduction | 7.7% |
 | Hooks Used | 4 (useStudents, useCurrentUser, useForm, useFormValidation) |
 | TypeScript Errors | 0 |
 | Status | In Progress |
@@ -66,7 +74,8 @@
 ### Detailed Breakdown
 - **BulkAttendanceForm**: 434 → 424 lines (-10, -2.3%)
 - **WhatsAppEnquiryForm**: 261 → 239 lines (-22, -8.4%)
-- **Total Impact**: 695 → 663 lines (-32 lines, -4.6% average)
+- **AddEventForm**: 319 → 285 lines (-34, -10.7%)
+- **Total Impact**: 1,014 → 948 lines (-66 lines, -6.5% average)
 
 ---
 

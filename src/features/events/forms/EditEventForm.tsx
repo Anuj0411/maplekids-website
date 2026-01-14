@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import '@/styles/Forms.css';
 import { FormField, Button } from '@/components/common';
 import { eventService } from '@/firebase/services';
+import { useForm } from '@/hooks/form/useForm';
+import { useFormValidation } from '@/hooks/form/useFormValidation';
 
 interface EventFormData {
   title: string;
@@ -13,30 +15,72 @@ interface EventFormData {
   isActive: boolean;
 }
 
-interface FormErrors {
-  title?: string;
-  description?: string;
-  date?: string;
-  time?: string;
-  location?: string;
-}
-
 const EditEventForm: React.FC = () => {
   const { eventId } = useParams<{ eventId: string }>();
-  const [formData, setFormData] = useState<EventFormData>({
-    title: '',
-    description: '',
-    date: '',
-    time: '',
-    location: '',
-    isActive: true
-  });
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
+
+  // Custom validator for future dates
+  const validateFutureDate = (dateValue: string): string | undefined => {
+    if (!dateValue) return 'Event date is required';
+    const selectedDate = new Date(dateValue);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (selectedDate < today) {
+      return 'Event date cannot be in the past';
+    }
+    return undefined;
+  };
+
+  const validation = useFormValidation();
+
+  const { values, errors, handleChange, setFieldValue, handleSubmit, isSubmitting } = useForm<EventFormData>({
+    initialValues: {
+      title: '',
+      description: '',
+      date: '',
+      time: '',
+      location: '',
+      isActive: true
+    },
+    validate: (values) => ({
+      title: validation.rules.required('Event title is required')(values.title) ||
+             validation.rules.minLength(3, 'Event title must be at least 3 characters long')(values.title),
+      description: validation.rules.required('Event description is required')(values.description) ||
+                  validation.rules.minLength(10, 'Event description must be at least 10 characters long')(values.description),
+      date: validateFutureDate(values.date),
+      time: validation.rules.required('Event time is required')(values.time),
+      location: validation.rules.required('Event location is required')(values.location),
+    }),
+    onSubmit: async (values) => {
+      try {
+        if (!eventId) {
+          throw new Error('Event ID is required');
+        }
+
+        await eventService.updateEvent(eventId, {
+          title: values.title,
+          description: values.description,
+          date: values.date,
+          time: values.time,
+          location: values.location,
+          isActive: values.isActive
+        });
+
+        setSuccessMessage(`Event "${values.title}" updated successfully.`);
+        setTimeout(() => {
+          navigate('/admin-dashboard');
+        }, 2000);
+      } catch (error) {
+        console.error('Error updating event:', error);
+        setErrorMessage('Failed to update event. Please try again.');
+        setTimeout(() => setErrorMessage(''), 5000);
+        throw error;
+      }
+    }
+  });
 
   useEffect(() => {
     const loadEvent = async () => {
@@ -51,14 +95,13 @@ const EditEventForm: React.FC = () => {
         const event = events.find(e => e.id === eventId);
         
         if (event) {
-          setFormData({
-            title: event.title,
-            description: event.description,
-            date: event.date,
-            time: event.time,
-            location: event.location,
-            isActive: event.isActive
-          });
+          // Use setFieldValue to populate form
+          setFieldValue('title', event.title);
+          setFieldValue('description', event.description);
+          setFieldValue('date', event.date);
+          setFieldValue('time', event.time);
+          setFieldValue('location', event.location);
+          setFieldValue('isActive', event.isActive);
         } else {
           setErrorMessage('Event not found');
         }
@@ -71,97 +114,7 @@ const EditEventForm: React.FC = () => {
     };
 
     loadEvent();
-  }, [eventId]);
-
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
-
-    if (!formData.title.trim()) {
-      newErrors.title = 'Event title is required';
-    } else if (formData.title.trim().length < 3) {
-      newErrors.title = 'Event title must be at least 3 characters long';
-    }
-
-    if (!formData.description.trim()) {
-      newErrors.description = 'Event description is required';
-    } else if (formData.description.trim().length < 10) {
-      newErrors.description = 'Event description must be at least 10 characters long';
-    }
-
-    if (!formData.date) {
-      newErrors.date = 'Event date is required';
-    } else {
-      const selectedDate = new Date(formData.date);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      if (selectedDate < today) {
-        newErrors.date = 'Event date cannot be in the past';
-      }
-    }
-
-    if (!formData.time) {
-      newErrors.time = 'Event time is required';
-    }
-
-    if (!formData.location.trim()) {
-      newErrors.location = 'Event location is required';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value, type } = e.target;
-    const checked = (e.target as HTMLInputElement).checked;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-
-    // Clear error when user starts typing
-    if (errors[name as keyof FormErrors]) {
-      setErrors(prev => ({ ...prev, [name]: undefined }));
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-
-    setIsSubmitting(true);
-    
-    try {
-      if (!eventId) {
-        throw new Error('Event ID is required');
-      }
-
-      await eventService.updateEvent(eventId, {
-        title: formData.title,
-        description: formData.description,
-        date: formData.date,
-        time: formData.time,
-        location: formData.location,
-        isActive: formData.isActive
-      });
-
-      setSuccessMessage(`Event "${formData.title}" updated successfully.`);
-      setTimeout(() => {
-        navigate('/admin-dashboard');
-      }, 2000);
-    } catch (error) {
-      console.error('Error updating event:', error);
-      setErrorMessage('Failed to update event. Please try again.');
-      setTimeout(() => setErrorMessage(''), 5000);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  }, [eventId, setFieldValue]);
 
   const handleCancel = () => {
     navigate('/admin-dashboard');
@@ -177,7 +130,7 @@ const EditEventForm: React.FC = () => {
     );
   }
 
-  if (errorMessage && !formData.title) {
+  if (errorMessage && !values.title) {
     return (
       <div className="form-container">
         <div className="form-card">
@@ -193,7 +146,7 @@ const EditEventForm: React.FC = () => {
       <div className="form-card">
         <div className="form-header">
           <h1>✏️ Edit Event</h1>
-          <p>Update event information for: <strong>{formData.title}</strong></p>
+          <p>Update event information for: <strong>{values.title}</strong></p>
         </div>
 
         <form onSubmit={handleSubmit} className="form">
@@ -206,8 +159,8 @@ const EditEventForm: React.FC = () => {
             <FormField
               label="Event Title"
               name="title"
-              value={formData.title}
-              onChange={handleInputChange}
+              value={values.title}
+              onChange={handleChange}
               type="text"
               placeholder="Enter event title"
               error={errors.title}
@@ -217,8 +170,8 @@ const EditEventForm: React.FC = () => {
             <FormField
               label="Event Description"
               name="description"
-              value={formData.description}
-              onChange={handleInputChange}
+              value={values.description}
+              onChange={handleChange}
               as="textarea"
               placeholder="Describe the event details, activities, and what participants can expect"
               rows={4}
@@ -235,8 +188,8 @@ const EditEventForm: React.FC = () => {
               <FormField
                 label="Event Date"
                 name="date"
-                value={formData.date}
-                onChange={handleInputChange}
+                value={values.date}
+                onChange={handleChange}
                 type="date"
                 min={new Date().toISOString().split('T')[0]}
                 error={errors.date}
@@ -246,8 +199,8 @@ const EditEventForm: React.FC = () => {
               <FormField
                 label="Event Time"
                 name="time"
-                value={formData.time}
-                onChange={handleInputChange}
+                value={values.time}
+                onChange={handleChange}
                 type="time"
                 error={errors.time}
                 required
@@ -257,8 +210,8 @@ const EditEventForm: React.FC = () => {
             <FormField
               label="Event Location"
               name="location"
-              value={formData.location}
-              onChange={handleInputChange}
+              value={values.location}
+              onChange={handleChange}
               type="text"
               placeholder="e.g., School Auditorium, Playground, Classroom 1A"
               error={errors.location}
@@ -274,8 +227,8 @@ const EditEventForm: React.FC = () => {
                 <input
                   type="checkbox"
                   name="isActive"
-                  checked={formData.isActive}
-                  onChange={handleInputChange}
+                  checked={values.isActive}
+                  onChange={handleChange}
                 />
                 <span className="checkmark"></span>
                 Make this event active and visible on the home page
@@ -291,26 +244,26 @@ const EditEventForm: React.FC = () => {
             <div className="summary-grid">
               <div className="summary-item">
                 <span className="summary-label">Title:</span>
-                <span className="summary-value">{formData.title || 'Not specified'}</span>
+                <span className="summary-value">{values.title || 'Not specified'}</span>
               </div>
               <div className="summary-item">
                 <span className="summary-label">Date:</span>
                 <span className="summary-value">
-                  {formData.date ? new Date(formData.date).toLocaleDateString() : 'Not specified'}
+                  {values.date ? new Date(values.date).toLocaleDateString() : 'Not specified'}
                 </span>
               </div>
               <div className="summary-item">
                 <span className="summary-label">Time:</span>
-                <span className="summary-value">{formData.time || 'Not specified'}</span>
+                <span className="summary-value">{values.time || 'Not specified'}</span>
               </div>
               <div className="summary-item">
                 <span className="summary-label">Location:</span>
-                <span className="summary-value">{formData.location || 'Not specified'}</span>
+                <span className="summary-value">{values.location || 'Not specified'}</span>
               </div>
               <div className="summary-item">
                 <span className="summary-label">Status:</span>
                 <span className="summary-value">
-                  {formData.isActive ? '🟢 Active' : '🔴 Inactive'}
+                  {values.isActive ? '🟢 Active' : '🔴 Inactive'}
                 </span>
               </div>
             </div>

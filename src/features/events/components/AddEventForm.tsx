@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import '@/styles/Forms.css';
 import { FormField, Button } from '@/components/common';
 import { eventService } from '@/firebase/services';
+import { useForm } from '@/hooks/form/useForm';
+import { useFormValidation } from '@/hooks/form/useFormValidation';
 
 interface EventFormData {
   title: string;
@@ -13,131 +15,89 @@ interface EventFormData {
   isActive: boolean;
 }
 
-interface FormErrors {
-  title?: string;
-  description?: string;
-  date?: string;
-  time?: string;
-  location?: string;
-  general?: string;
-}
-
 const AddEventForm: React.FC = () => {
-  const [formData, setFormData] = useState<EventFormData>({
-    title: '',
-    description: '',
-    date: '',
-    time: '',
-    location: '',
-    isActive: true
-  });
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
   const navigate = useNavigate();
+  const validation = useFormValidation();
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [generalError, setGeneralError] = useState<string>('');
 
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
-
-    if (!formData.title.trim()) {
-      newErrors.title = 'Event title is required';
-    } else if (formData.title.trim().length < 3) {
-      newErrors.title = 'Event title must be at least 3 characters long';
-    }
-
-    if (!formData.description.trim()) {
-      newErrors.description = 'Event description is required';
-    } else if (formData.description.trim().length < 10) {
-      newErrors.description = 'Event description must be at least 10 characters long';
-    }
-
-    if (!formData.date) {
-      newErrors.date = 'Event date is required';
-    } else {
-      const selectedDate = new Date(formData.date);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      if (selectedDate < today) {
-        newErrors.date = 'Event date cannot be in the past';
-      }
-    }
-
-    if (!formData.time) {
-      newErrors.time = 'Event time is required';
-    }
-
-    if (!formData.location.trim()) {
-      newErrors.location = 'Event location is required';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value, type } = e.target;
-    const checked = (e.target as HTMLInputElement).checked;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-    // Clear error when user starts typing
-    if (errors[name as keyof FormErrors]) {
-      setErrors(prev => ({ ...prev, [name]: undefined }));
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Custom date validator to check if date is not in the past
+  const validateFutureDate = (dateValue: string): string | undefined => {
+    if (!dateValue) return 'Event date is required';
     
-    if (!validateForm()) {
-      return;
+    const selectedDate = new Date(dateValue);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (selectedDate < today) {
+      return 'Event date cannot be in the past';
     }
-
-    setIsSubmitting(true);
-
-    try {
-      console.log('Creating event with data:', formData);
-      
-      // Save to Firebase using eventService
-      const createdEvent = await eventService.addEvent({
-        title: formData.title,
-        description: formData.description,
-        date: formData.date,
-        time: formData.time,
-        location: formData.location,
-        isActive: formData.isActive
-      });
-
-      console.log('Event created successfully:', createdEvent);
-      setSubmitSuccess(true);
-      
-      // Redirect back to admin dashboard after 3 seconds
-      setTimeout(() => {
-        navigate('/admin-dashboard');
-      }, 3000);
-
-    } catch (error: any) {
-      console.error('Error creating event:', error);
-      
-      // Provide more specific error messages
-      let errorMessage = 'Failed to create event. Please try again.';
-      
-      if (error.code === 'permission-denied') {
-        errorMessage = 'Permission denied. Please make sure you are logged in as an admin.';
-      } else if (error.code === 'unavailable') {
-        errorMessage = 'Service temporarily unavailable. Please try again later.';
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      
-      setErrors({ general: errorMessage });
-    } finally {
-      setIsSubmitting(false);
-    }
+    return undefined;
   };
+
+  const { values, errors, handleChange, handleSubmit, isSubmitting } = useForm<EventFormData>({
+    initialValues: {
+      title: '',
+      description: '',
+      date: '',
+      time: '',
+      location: '',
+      isActive: true
+    },
+    validate: (values) => ({
+      title: validation.composeValidators(
+        validation.rules.required('Event title is required'),
+        validation.rules.minLength(3, 'Event title must be at least 3 characters long')
+      )(values.title),
+      description: validation.composeValidators(
+        validation.rules.required('Event description is required'),
+        validation.rules.minLength(10, 'Event description must be at least 10 characters long')
+      )(values.description),
+      date: validateFutureDate(values.date),
+      time: validation.rules.required('Event time is required')(values.time),
+      location: validation.rules.required('Event location is required')(values.location),
+    }),
+    onSubmit: async (values) => {
+      try {
+        console.log('Creating event with data:', values);
+        
+        // Save to Firebase using eventService
+        const createdEvent = await eventService.addEvent({
+          title: values.title,
+          description: values.description,
+          date: values.date,
+          time: values.time,
+          location: values.location,
+          isActive: values.isActive
+        });
+
+        console.log('Event created successfully:', createdEvent);
+        setSubmitSuccess(true);
+        setGeneralError('');
+        
+        // Redirect back to admin dashboard after 3 seconds
+        setTimeout(() => {
+          navigate('/admin-dashboard');
+        }, 3000);
+
+      } catch (error: any) {
+        console.error('Error creating event:', error);
+        
+        // Provide more specific error messages
+        let errorMessage = 'Failed to create event. Please try again.';
+        
+        if (error.code === 'permission-denied') {
+          errorMessage = 'Permission denied. Please make sure you are logged in as an admin.';
+        } else if (error.code === 'unavailable') {
+          errorMessage = 'Service temporarily unavailable. Please try again later.';
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
+        setGeneralError(errorMessage);
+      }
+    }
+  });
 
   const handleCancel = () => {
     navigate('/admin-dashboard');
@@ -153,14 +113,20 @@ const AddEventForm: React.FC = () => {
 
         {!submitSuccess ? (
           <form onSubmit={handleSubmit} className="form">
+            {generalError && (
+              <div className="form-error-message" style={{ marginBottom: '1rem', padding: '1rem', backgroundColor: '#fee', color: '#c33', borderRadius: '4px' }}>
+                {generalError}
+              </div>
+            )}
+            
             <div className="form-section">
               <h3>📝 Event Details</h3>
               
               <FormField
                 label="Event Title"
                 name="title"
-                value={formData.title}
-                onChange={handleInputChange}
+                value={values.title}
+                onChange={handleChange}
                 type="text"
                 placeholder="Enter event title"
                 error={errors.title}
@@ -170,8 +136,8 @@ const AddEventForm: React.FC = () => {
               <FormField
                 label="Event Description"
                 name="description"
-                value={formData.description}
-                onChange={handleInputChange}
+                value={values.description}
+                onChange={handleChange}
                 as="textarea"
                 placeholder="Describe the event details, activities, and what participants can expect"
                 rows={4}
@@ -188,8 +154,8 @@ const AddEventForm: React.FC = () => {
                 <FormField
                   label="Event Date"
                   name="date"
-                  value={formData.date}
-                  onChange={handleInputChange}
+                  value={values.date}
+                  onChange={handleChange}
                   type="date"
                   min={new Date().toISOString().split('T')[0]}
                   error={errors.date}
@@ -199,8 +165,8 @@ const AddEventForm: React.FC = () => {
                 <FormField
                   label="Event Time"
                   name="time"
-                  value={formData.time}
-                  onChange={handleInputChange}
+                  value={values.time}
+                  onChange={handleChange}
                   type="time"
                   error={errors.time}
                   required
@@ -210,8 +176,8 @@ const AddEventForm: React.FC = () => {
               <FormField
                 label="Event Location"
                 name="location"
-                value={formData.location}
-                onChange={handleInputChange}
+                value={values.location}
+                onChange={handleChange}
                 type="text"
                 placeholder="e.g., School Auditorium, Playground, Classroom 1A"
                 error={errors.location}
@@ -227,8 +193,8 @@ const AddEventForm: React.FC = () => {
                   <input
                     type="checkbox"
                     name="isActive"
-                    checked={formData.isActive}
-                    onChange={handleInputChange}
+                    checked={values.isActive}
+                    onChange={handleChange}
                   />
                   <span className="checkmark"></span>
                   Make this event active and visible on the home page
@@ -244,26 +210,26 @@ const AddEventForm: React.FC = () => {
               <div className="summary-grid">
                 <div className="summary-item">
                   <span className="summary-label">Title:</span>
-                  <span className="summary-value">{formData.title || 'Not specified'}</span>
+                  <span className="summary-value">{values.title || 'Not specified'}</span>
                 </div>
                 <div className="summary-item">
                   <span className="summary-label">Date:</span>
                   <span className="summary-value">
-                    {formData.date ? new Date(formData.date).toLocaleDateString() : 'Not specified'}
+                    {values.date ? new Date(values.date).toLocaleDateString() : 'Not specified'}
                   </span>
                 </div>
                 <div className="summary-item">
                   <span className="summary-label">Time:</span>
-                  <span className="summary-value">{formData.time || 'Not specified'}</span>
+                  <span className="summary-value">{values.time || 'Not specified'}</span>
                 </div>
                 <div className="summary-item">
                   <span className="summary-label">Location:</span>
-                  <span className="summary-value">{formData.location || 'Not specified'}</span>
+                  <span className="summary-value">{values.location || 'Not specified'}</span>
                 </div>
                 <div className="summary-item">
                   <span className="summary-label">Status:</span>
                   <span className="summary-value">
-                    {formData.isActive ? '🟢 Active' : '🔴 Inactive'}
+                    {values.isActive ? '🟢 Active' : '🔴 Inactive'}
                   </span>
                 </div>
               </div>
@@ -297,11 +263,11 @@ const AddEventForm: React.FC = () => {
               
               <div className="success-details">
                 <h4>Event Details:</h4>
-                <p><strong>Title:</strong> {formData.title}</p>
-                <p><strong>Date:</strong> {new Date(formData.date).toLocaleDateString()}</p>
-                <p><strong>Time:</strong> {formData.time}</p>
-                <p><strong>Location:</strong> {formData.location}</p>
-                <p><strong>Status:</strong> {formData.isActive ? 'Active' : 'Inactive'}</p>
+                <p><strong>Title:</strong> {values.title}</p>
+                <p><strong>Date:</strong> {new Date(values.date).toLocaleDateString()}</p>
+                <p><strong>Time:</strong> {values.time}</p>
+                <p><strong>Location:</strong> {values.location}</p>
+                <p><strong>Status:</strong> {values.isActive ? 'Active' : 'Inactive'}</p>
               </div>
               
               <div className="redirect-message">
