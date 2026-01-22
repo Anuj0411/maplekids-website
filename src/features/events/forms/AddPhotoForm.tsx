@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '@/styles/Forms.css';
-import { photoService } from '@/firebase/services';
+import { usePhotos } from '@/hooks/data/usePhotos';
 import { FormField, Button } from '@/components/common';
 
 interface PhotoFormData {
@@ -30,6 +30,7 @@ const AddPhotoForm: React.FC = () => {
   const [dragActive, setDragActive] = useState(false);
 
   const navigate = useNavigate();
+  const { uploadPhotoWithMetadata } = usePhotos({ autoFetch: false });
 
   const photoCategories = [
     'School Events',
@@ -203,19 +204,14 @@ const AddPhotoForm: React.FC = () => {
       console.log('File created successfully:', { name: file.name, type: file.type, size: file.size });
       console.log('Uploading file to Firebase Storage...', { name: file.name, type: file.type, size: file.size });
 
-      // Upload the image to Firebase Storage
+      // Upload the image and save metadata to Firestore using hook
       try {
-        const imageUrl = await photoService.uploadPhoto(file);
-        console.log('Image uploaded successfully. Download URL:', imageUrl);
-        
-        // Save the photo record to Firestore
-        await photoService.addPhoto({
+        await uploadPhotoWithMetadata(file, {
           title: formData.title,
           description: formData.description,
-          category: formData.category,
-          imageUrl
+          category: formData.category
         });
-        console.log('Photo record saved to Firestore.');
+        console.log('Photo uploaded and saved successfully.');
         
         setFormData(initialFormData);
         setImagePreview('');

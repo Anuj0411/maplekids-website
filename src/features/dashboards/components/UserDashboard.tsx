@@ -1,38 +1,33 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Dashboard.css';
-import { authService } from '@/firebase/services';
+import { useAuth } from '@/hooks/auth/useAuth';
+import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
+import { useUserRole } from '@/hooks/auth/useUserRole';
 import { Button } from '@/components/common';
 
-type User = import("@/firebase/services").User;
-
 const UserDashboard: React.FC = () => {
-  const [user, setUser] = useState<User | null>(null);
   const navigate = useNavigate();
+  
+  // Use custom hooks for auth and user data
+  const { signOut } = useAuth();
+  const { userData: user } = useCurrentUser();
+  const { isStudent } = useUserRole();
 
+  // Redirect non-student users to appropriate dashboard
   useEffect(() => {
-    const fetchUser = async () => {
-      const userData = await authService.getCurrentUserData();
-      if (!userData) {
-        navigate('/signin');
-        return;
+    if (user && !isStudent) {
+      // Redirect to appropriate dashboard based on role
+      if (user.role === 'admin') {
+        navigate('/admin-dashboard');
+      } else if (user.role === 'teacher') {
+        navigate('/teacher-dashboard');
       }
-      if (userData.role !== 'student') {
-        // Redirect to appropriate dashboard based on role
-        if (userData.role === 'admin') {
-          navigate('/admin-dashboard');
-        } else if (userData.role === 'teacher') {
-          navigate('/teacher-dashboard');
-        }
-        return;
-      }
-      setUser(userData);
-    };
-    fetchUser();
-  }, [navigate]);
+    }
+  }, [user, isStudent, navigate]);
 
   const handleSignOut = async () => {
-    await authService.signOut();
+    await signOut();
     navigate('/');
   };
 

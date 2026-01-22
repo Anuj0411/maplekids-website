@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import type { Photo } from '@/firebase/types';
 import { photoService } from '@/firebase/services';
+import { db, storage } from '@/firebase/config';
 
 interface UsePhotosOptions {
 	category?: string;
@@ -70,11 +73,80 @@ export const usePhotos = (options: UsePhotosOptions = {}) => {
 		fetchPhotos();
 	}, [fetchPhotos]);
 
+	/**
+	 * Upload photo to Firebase Storage
+	 * Returns the download URL
+	 */
+	const uploadPhoto = useCallback(async (file: File): Promise<string> => {
+		try {
+			const storageRef = ref(
+				storage,
+				`photos/${Date.now()}_${file.name}`
+			);
+			const snapshot = await uploadBytes(storageRef, file);
+			const downloadURL = await getDownloadURL(snapshot.ref);
+			return downloadURL;
+		} catch (err: any) {
+			console.error('Error uploading photo to storage:', err);
+			throw new Error(err.message || 'Failed to upload photo to storage');
+		}
+	}, []);
+
+	/**
+	 * Add photo metadata to Firestore
+	 * Includes optimistic update to local state
+	 */
+	const addPhoto = useCallback(async (
+		photoData: Omit<Photo, 'id' | 'uploadedAt'>
+	): Promise<Photo> => {
+		try {
+			const docRef = await addDoc(collection(db, 'photos'), {
+				...photoData,
+				uploadedAt: serverTimestamp(),
+			});
+			
+			const newPhoto = { ...photoData, id: docRef.id } as Photo;
+			
+			// Optimistic update: Add to local state
+			setPhotos(prev => [newPhoto, ...prev]);
+			
+			return newPhoto;
+		} catch (err: any) {
+			console.error('Error adding photo to Firestore:', err);
+			throw new Error(err.message || 'Failed to add photo metadata');
+		}
+	}, []);
+
+	/**
+	 * Convenience method that uploads photo and saves metadata
+	 * Combines uploadPhoto and addPhoto in one call
+	 */
+	const uploadPhotoWithMetadata = useCallback(async (
+		file: File,
+		metadata: Omit<Photo, 'id' | 'uploadedAt' | 'imageUrl'>
+	): Promise<Photo> => {
+		try {
+			// Upload image to Storage
+			const imageUrl = await uploadPhoto(file);
+			
+			// Save metadata to Firestore
+			const photo = await addPhoto({ ...metadata, imageUrl });
+			
+			return photo;
+		} catch (err: any) {
+			console.error('Error uploading photo with metadata:', err);
+			throw new Error(err.message || 'Failed to upload photo');
+		}
+	}, [uploadPhoto, addPhoto]);
+
 	return {
 		photos,
 		loading,
 		error,
 		refetch,
 		fetchPhotos,
+		uploadPhoto,
+		addPhoto,
+		uploadPhotoWithMetadata,
 	};
 };

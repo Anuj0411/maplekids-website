@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '@/styles/Dashboard.css';
-import { authService } from '@/firebase/services';
 import { Button } from '@/components/common';
 import BulkAttendanceForm from '@/features/attendance/components/BulkAttendanceForm';
 import AcademicReportsManager from '@/features/reports/components/AcademicReportsManager';
 import RemarksManager from '@/features/reports/components/RemarksManager';
+import { useAuth } from '@/hooks/auth/useAuth';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useUserRole } from '@/hooks/auth/useUserRole';
 import { useStudents } from '@/hooks/data/useStudents';
@@ -13,6 +13,7 @@ import { useAttendance } from '@/hooks/data/useAttendance';
 
 const TeacherDashboard: React.FC = () => {
   // Use custom hooks for auth and data
+  const { signOut: authSignOut } = useAuth();
   const { userData: user } = useCurrentUser();
   const { isTeacher } = useUserRole();
   const { students } = useStudents();
@@ -28,7 +29,7 @@ const TeacherDashboard: React.FC = () => {
     attendance, 
     refetch: refetchAttendance
   } = useAttendance({
-    date: selectedDate ? new Date(selectedDate) : undefined
+    filterByDate: selectedDate
   });
 
   // Check user role on mount and redirect if not teacher
@@ -42,7 +43,7 @@ const TeacherDashboard: React.FC = () => {
 
   // Handle sign out
   const handleSignOut = async () => {
-    await authService.signOut();
+    await authSignOut();
     navigate('/');
   };
 

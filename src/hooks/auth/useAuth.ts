@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { User as FirebaseUser } from 'firebase/auth';
+import { useState, useEffect, useCallback } from 'react';
+import { User as FirebaseUser, signOut as firebaseSignOut } from 'firebase/auth';
 import { auth } from '@/firebase/config';
 
 /**
@@ -38,9 +38,23 @@ export const useAuth = () => {
 		return () => unsubscribe();
 	}, []);
 
+	/**
+	 * Sign out the current user
+	 */
+	const signOut = useCallback(async (): Promise<void> => {
+		try {
+			await firebaseSignOut(auth);
+			// User state will automatically update via onAuthStateChanged listener
+		} catch (err: any) {
+			console.error('Error signing out:', err);
+			throw new Error(err.message || 'Failed to sign out');
+		}
+	}, []);
+
 	return {
 		user,
 		loading,
 		isAuthenticated: !!user,
+		signOut,
 	};
 };
