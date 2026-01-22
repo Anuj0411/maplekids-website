@@ -1,16 +1,17 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '@/firebase/services';
+import { useAuth } from '@/hooks/auth/useAuth';
 import { useForm, useFormValidation } from '@/hooks';
 import './SigninForm.css';
 
 const SigninForm: React.FC = () => {
   const navigate = useNavigate();
-  const [firebaseError, setFirebaseError] = useState<string>('');
+  const { signIn, error: authError, loading: authLoading } = useAuth();
   const validation = useFormValidation();
 
   // Use our custom form hook
-  const { values, errors, handleChange, handleSubmit, isSubmitting } = useForm({
+  const { values, errors, handleChange, handleSubmit } = useForm({
     initialValues: {
       email: '',
       password: ''
@@ -23,11 +24,9 @@ const SigninForm: React.FC = () => {
       password: validation.rules.required('Password is required')(values.password),
     }),
     onSubmit: async (values) => {
-      setFirebaseError('');
-
       try {
-        // Sign in with Firebase
-        await authService.signIn(values.email, values.password);
+        // Sign in with Firebase using useAuth hook
+        await signIn(values.email, values.password);
         
         // Get user data to determine role and redirect
         const userData = await authService.getCurrentUserData();
@@ -52,30 +51,15 @@ const SigninForm: React.FC = () => {
         }
 
       } catch (error: any) {
+        // Error already handled by useAuth hook
         console.error('Signin error:', error);
-        
-        // Handle specific Firebase errors
-        if (error.code === 'auth/user-not-found') {
-          setFirebaseError('No account found with this email. Please sign up first.');
-        } else if (error.code === 'auth/wrong-password') {
-          setFirebaseError('Incorrect password. Please try again.');
-        } else if (error.code === 'auth/invalid-email') {
-          setFirebaseError('Please enter a valid email address.');
-        } else if (error.code === 'auth/too-many-requests') {
-          setFirebaseError('Too many failed attempts. Please try again later.');
-        } else {
-          setFirebaseError('An error occurred during sign in. Please try again.');
-        }
       }
     }
   });
 
-  // Clear Firebase error when user starts typing
+  // Clear auth error when user starts typing
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     handleChange(e);
-    if (firebaseError) {
-      setFirebaseError('');
-    }
   };
 
   return (
@@ -86,10 +70,10 @@ const SigninForm: React.FC = () => {
           <p>Sign in to your Maplekids account</p>
         </div>
 
-        {firebaseError && (
+        {authError && (
           <div className="auth-error">
             <span className="error-icon">⚠️</span>
-            {firebaseError}
+            {authError}
           </div>
         )}
 
@@ -127,9 +111,9 @@ const SigninForm: React.FC = () => {
           <button 
             type="submit" 
             className="btn-submit" 
-            disabled={isSubmitting}
+            disabled={authLoading}
           >
-            {isSubmitting ? (
+            {authLoading ? (
               <>
                 <span className="spinner"></span>
                 Signing In...

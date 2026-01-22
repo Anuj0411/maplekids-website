@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '@/styles/Dashboard.css';
-import { authService, studentService, userService, financialService, eventService } from '@/firebase/services';
+import { studentService, userService, financialService, eventService } from '@/firebase/services';
 import type { Student } from '@/firebase/types';
 import { Button, Table } from '@/components/common';
 import AttendanceOverview from '@/features/attendance/components/AttendanceOverview';
@@ -9,11 +9,13 @@ import UserCreationModal from '@/features/students/components/UserCreationModal'
 import ExcelBulkUserCreationModal from '@/features/students/components/ExcelBulkUserCreationModal';
 import AdminAnnouncementManager from '@/features/announcements/components/AdminAnnouncementManager';
 import { Announcement } from '@/features/announcements/services/announcementService';
+import { useAuth } from '@/hooks/auth/useAuth';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useDashboardData, DashboardUser as User, DashboardFinancialRecord as FinancialRecord } from '@/hooks/data/useDashboardData';
 
 const AdminDashboard: React.FC = () => {
   // Use custom hooks for authentication and dashboard data
+  const { signOut } = useAuth();
   const { userData: user } = useCurrentUser();
   const { 
     users, 
@@ -80,8 +82,8 @@ const AdminDashboard: React.FC = () => {
   }, [user, navigate]);
 
   const handleSignOut = async () => {
-    // Sign out using Firebase Auth
-    await authService.signOut();
+    // Sign out using useAuth hook
+    await signOut();
     navigate('/');
   };
 

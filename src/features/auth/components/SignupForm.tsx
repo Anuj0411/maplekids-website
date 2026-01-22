@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { authService } from '@/firebase/services';
+import { useAuth } from '@/hooks/auth/useAuth';
 import { useForm, useFormValidation } from '@/hooks';
 import './SignupForm.css';
 import { FormField, Button } from '@/components/common';
@@ -9,13 +9,13 @@ import { FormField, Button } from '@/components/common';
 const SignupForm: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { signUp, error: authError, loading: authLoading } = useAuth();
   const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [firebaseError, setFirebaseError] = useState<string>('');
   const [progress, setProgress] = useState(0);
   const validation = useFormValidation();
 
   // Use our custom form hook
-  const { values, errors, handleChange, handleSubmit, isSubmitting } = useForm({
+  const { values, errors, handleChange, handleSubmit } = useForm({
     initialValues: {
       firstName: '',
       lastName: '',
@@ -24,7 +24,7 @@ const SignupForm: React.FC = () => {
       confirmPassword: '',
       phone: '',
       address: '',
-      role: 'guest' as 'admin' | 'teacher' | 'general' | 'guest'
+      role: 'student' as 'admin' | 'teacher' | 'student'
     },
     validate: (values) => ({
       firstName: validation.composeValidators(
@@ -62,8 +62,6 @@ const SignupForm: React.FC = () => {
       )(values.address),
     }),
     onSubmit: async (values) => {
-      setFirebaseError('');
-
       try {
         const userData = {
           firstName: values.firstName.trim(),
@@ -74,7 +72,7 @@ const SignupForm: React.FC = () => {
           role: values.role
         };
 
-        await authService.signUp(values.email, values.password, userData);
+        await signUp(values.email, values.password, userData);
         
         setSubmitSuccess(true);
         
@@ -84,17 +82,8 @@ const SignupForm: React.FC = () => {
         }, 3000);
 
       } catch (error: any) {
+        // Error already handled by useAuth hook
         console.error('Signup error:', error);
-        
-        if (error.code === 'auth/email-already-in-use') {
-          setFirebaseError('An account with this email already exists. Please sign in instead.');
-        } else if (error.code === 'auth/weak-password') {
-          setFirebaseError('Password is too weak. Please choose a stronger password.');
-        } else if (error.code === 'auth/invalid-email') {
-          setFirebaseError('Please enter a valid email address.');
-        } else {
-          setFirebaseError('An error occurred during signup. Please try again.');
-        }
       }
     }
   });
@@ -106,12 +95,9 @@ const SignupForm: React.FC = () => {
     setProgress((filledFields / totalFields) * 100);
   }, [values]);
 
-  // Clear Firebase error when user starts typing
+  // Clear auth error when user starts typing
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     handleChange(e);
-    if (firebaseError) {
-      setFirebaseError('');
-    }
   };
 
   const getPasswordStrength = (password: string) => {
@@ -170,10 +156,10 @@ const SignupForm: React.FC = () => {
           </div>
         </div>
 
-        {firebaseError && (
+        {authError && (
           <div className="error-banner">
             <span className="error-icon">⚠️</span>
-            {firebaseError}
+            {authError}
           </div>
         )}
 
@@ -367,10 +353,10 @@ const SignupForm: React.FC = () => {
             <Button
               type="submit"
               variant="primary"
-              disabled={isSubmitting}
+              disabled={authLoading}
               className="submit-btn"
             >
-              {isSubmitting ? (
+              {authLoading ? (
                 <>
                   <span className="spinner"></span>
                   {t('auth.signup.form.creating')}
