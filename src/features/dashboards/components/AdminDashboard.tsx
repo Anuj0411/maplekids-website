@@ -8,7 +8,7 @@ import AttendanceOverview from '@/features/attendance/components/AttendanceOverv
 import UserCreationModal from '@/features/students/components/UserCreationModal';
 import ExcelBulkUserCreationModal from '@/features/students/components/ExcelBulkUserCreationModal';
 import AdminAnnouncementManager from '@/features/announcements/components/AdminAnnouncementManager';
-import { Announcement } from '@/features/announcements/services/announcementService';
+import type { Announcement } from '@/firebase/services/announcement.service';
 import { useAuth } from '@/hooks/auth/useAuth';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useDashboardData, DashboardUser as User, DashboardFinancialRecord as FinancialRecord } from '@/hooks/data/useDashboardData';

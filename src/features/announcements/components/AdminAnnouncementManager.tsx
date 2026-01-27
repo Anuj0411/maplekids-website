@@ -1,17 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { announcementService, type Announcement } from '@/firebase/services/announcement.service';
+import { useCurrentUser } from '@/hooks/auth';
 import './AdminAnnouncementManager.css';
-
-interface Announcement {
-  id: string;
-  mediaUrl: string;
-  mediaType: 'image' | 'video';
-  isActive: boolean;
-  startDate: Date;
-  endDate: Date;
-  displayDuration: number;
-  createdAt: Date;
-  createdBy: string;
-}
 
 interface AdminAnnouncementManagerProps {
   onAnnouncementChange: (announcements: Announcement[]) => void;
@@ -21,7 +11,13 @@ const AdminAnnouncementManager: React.FC<AdminAnnouncementManagerProps> = ({ onA
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const { userData } = useCurrentUser();
+  
+  // Helper function to get default form data with current date/time
+  const getDefaultFormData = () => ({
     mediaUrl: '',
     mediaType: 'image' as 'image' | 'video',
     isActive: true,
@@ -29,31 +25,29 @@ const AdminAnnouncementManager: React.FC<AdminAnnouncementManagerProps> = ({ onA
     endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
     displayDuration: 10
   });
+  
+  const [formData, setFormData] = useState(getDefaultFormData());
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
 
+  // Subscribe to announcements in real-time
   useEffect(() => {
-    // Load announcements from localStorage (in real app, this would be from Firebase)
-    const savedAnnouncements = localStorage.getItem('announcements');
-    if (savedAnnouncements) {
-      const parsed = JSON.parse(savedAnnouncements).map((ann: any) => {
-        // Migrate old announcements to new format
-        const migratedAnn = {
-          ...ann,
-          startDate: new Date(ann.startDate),
-          endDate: new Date(ann.endDate),
-          createdAt: new Date(ann.createdAt),
-          // Handle migration from old format
-          mediaUrl: ann.mediaUrl || ann.imageUrl || '',
-          mediaType: ann.mediaType || 'image'
-        };
-        return migratedAnn;
-      });
-      setAnnouncements(parsed);
-      onAnnouncementChange(parsed);
-      
-      // Save migrated announcements back to localStorage
-      localStorage.setItem('announcements', JSON.stringify(parsed));
-    }
+    setLoading(true);
+    setError(null);
+
+    const unsubscribe = announcementService.subscribeToAnnouncements(
+      (fetchedAnnouncements) => {
+        setAnnouncements(fetchedAnnouncements);
+        onAnnouncementChange(fetchedAnnouncements);
+        setLoading(false);
+      },
+      (err) => {
+        console.error('Error loading announcements:', err);
+        setError(err.message);
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
   }, [onAnnouncementChange]);
 
   const handleMediaUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -82,7 +76,7 @@ const AdminAnnouncementManager: React.FC<AdminAnnouncementManagerProps> = ({ onA
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.mediaUrl) {
@@ -90,41 +84,54 @@ const AdminAnnouncementManager: React.FC<AdminAnnouncementManagerProps> = ({ onA
       return;
     }
 
-    const newAnnouncement: Announcement = {
-      id: editingId || Date.now().toString(),
-      mediaUrl: formData.mediaUrl,
-      mediaType: formData.mediaType,
-      isActive: formData.isActive,
-      startDate: new Date(formData.startDate),
-      endDate: new Date(formData.endDate),
-      displayDuration: formData.displayDuration,
-      createdAt: editingId ? announcements.find(a => a.id === editingId)?.createdAt || new Date() : new Date(),
-      createdBy: 'admin' // In real app, get from auth context
-    };
-
-    let updatedAnnouncements;
-    if (editingId) {
-      updatedAnnouncements = announcements.map(a => a.id === editingId ? newAnnouncement : a);
-    } else {
-      updatedAnnouncements = [...announcements, newAnnouncement];
+    if (!userData?.id) {
+      alert('You must be logged in to manage announcements');
+      return;
     }
 
-    setAnnouncements(updatedAnnouncements);
-    localStorage.setItem('announcements', JSON.stringify(updatedAnnouncements));
-    onAnnouncementChange(updatedAnnouncements);
-    
-    resetForm();
+    setSaving(true);
+    setError(null);
+
+    try {
+      if (editingId) {
+        // Update existing announcement
+        await announcementService.updateAnnouncement(
+          editingId,
+          {
+            mediaUrl: formData.mediaUrl,
+            mediaType: formData.mediaType,
+            isActive: formData.isActive,
+            startDate: new Date(formData.startDate),
+            endDate: new Date(formData.endDate),
+            displayDuration: formData.displayDuration
+          },
+          userData.id
+        );
+      } else {
+        // Create new announcement
+        await announcementService.addAnnouncement({
+          mediaUrl: formData.mediaUrl,
+          mediaType: formData.mediaType,
+          isActive: formData.isActive,
+          startDate: new Date(formData.startDate),
+          endDate: new Date(formData.endDate),
+          displayDuration: formData.displayDuration,
+          createdBy: userData.id
+        });
+      }
+
+      resetForm();
+    } catch (err) {
+      console.error('Error saving announcement:', err);
+      setError(err instanceof Error ? err.message : 'Failed to save announcement');
+      alert('Failed to save announcement. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const resetForm = () => {
-    setFormData({
-      mediaUrl: '',
-      mediaType: 'image',
-      isActive: true,
-      startDate: new Date().toISOString().slice(0, 16),
-      endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
-      displayDuration: 10
-    });
+    setFormData(getDefaultFormData());
     setMediaPreview(null);
     setIsCreating(false);
     setEditingId(null);
@@ -144,31 +151,69 @@ const AdminAnnouncementManager: React.FC<AdminAnnouncementManagerProps> = ({ onA
     setIsCreating(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this announcement?')) {
-      const updatedAnnouncements = announcements.filter(a => a.id !== id);
-      setAnnouncements(updatedAnnouncements);
-      localStorage.setItem('announcements', JSON.stringify(updatedAnnouncements));
-      onAnnouncementChange(updatedAnnouncements);
+      setSaving(true);
+      try {
+        await announcementService.deleteAnnouncement(id);
+      } catch (err) {
+        console.error('Error deleting announcement:', err);
+        alert('Failed to delete announcement. Please try again.');
+      } finally {
+        setSaving(false);
+      }
     }
   };
 
-  const toggleActive = (id: string) => {
-    const updatedAnnouncements = announcements.map(a => 
-      a.id === id ? { ...a, isActive: !a.isActive } : a
-    );
-    setAnnouncements(updatedAnnouncements);
-    localStorage.setItem('announcements', JSON.stringify(updatedAnnouncements));
-    onAnnouncementChange(updatedAnnouncements);
+  const toggleActive = async (id: string) => {
+    if (!userData?.id) {
+      alert('You must be logged in');
+      return;
+    }
+
+    const announcement = announcements.find(a => a.id === id);
+    if (!announcement) return;
+
+    setSaving(true);
+    try {
+      await announcementService.updateAnnouncement(
+        id,
+        { isActive: !announcement.isActive },
+        userData.id
+      );
+    } catch (err) {
+      console.error('Error toggling announcement:', err);
+      alert('Failed to update announcement. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <div className="admin-announcement-manager">
+      {error && (
+        <div className="error-message" style={{
+          padding: '10px',
+          background: '#fee',
+          color: '#c00',
+          borderRadius: '5px',
+          marginBottom: '15px'
+        }}>
+          ⚠️ {error}
+        </div>
+      )}
+
       <div className="announcement-header">
         <h2>📢 Flash Announcements</h2>
         <button 
           className="create-announcement-btn"
-          onClick={() => setIsCreating(true)}
+          onClick={() => {
+            // Reset form with current date/time when opening
+            setFormData(getDefaultFormData());
+            setMediaPreview(null);
+            setIsCreating(true);
+          }}
+          disabled={saving || loading}
         >
           + Create New Announcement
         </button>
@@ -250,11 +295,20 @@ const AdminAnnouncementManager: React.FC<AdminAnnouncementManagerProps> = ({ onA
             </div>
 
             <div className="form-actions">
-              <button type="button" onClick={resetForm} className="cancel-btn">
+              <button 
+                type="button" 
+                onClick={resetForm} 
+                className="cancel-btn"
+                disabled={saving}
+              >
                 Cancel
               </button>
-              <button type="submit" className="submit-btn">
-                {editingId ? 'Update' : 'Create'} Announcement
+              <button 
+                type="submit" 
+                className="submit-btn"
+                disabled={saving}
+              >
+                {saving ? 'Saving...' : (editingId ? 'Update' : 'Create')} Announcement
               </button>
             </div>
           </form>
@@ -262,7 +316,15 @@ const AdminAnnouncementManager: React.FC<AdminAnnouncementManagerProps> = ({ onA
       )}
 
       <div className="announcements-list">
-        {announcements.length === 0 ? (
+        {loading ? (
+          <div className="loading-message" style={{
+            textAlign: 'center',
+            padding: '40px',
+            color: '#666'
+          }}>
+            Loading announcements...
+          </div>
+        ) : announcements.length === 0 ? (
           <div className="no-announcements">
             <p>No announcements created yet.</p>
           </div>
@@ -293,18 +355,21 @@ const AdminAnnouncementManager: React.FC<AdminAnnouncementManagerProps> = ({ onA
                 <button
                   className={`toggle-btn ${announcement.isActive ? 'deactivate' : 'activate'}`}
                   onClick={() => toggleActive(announcement.id)}
+                  disabled={saving}
                 >
                   {announcement.isActive ? 'Deactivate' : 'Activate'}
                 </button>
                 <button
                   className="edit-btn"
                   onClick={() => handleEdit(announcement)}
+                  disabled={saving}
                 >
                   Edit
                 </button>
                 <button
                   className="delete-btn"
                   onClick={() => handleDelete(announcement.id)}
+                  disabled={saving}
                 >
                   Delete
                 </button>

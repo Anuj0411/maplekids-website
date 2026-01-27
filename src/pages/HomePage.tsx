@@ -7,7 +7,6 @@ import { Carousel } from '../components/common';
 import Header from '../components/common/Header';
 import WhatsAppEnquiryForm from '../features/enquiry/components/WhatsAppEnquiryForm';
 import FlashAnnouncement from '../features/announcements/components/FlashAnnouncement';
-import { useAnnouncement } from '../features/announcements/contexts/AnnouncementContext';
 import schoolImage from '../assets/school_image.jpg';
 import backToSchool1 from '../assets/back_to_school.jpg';
 import backToSchool2 from '../assets/back_to_school2.jpg';
@@ -54,7 +53,6 @@ const HomePage: React.FC = () => {
   const [targetNumber, setTargetNumber] = useState<number>(0);
   const [objectOptions, setObjectOptions] = useState<number[]>([]);
   const [currentObjects, setCurrentObjects] = useState<string[]>([]);
-  const { announcements, handleAnnouncementDismiss } = useAnnouncement();
   
   // WhatsApp Configuration - Replace with your actual WhatsApp number
   const whatsappNumber = '919238612960'; // Format: country code + number (no + sign)
@@ -353,10 +351,7 @@ const HomePage: React.FC = () => {
       <Header scrollToSection={scrollToSection} />
       
       {/* Flash Announcements */}
-      <FlashAnnouncement 
-        announcements={announcements}
-        onDismiss={handleAnnouncementDismiss}
-      />
+      <FlashAnnouncement />
       
       {/* Floating Bubbles Background */}
       <div className="floating-bubbles">

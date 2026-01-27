@@ -1,7 +1,7 @@
 # MapleKids Website - Documentation Index
 
 **Project**: MapleKids Pre-School Management System  
-**Last Updated**: January 22, 2026  
+**Last Updated**: January 23, 2026  
 **Status**: Production Ready ✅
 
 ---
@@ -21,10 +21,13 @@ Complete architecture documentation and implementation guides
 Firebase configuration, setup, and integration guides
 - `FIREBASE_SETUP.md` - Firebase project setup guide
 - `FIREBASE_INTEGRATION_SUMMARY.md` - Integration overview
+- `ANNOUNCEMENT_FIRESTORE_RULES.md` - Announcement security rules
 - `firestore-rules-update.md` - Firestore security rules
 
 ### `/docs/guides/`
 Operational guides and quick references
+- `ANNOUNCEMENT_SYSTEM.md` - Flash announcements with Firebase (real-time)
+- `PHASE6_MIGRATION_SUMMARY.md` - Phase 6 announcement migration details
 - `ASSESSMENT_TESTING.md` - Testing procedures
 - `ICON_REPLACEMENT_GUIDE.md` - Icon system guide
 - `LANGUAGE_POPUP_CONFIG.md` - Multi-language configuration
