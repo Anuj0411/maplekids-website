@@ -57,6 +57,7 @@
   },
   "devDependencies": {
     "@craco/craco": "^7.1.0",
-    "craco-alias": "^3.0.1"
+    "craco-alias": "^3.0.1",
+    "css-minimizer-webpack-plugin": "^7.0.4"
   }
 }
