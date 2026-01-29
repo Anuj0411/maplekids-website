@@ -122,21 +122,21 @@ export const useUsers = (options: UseUsersOptions = {}): UseUsersReturn => {
 
   /**
    * Add a new user (creates both Auth and Firestore record)
+   * Note: Creating a user will log out the current admin due to Firebase Auth limitations.
+   * The admin will need to log back in after creating a user.
    */
   const addUser = useCallback(async (email: string, password: string, userData: Partial<User>): Promise<void> => {
     try {
       setError(null);
 
-      // Check if admin is signed in
+      // Get current admin UID before creating new user
       const currentAdmin = auth.currentUser;
       if (!currentAdmin) {
         throw new Error('No admin user is currently signed in');
       }
-
-      // Store admin credentials
       const adminUid = currentAdmin.uid;
 
-      // Create Firebase Auth account
+      // Create Firebase Auth account (this will automatically log in the new user)
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const firebaseUser = userCredential.user;
 
@@ -177,7 +177,7 @@ export const useUsers = (options: UseUsersOptions = {}): UseUsersReturn => {
         await setDoc(doc(db, 'students', (userData as any).rollNumber), studentData);
       }
 
-      // Sign out the newly created user
+      // Sign out the newly created user (which logs out everyone)
       await signOut(auth);
 
       // Optimistically add to local state
