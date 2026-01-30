@@ -5,6 +5,7 @@ import { signOut } from 'firebase/auth';
 import { auth } from '@/firebase/config';
 import { useStudentDashboardData } from '@/hooks/data/useStudentDashboardData';
 import PasswordResetModal from '@/features/auth/components/PasswordResetModal';
+import StudentOverview from './tabs/StudentOverview';
 import './StudentDashboard.css';
 
 const StudentDashboard: React.FC = () => {
@@ -47,6 +48,8 @@ const StudentDashboard: React.FC = () => {
     }
   }, [activeTab, student, refetchReports, refetchRemarks]);
 
+  // Used in Attendance tab
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getAttendanceStats = () => {
     const totalDays = attendance.length;
     const presentDays = attendance.filter(a => {
@@ -143,9 +146,6 @@ const StudentDashboard: React.FC = () => {
     );
   }
 
-  const stats = getAttendanceStats();
-  const attendancePercentage = stats.totalDays > 0 ? Math.round((stats.presentDays / stats.totalDays) * 100) : 0;
-
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -221,126 +221,12 @@ const StudentDashboard: React.FC = () => {
 
       <div className="dashboard-content">
         {activeTab === 'overview' && (
-          <div className="tab-content">
-            <div className="stats-grid">
-              <Card className="stat-card">
-                <h3>📊 Attendance Overview</h3>
-                <div className="stat-value">{attendancePercentage}%</div>
-                <p>Overall Attendance</p>
-              </Card>
-              
-              <Card className="stat-card">
-                <h3>✅ Present Days</h3>
-                <div className="stat-value">{stats.presentDays}</div>
-                <p>Out of {stats.totalDays} days</p>
-              </Card>
-              
-              <Card className="stat-card">
-                <h3>❌ Absent Days</h3>
-                <div className="stat-value">{stats.absentDays}</div>
-                <p>Total absences</p>
-              </Card>
-              
-              <Card className="stat-card">
-                <h3>⏰ Late Days</h3>
-                <div className="stat-value">{stats.lateDays}</div>
-                <p>Total late arrivals</p>
-              </Card>
-            </div>
-
-            <Card className="recent-activity">
-              <h3>📈 Recent Activity</h3>
-              <div className="activity-list">
-                {(() => {
-                  const activities: Array<{
-                    id: string;
-                    type: 'report' | 'remark';
-                    date: string;
-                    title: string;
-                    description: string;
-                    icon: string;
-                    color: string;
-                    auditInfo?: string;
-                  }> = [];
-
-                  // Add recent academic reports
-                  academicReports.slice(0, 3).forEach((report) => {
-                    let auditInfo = '';
-                    if (report.updatedByInfo) {
-                      const updateDate = report.updatedAt?.toDate?.() || new Date(report.updatedAt || Date.now());
-                      auditInfo = `Updated by ${report.updatedByInfo.userName} (${report.updatedByInfo.userRole}) on ${updateDate.toLocaleDateString()}`;
-                    } else if (report.createdByInfo) {
-                      const createDate = report.createdAt?.toDate?.() || new Date(report.createdAt || Date.now());
-                      auditInfo = `Created by ${report.createdByInfo.userName} (${report.createdByInfo.userRole}) on ${createDate.toLocaleDateString()}`;
-                    }
-                    
-                    activities.push({
-                      id: `report-${report.id}`,
-                      type: 'report',
-                      date: new Date(report.createdAt?.toDate?.() || report.createdAt).toLocaleDateString(),
-                      title: `📊 ${report.term} Report`,
-                      description: `${report.subjects.length} subjects - ${report.term} term`,
-                      icon: '📊',
-                      color: 'blue',
-                      auditInfo
-                    });
-                  });
-
-                  // Add recent remarks
-                  remarks.slice(0, 2).forEach((remark) => {
-                    let auditInfo = '';
-                    if (remark.updatedByInfo) {
-                      const updateDate = remark.updatedAt?.toDate?.() || new Date(remark.updatedAt || Date.now());
-                      auditInfo = `Updated by ${remark.updatedByInfo.userName} (${remark.updatedByInfo.userRole}) on ${updateDate.toLocaleDateString()}`;
-                    } else if (remark.createdByInfo) {
-                      const createDate = remark.createdAt?.toDate?.() || new Date(remark.createdAt || Date.now());
-                      auditInfo = `Created by ${remark.createdByInfo.userName} (${remark.createdByInfo.userRole}) on ${createDate.toLocaleDateString()}`;
-                    }
-                    
-                    activities.push({
-                      id: `remark-${remark.id}`,
-                      type: 'remark',
-                      date: new Date(remark.createdAt?.toDate?.() || remark.createdAt).toLocaleDateString(),
-                      title: `💬 ${remark.type === 'positive' ? 'Positive' : remark.type === 'negative' ? 'Needs Attention' : 'General'} Remark`,
-                      description: remark.remark.length > 50 ? remark.remark.substring(0, 50) + '...' : remark.remark,
-                      icon: remark.type === 'positive' ? '✅' : remark.type === 'negative' ? '⚠️' : '💬',
-                      color: remark.type === 'positive' ? 'green' : remark.type === 'negative' ? 'red' : 'blue',
-                      auditInfo
-                    });
-                  });
-
-                  // Sort by date (most recent first)
-                  activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-                  // Show only the 5 most recent activities
-                  return activities.slice(0, 5).map((activity) => (
-                    <div key={activity.id} className="activity-item">
-                      <div className="activity-content">
-                        <div className="activity-header">
-                          <span className="activity-icon">{activity.icon}</span>
-                          <span className="activity-title">{activity.title}</span>
-                          <span className="activity-date">{activity.date}</span>
-                        </div>
-                        <p className="activity-description">{activity.description}</p>
-                        {activity.auditInfo && (
-                          <p className="activity-audit-info">
-                            <span className="audit-icon">👤</span> {activity.auditInfo}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  ));
-                })()}
-                
-                {academicReports.length === 0 && remarks.length === 0 && (
-                  <div className="no-activity">
-                    <p>📝 No recent activity to show</p>
-                    <p className="sub-text">Academic reports and remarks will appear here</p>
-                  </div>
-                )}
-              </div>
-            </Card>
-          </div>
+          <StudentOverview
+            student={student}
+            attendance={attendance}
+            academicReports={academicReports}
+            remarks={remarks}
+          />
         )}
 
         {activeTab === 'attendance' && (

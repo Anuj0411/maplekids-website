@@ -1,0 +1,93 @@
+/* Mobile-First Responsive Grid System */
+
+.grid-container {
+  width: 100%;
+  padding: 0;
+  margin: 0;
+}
+
+/* Stats Grid - Mobile First */
+.stats-grid {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+  
+  /* Mobile: 1 column (default) */
+  grid-template-columns: 1fr;
+}
+
+/* Tablet: 2 columns */
+@media (min-width: 768px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+}
+
+/* Desktop Small: 4 columns */
+@media (min-width: 1024px) {
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+  }
+}
+
+/* Desktop Large: 4 columns with more gap */
+@media (min-width: 1440px) {
+  .stats-grid {
+    gap: 24px;
+  }
+}
+
+/* Content Grid - For mixed layouts */
+.content-grid {
+  display: grid;
+  gap: 16px;
+  width: 100%;
+  
+  /* Mobile: 1 column (default) */
+  grid-template-columns: 1fr;
+}
+
+/* Tablet: 1 column (better for content) */
+@media (min-width: 768px) {
+  .content-grid {
+    gap: 20px;
+  }
+}
+
+/* Desktop: 2 columns for mixed content */
+@media (min-width: 1024px) {
+  .content-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+  
+  /* Allow full-width items */
+  .content-grid .full-width {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Utility: Auto-fit grid (for unknown number of items) */
+.auto-grid {
+  display: grid;
+  gap: 16px;
+  
+  /* Mobile: 1 column */
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .auto-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .auto-grid {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 24px;
+  }
+}
