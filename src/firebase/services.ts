@@ -291,7 +291,13 @@ export interface Attendance {
 		name: string;
 		email: string;
 	};
+	updatedBy?: {
+		userId: string;
+		name: string;
+		email: string;
+	};
 	createdAt?: any;
+	updatedAt?: any;
 }
 
 
@@ -1161,7 +1167,7 @@ export const attendanceService = {
 				const docRef = doc(db, 'attendance', existingAttendance.id!);
 				await updateDoc(docRef, {
 					students: attendanceData.students,
-					markedBy: attendanceData.markedBy,
+					updatedBy: attendanceData.markedBy, // Track who updated
 					updatedAt: serverTimestamp(),
 				});
 				console.log('Attendance updated successfully');

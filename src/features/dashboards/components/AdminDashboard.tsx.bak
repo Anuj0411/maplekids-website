@@ -32,7 +32,6 @@ const AdminDashboard: React.FC = () => {
   // UI state
   const [activeTab, setActiveTab] = useState('overview');
   const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
-  const [showPasswordReset, setShowPasswordReset] = useState(false);
   
   // Financial records filtering
   const [financialFilters, setFinancialFilters] = useState({
@@ -352,9 +351,6 @@ const AdminDashboard: React.FC = () => {
         <div className="nav-user">
           <span>Admin: {user.firstName} {user.lastName}</span>
           <div className="nav-user-actions">
-            <Button variant="primary" onClick={() => setShowPasswordReset(true)} className="btn-change-password">
-              🔐 Change Password
-            </Button>
             <Button variant="danger" onClick={handleSignOut} className="btn-signout">Sign Out</Button>
           </div>
         </div>
@@ -1012,6 +1008,149 @@ const AdminDashboard: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* Password Reset Tab */}
+        {activeTab === 'password-reset' && (
+          <div className="tab-content">
+            <div className="section-header">
+              <h3>🔐 Reset User Password</h3>
+              <p style={{ marginTop: '10px', color: '#666', fontSize: '0.95rem' }}>
+                Select a user to send them a password reset email. The email will contain instructions for the user to set a new password.
+              </p>
+            </div>
+
+            <div className="password-reset-section">
+              <div className="form-group" style={{ maxWidth: '500px', marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151' }}>
+                  Search By
+                </label>
+                <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchByPhone(false);
+                      setSelectedUserEmail('');
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: '10px',
+                      border: '2px solid #e5e7eb',
+                      borderRadius: '8px',
+                      background: 'white',
+                      cursor: 'pointer',
+                      fontWeight: '600',
+                      color: !searchByPhone ? '#2e7d32' : '#6b7280',
+                      borderColor: !searchByPhone ? '#2e7d32' : '#e5e7eb',
+                      backgroundColor: !searchByPhone ? '#f1f8f4' : 'white'
+                    }}
+                  >
+                    📧 Email
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchByPhone(true);
+                      setSelectedUserEmail('');
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: '10px',
+                      border: '2px solid #e5e7eb',
+                      borderRadius: '8px',
+                      background: 'white',
+                      cursor: 'pointer',
+                      fontWeight: '600',
+                      color: searchByPhone ? '#2e7d32' : '#6b7280',
+                      borderColor: searchByPhone ? '#2e7d32' : '#e5e7eb',
+                      backgroundColor: searchByPhone ? '#f1f8f4' : 'white'
+                    }}
+                  >
+                    📱 Phone Number
+                  </button>
+                </div>
+              </div>
+
+              <div className="form-group" style={{ maxWidth: '500px' }}>
+                <label htmlFor="userSelect" style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151' }}>
+                  Select User{searchByPhone ? ' by Phone' : ' by Email'} *
+                </label>
+                <select
+                  id="userSelect"
+                  value={selectedUserEmail}
+                  onChange={(e) => setSelectedUserEmail(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '2px solid #e5e7eb',
+                    borderRadius: '8px',
+                    fontSize: '1rem',
+                    backgroundColor: 'white',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="">-- Select a user --</option>
+                  {users
+                    .sort((a, b) => {
+                      if (searchByPhone) {
+                        return (a.phone || '').localeCompare(b.phone || '');
+                      }
+                      const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
+                      const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
+                      return nameA.localeCompare(nameB);
+                    })
+                    .map((u) => (
+                      <option key={u.id} value={u.email}>
+                        {searchByPhone 
+                          ? `📱 ${u.phone || 'N/A'} - ${u.firstName} ${u.lastName} (${u.role})`
+                          : `${u.firstName} ${u.lastName} - � ${u.email} (${u.role})`
+                        }
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              {selectedUserEmail && (
+                <div style={{ 
+                  marginTop: '20px', 
+                  padding: '16px', 
+                  background: '#e3f2fd', 
+                  border: '1px solid #2196f3',
+                  borderRadius: '8px',
+                  maxWidth: '500px'
+                }}>
+                  <p style={{ margin: '0 0 8px 0', color: '#1565c0', fontWeight: '600' }}>
+                    Selected User:
+                  </p>
+                  <p style={{ margin: '0 0 12px 0', color: '#0d47a1', fontSize: '1.05rem' }}>
+                    {selectedUserEmail}
+                  </p>
+                  <Button
+                    variant="primary"
+                    onClick={() => setShowPasswordReset(true)}
+                    style={{ width: '100%' }}
+                  >
+                    � Reset Password
+                  </Button>
+                </div>
+              )}
+
+              {!selectedUserEmail && (
+                <div style={{ 
+                  marginTop: '20px', 
+                  padding: '20px', 
+                  background: '#f9fafb', 
+                  borderRadius: '8px',
+                  textAlign: 'center',
+                  maxWidth: '500px'
+                }}>
+                  <p style={{ margin: 0, color: '#6b7280' }}>
+                    👆 Please select a user from the dropdown above
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* User Creation Modal */}
@@ -1032,14 +1171,6 @@ const AdminDashboard: React.FC = () => {
           await refetchDashboard(); // This will reload both users and students
           setIsExcelBulkUserCreationModalOpen(false);
         }}
-      />
-
-      {/* Password Reset Modal */}
-      <PasswordResetModal
-        isOpen={showPasswordReset}
-        onClose={() => setShowPasswordReset(false)}
-        userEmail={user?.email || ''}
-        mode="self"
       />
     </div>
   );

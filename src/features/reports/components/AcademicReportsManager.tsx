@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Card } from '@/components/common';
 import { useStudents } from '@/hooks/data/useStudents';
+import { useAuth } from '@/features/auth';
 import type { Student } from '@/firebase/types';
 import { db } from '@/firebase/config';
 import { collection, addDoc, updateDoc, doc, getDocs, query, where, serverTimestamp, deleteDoc } from 'firebase/firestore';
@@ -12,6 +13,15 @@ interface SubjectResult {
   maxMarks: number;
   grade: string;
   remarks: string;
+  notApplicable?: boolean; // Flag to mark subject as N/A
+}
+
+interface AuditInfo {
+  userId: string;
+  userName: string;
+  userEmail: string;
+  userRole: string;
+  timestamp: any;
 }
 
 interface AcademicReport {
@@ -23,6 +33,10 @@ interface AcademicReport {
   term: string;
   createdAt: any;
   createdBy: string;
+  createdByInfo?: AuditInfo; // Enhanced audit info
+  updatedAt?: any;
+  updatedBy?: string;
+  updatedByInfo?: AuditInfo; // Enhanced audit info for updates
 }
 
 interface AcademicReportsManagerProps {
@@ -34,6 +48,7 @@ const AcademicReportsManager: React.FC<AcademicReportsManagerProps> = ({ selecte
   console.log('AcademicReportsManager: Component initialized with selectedClass:', selectedClass);
   
   const { students: allStudents, loading: studentsLoading } = useStudents({ autoFetch: true });
+  const { userData } = useAuth(); // Get current logged-in user info
   
   const [students, setStudents] = useState<Student[]>([]);
   const [reports, setReports] = useState<AcademicReport[]>([]);
@@ -47,7 +62,7 @@ const AcademicReportsManager: React.FC<AcademicReportsManagerProps> = ({ selecte
     term: 'Term 1'
   });
 
-  const subjects = ['English', 'Mathematics', 'Science', 'Social Studies', 'Art & Craft', 'Physical Education', 'Music', 'Computer Science'];
+  const subjects = ['English', 'Mathematics', 'Science', 'Social Studies', 'General Knowledge', 'Art & Craft', 'Physical Education', 'Music', 'Computer Science'];
   const terms = ['Term 1', 'Term 2', 'Term 3', 'Final Exam'];
 
   useEffect(() => {
@@ -136,8 +151,17 @@ const AcademicReportsManager: React.FC<AcademicReportsManagerProps> = ({ selecte
     
     try {
       console.log('Submitting form with data:', formData);
+      console.log('Selected student ID from filter:', selectedStudentId);
       
-      const student = students.find(s => s.rollNumber === formData.studentId);
+      // Use selectedStudentId if formData.studentId is empty
+      const studentId = formData.studentId || selectedStudentId;
+      
+      if (!studentId) {
+        alert('Please select a student');
+        return;
+      }
+      
+      const student = students.find(s => s.rollNumber === studentId);
       if (!student) {
         alert('Student not found');
         return;
@@ -145,34 +169,60 @@ const AcademicReportsManager: React.FC<AcademicReportsManagerProps> = ({ selecte
 
       console.log('Found student:', student);
 
-      // Filter out subjects with no marks entered
-      const validSubjects = formData.subjects.filter(s => s.marks > 0);
-      console.log('Valid subjects:', validSubjects);
+      // Filter out subjects that are marked as Not Applicable or have no marks entered
+      const validSubjects = formData.subjects.filter(s => !s.notApplicable && s.marks > 0);
+      console.log('Valid subjects (excluding N/A):', validSubjects);
       
-      if (validSubjects.length === 0) {
-        alert('Please enter marks for at least one subject');
+      // Keep all subjects in the report but filter for validation
+      const allSubjects = formData.subjects;
+      
+      if (validSubjects.length === 0 && allSubjects.every(s => s.notApplicable)) {
+        alert('Please enter marks for at least one subject or mark at least one subject as applicable');
         return;
       }
 
-      const reportData = {
-        studentId: formData.studentId,
+      // Create audit info with current user details
+      const currentAuditInfo: AuditInfo = {
+        userId: userData?.id || 'unknown',
+        userName: userData ? `${userData.firstName} ${userData.lastName}` : 'Unknown User',
+        userEmail: userData?.email || 'unknown@email.com',
+        userRole: userData?.role || 'unknown',
+        timestamp: serverTimestamp()
+      };
+
+      const reportData: Partial<AcademicReport> = editingReport ? {
+        // For updates, keep existing createdBy info and add updated info
+        studentId: studentId,
         studentName: `${student.firstName} ${student.lastName}`,
         class: student.class,
-        subjects: validSubjects,
+        subjects: allSubjects,
+        term: formData.term,
+        updatedAt: serverTimestamp(),
+        updatedBy: userData?.id || 'unknown',
+        updatedByInfo: currentAuditInfo
+      } : {
+        // For new reports, set createdBy info
+        studentId: studentId,
+        studentName: `${student.firstName} ${student.lastName}`,
+        class: student.class,
+        subjects: allSubjects,
         term: formData.term,
         createdAt: serverTimestamp(),
-        createdBy: 'teacher' // This should be the actual teacher ID
+        createdBy: userData?.id || 'unknown',
+        createdByInfo: currentAuditInfo
       };
 
       console.log('Report data to save:', reportData);
+      console.log('Current user audit info:', currentAuditInfo);
       console.log('Student details:', {
         rollNumber: student.rollNumber,
         firstName: student.firstName,
         lastName: student.lastName,
         class: student.class
       });
+      console.log('Resolved student ID:', studentId);
       console.log('Form data studentId:', formData.studentId);
-      console.log('Are they equal?', formData.studentId === student.rollNumber);
+      console.log('Selected filter studentId:', selectedStudentId);
 
       if (editingReport) {
         // Update existing report
@@ -413,14 +463,35 @@ const AcademicReportsManager: React.FC<AcademicReportsManagerProps> = ({ selecte
                   subject,
                   marks: 0,
                   maxMarks: 100,
-                  grade: 'F',
-                  remarks: ''
+                  grade: 'D',
+                  remarks: '',
+                  notApplicable: false
                 };
                 
                 return (
-                  <div key={subject} className="subject-entry">
+                  <div key={subject} className={`subject-entry ${subjectData.notApplicable ? 'not-applicable' : ''}`}>
                     <div className="subject-header">
                       <h5>{subject}</h5>
+                      <label className="na-checkbox">
+                        <input
+                          type="checkbox"
+                          checked={subjectData.notApplicable || false}
+                          onChange={(e) => {
+                            const isNA = e.target.checked;
+                            const updatedSubjects = formData.subjects.filter(s => s.subject !== subject);
+                            updatedSubjects.push({
+                              subject,
+                              marks: isNA ? 0 : subjectData.marks,
+                              maxMarks: subjectData.maxMarks,
+                              grade: isNA ? 'N/A' : subjectData.grade,
+                              remarks: isNA ? 'Not Applicable' : subjectData.remarks,
+                              notApplicable: isNA
+                            });
+                            setFormData({ ...formData, subjects: updatedSubjects });
+                          }}
+                        />
+                        <span>Not Applicable</span>
+                      </label>
                     </div>
                     <div className="subject-inputs">
                       <div className="marks-row">
@@ -439,12 +510,14 @@ const AcademicReportsManager: React.FC<AcademicReportsManagerProps> = ({ selecte
                                 marks,
                                 maxMarks,
                                 grade,
-                                remarks: subjectData.remarks
+                                remarks: subjectData.remarks,
+                                notApplicable: false
                               });
                               setFormData({ ...formData, subjects: updatedSubjects });
                             }}
                             min="0"
                             placeholder="0"
+                            disabled={subjectData.notApplicable}
                           />
                         </div>
                         <div className="marks-separator">/</div>
@@ -463,18 +536,20 @@ const AcademicReportsManager: React.FC<AcademicReportsManagerProps> = ({ selecte
                                 marks,
                                 maxMarks,
                                 grade,
-                                remarks: subjectData.remarks
+                                remarks: subjectData.remarks,
+                                notApplicable: false
                               });
                               setFormData({ ...formData, subjects: updatedSubjects });
                             }}
                             min="1"
                             placeholder="100"
+                            disabled={subjectData.notApplicable}
                           />
                         </div>
                         <div className="grade-display">
                           <label>Grade</label>
-                          <span className={`grade-badge grade-${subjectData.grade}`}>
-                            {subjectData.grade}
+                          <span className={`grade-badge grade-${subjectData.notApplicable ? 'na' : subjectData.grade}`}>
+                            {subjectData.notApplicable ? 'N/A' : subjectData.grade}
                           </span>
                         </div>
                       </div>
@@ -490,9 +565,10 @@ const AcademicReportsManager: React.FC<AcademicReportsManagerProps> = ({ selecte
                             });
                             setFormData({ ...formData, subjects: updatedSubjects });
                           }}
-                          placeholder={`Enter remarks for ${subject}...`}
+                          placeholder={subjectData.notApplicable ? 'Not Applicable' : `Enter remarks for ${subject}...`}
                           rows={2}
                           className="subject-remarks"
+                          disabled={subjectData.notApplicable}
                         />
                       </div>
                     </div>
@@ -545,11 +621,12 @@ const AcademicReportsManager: React.FC<AcademicReportsManagerProps> = ({ selecte
                 );
               }
 
-              // Calculate overall grade
-              const totalMarks = report.subjects.reduce((sum, s) => sum + (s.marks || 0), 0);
-              const totalMaxMarks = report.subjects.reduce((sum, s) => sum + (s.maxMarks || 0), 0);
+              // Calculate overall grade (excluding N/A subjects)
+              const applicableSubjects = report.subjects.filter(s => !s.notApplicable);
+              const totalMarks = applicableSubjects.reduce((sum, s) => sum + (s.marks || 0), 0);
+              const totalMaxMarks = applicableSubjects.reduce((sum, s) => sum + (s.maxMarks || 0), 0);
               const overallPercentage = totalMaxMarks > 0 ? (totalMarks / totalMaxMarks) * 100 : 0;
-              const overallGrade = calculateGrade(totalMarks, totalMaxMarks);
+              const overallGrade = totalMaxMarks > 0 ? calculateGrade(totalMarks, totalMaxMarks) : 'N/A';
               
               return (
                 <Card key={report.id} className="report-card">
@@ -562,7 +639,7 @@ const AcademicReportsManager: React.FC<AcademicReportsManagerProps> = ({ selecte
                   </div>
                   <div className="report-details">
                     <p><strong>Term:</strong> {report.term}</p>
-                    <p><strong>Subjects:</strong> {report.subjects.length}</p>
+                    <p><strong>Subjects:</strong> {report.subjects.length} ({applicableSubjects.length} applicable)</p>
                   </div>
                   <div className="subjects-summary">
                     <h5>Subject Performance:</h5>
@@ -580,14 +657,16 @@ const AcademicReportsManager: React.FC<AcademicReportsManagerProps> = ({ selecte
                           );
                         }
                         
+                        const isNA = subject.notApplicable;
+                        
                         return (
-                          <div key={index} className="subject-item">
+                          <div key={index} className={`subject-item ${isNA ? 'na-subject' : ''}`}>
                             <span className="subject-name">{subject.subject || 'Unknown Subject'}</span>
-                            <span className={`subject-grade grade-${(subject.grade || 'F').replace('+', '\\+')}`}>
-                              {subject.grade || 'F'}
+                            <span className={`subject-grade grade-${isNA ? 'na' : (subject.grade || 'F').replace('+', '\\+')}`}>
+                              {isNA ? 'N/A' : (subject.grade || 'F')}
                             </span>
                             <span className="subject-marks">
-                              {subject.marks || 0}/{subject.maxMarks || 0}
+                              {isNA ? 'N/A' : `${subject.marks || 0}/${subject.maxMarks || 0}`}
                             </span>
                           </div>
                         );

@@ -68,11 +68,40 @@ export const studentService = {
 				orderBy('firstName')
 			);
 			const querySnapshot = await getDocs(q);
-			return querySnapshot.docs.map((doc: any) => ({
+			
+			// Sort manually by firstName as fallback
+			const students = querySnapshot.docs.map((doc: any) => ({
 				id: doc.id,
 				...doc.data(),
 			})) as Student[];
+			
+			// Manual sort as backup in case index isn't ready
+			students.sort((a, b) => 
+				(a.firstName || '').localeCompare(b.firstName || '')
+			);
+			
+			return students;
 		} catch (error) {
+			// If index error, try without orderBy
+			if (error instanceof Error && error.message.includes('index')) {
+				console.warn('Index not found, querying without orderBy and sorting manually');
+				const q = query(
+					collection(db, 'students'),
+					where('class', '==', className)
+				);
+				const querySnapshot = await getDocs(q);
+				const students = querySnapshot.docs.map((doc: any) => ({
+					id: doc.id,
+					...doc.data(),
+				})) as Student[];
+				
+				// Manual sort
+				students.sort((a, b) => 
+					(a.firstName || '').localeCompare(b.firstName || '')
+				);
+				
+				return students;
+			}
 			throw handleError(error, `Error fetching students for class ${className}`);
 		}
 	},

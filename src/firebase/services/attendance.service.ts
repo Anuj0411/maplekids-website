@@ -460,7 +460,7 @@ export const attendanceService = {
 				const docRef = doc(db, 'attendance', existingAttendance.id!);
 				await updateDoc(docRef, {
 					students: attendanceData.students,
-					markedBy: attendanceData.markedBy,
+					updatedBy: attendanceData.markedBy, // Track who updated
 					updatedAt: serverTimestamp(),
 				});
 				console.log('Attendance updated successfully');

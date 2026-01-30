@@ -163,6 +163,43 @@
   box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
 }
 
+/* Password Input Wrapper */
+.password-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.password-input-wrapper input {
+  padding-right: 60px;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  opacity: 0.6;
+}
+
+.password-toggle-btn:hover {
+  opacity: 1;
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.password-toggle-btn:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
 .error-message {
   color: #e74c3c;
   font-size: 0.85rem;

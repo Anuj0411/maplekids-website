@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '@/firebase/services';
 import { useAuth } from '@/hooks/auth/useAuth';
@@ -9,6 +9,7 @@ const SigninForm: React.FC = () => {
   const navigate = useNavigate();
   const { signIn, error: authError, loading: authLoading } = useAuth();
   const validation = useFormValidation();
+  const [showPassword, setShowPassword] = useState(false);
 
   // Use our custom form hook
   const { values, errors, handleChange, handleSubmit } = useForm({
@@ -95,16 +96,26 @@ const SigninForm: React.FC = () => {
 
           <div className="form-group">
             <label htmlFor="password">Password *</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={values.password}
-              onChange={handleInputChange}
-              className={errors.password ? 'error' : ''}
-              placeholder="Enter your password"
-              autoComplete="current-password"
-            />
+            <div className="password-input-wrapper">
+              <input
+                type={showPassword ? "text" : "password"}
+                id="password"
+                name="password"
+                value={values.password}
+                onChange={handleInputChange}
+                className={errors.password ? 'error' : ''}
+                placeholder="Enter your password"
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                className="password-toggle-btn"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? '👁️' : '👁️‍🗨️'}
+              </button>
+            </div>
             {errors.password && <span className="error-message">{errors.password}</span>}
           </div>
 
