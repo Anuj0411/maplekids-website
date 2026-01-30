@@ -216,7 +216,10 @@ export const useUsers = (options: UseUsersOptions = {}): UseUsersReturn => {
   }, []);
 
   /**
-   * Delete a user
+   * Delete a user completely from all collections
+   * - Deletes from users collection
+   * - Deletes from students collection (if student)
+   * - Note: Does NOT delete from Firebase Auth (requires admin privileges)
    */
   const deleteUser = useCallback(async (userId: string): Promise<void> => {
     try {
@@ -225,20 +228,47 @@ export const useUsers = (options: UseUsersOptions = {}): UseUsersReturn => {
       // Get user data before deletion
       const userToDelete = users.find((u) => u.id === userId);
 
+      if (!userToDelete) {
+        throw new Error('User not found');
+      }
+
+      console.log('Deleting user:', {
+        userId,
+        role: userToDelete.role,
+        rollNumber: (userToDelete as any).rollNumber,
+        email: userToDelete.email
+      });
+
       // Optimistically remove from local state
       setUsers((prev) => prev.filter((user) => user.id !== userId));
 
-      // Delete from Firestore
+      // Delete from Firestore users collection
       await deleteDoc(doc(db, 'users', userId));
+      console.log(`✅ Deleted from users/${userId}`);
 
-      // If it's a student, also delete student record
-      if (userToDelete?.role === 'student' && (userToDelete as any).rollNumber) {
+      // If it's a student, also delete from students collection
+      // For students, the document ID in both collections is the rollNumber
+      if (userToDelete.role === 'student') {
         try {
-          await deleteDoc(doc(db, 'students', (userToDelete as any).rollNumber));
-        } catch (studentError) {
-          console.warn('Could not delete associated student record:', studentError);
+          // Try to delete using the rollNumber (which should be the same as userId for students)
+          await deleteDoc(doc(db, 'students', userId));
+          console.log(`✅ Deleted from students/${userId}`);
+        } catch (studentError: any) {
+          console.warn('Could not delete from students collection:', studentError);
+          
+          // If rollNumber is stored separately, try that
+          if ((userToDelete as any).rollNumber && (userToDelete as any).rollNumber !== userId) {
+            try {
+              await deleteDoc(doc(db, 'students', (userToDelete as any).rollNumber));
+              console.log(`✅ Deleted from students/${(userToDelete as any).rollNumber}`);
+            } catch (fallbackError) {
+              console.error('Failed to delete student record with rollNumber:', fallbackError);
+            }
+          }
         }
       }
+
+      console.log('✅ User deletion complete');
     } catch (err: any) {
       console.error('Error deleting user:', err);
       setError(err.message || 'Failed to delete user');

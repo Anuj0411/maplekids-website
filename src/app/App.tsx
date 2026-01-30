@@ -3,6 +3,9 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import './App.css';
 import '../i18n'; // Import i18n configuration
 
+// Import cleanup utilities (makes them available in browser console)
+import '../utils/cleanupOrphanedStudents';
+
 // Feature imports
 import { AuthProvider, SigninForm, ProtectedRoute } from '../features/auth';
 import { AnnouncementProvider, useAnnouncement } from '../features/announcements';

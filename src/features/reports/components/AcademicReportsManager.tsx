@@ -294,7 +294,17 @@ const AcademicReportsManager: React.FC<AcademicReportsManagerProps> = ({ selecte
         <div className="header-actions">
           <Button
             variant="primary"
-            onClick={() => setShowAddForm(true)}
+            onClick={() => {
+              // When opening the form, pre-fill with selected student if available
+              if (selectedStudentId) {
+                setFormData({
+                  studentId: selectedStudentId,
+                  subjects: [],
+                  term: 'Term 1'
+                });
+              }
+              setShowAddForm(true);
+            }}
             disabled={showAddForm || selectedClass === 'all' || students.length === 0}
           >
             <span className="btn-icon">➕</span>
@@ -350,22 +360,36 @@ const AcademicReportsManager: React.FC<AcademicReportsManagerProps> = ({ selecte
             {/* Student Selection */}
             <div className="form-section">
               <h4>👤 Student Information</h4>
-              <div className="form-group">
-                <label>Select Student</label>
-                <select
-                  value={formData.studentId}
-                  onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
-                  required
-                  className="student-select-input"
-                >
-                  <option value="">Choose a student...</option>
-                  {students.map(student => (
-                    <option key={student.rollNumber} value={student.rollNumber}>
-                      {student.rollNumber} - {student.firstName} {student.lastName}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {/* Only show student selector if no student is filtered */}
+              {!selectedStudentId ? (
+                <div className="form-group">
+                  <label>Select Student</label>
+                  <select
+                    value={formData.studentId}
+                    onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
+                    required
+                    className="student-select-input"
+                  >
+                    <option value="">Choose a student...</option>
+                    {students.map(student => (
+                      <option key={student.rollNumber} value={student.rollNumber}>
+                        {student.rollNumber} - {student.firstName} {student.lastName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div className="selected-student-display">
+                  <label>Selected Student</label>
+                  <div className="student-info-display">
+                    <strong>
+                      {students.find(s => s.rollNumber === selectedStudentId)?.rollNumber} - {' '}
+                      {students.find(s => s.rollNumber === selectedStudentId)?.firstName} {' '}
+                      {students.find(s => s.rollNumber === selectedStudentId)?.lastName}
+                    </strong>
+                  </div>
+                </div>
+              )}
               <div className="form-group">
                 <label>Term</label>
                 <select
