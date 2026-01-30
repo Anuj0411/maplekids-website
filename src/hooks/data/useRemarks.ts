@@ -12,6 +12,14 @@ import {
   serverTimestamp 
 } from 'firebase/firestore';
 
+export interface AuditInfo {
+  userId: string;
+  userName: string;
+  userEmail: string;
+  userRole: string;
+  timestamp: any;
+}
+
 export interface Remark {
   id?: string;
   studentId: string;
@@ -23,6 +31,10 @@ export interface Remark {
   date: string;
   createdAt: any;
   createdBy: string;
+  createdByInfo?: AuditInfo;
+  updatedBy?: string;
+  updatedByInfo?: AuditInfo;
+  updatedAt?: any;
 }
 
 interface UseRemarksOptions {

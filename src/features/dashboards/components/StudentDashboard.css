@@ -839,6 +839,25 @@
   .student-info h2 {
     font-size: 1.3rem;
   }
+
+  .header-content {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .header-right {
+    flex-direction: row;
+    width: 100%;
+    gap: 8px;
+    justify-content: center;
+  }
+
+  .header-right button {
+    flex: 1;
+    padding: 8px 12px !important;
+    font-size: 0.85rem !important;
+    white-space: nowrap;
+  }
   
   .dashboard-tabs {
     flex-direction: column;
@@ -995,6 +1014,15 @@
   
   .student-info h2 {
     font-size: 1.2rem;
+  }
+
+  .header-right button {
+    padding: 6px 10px !important;
+    font-size: 0.8rem !important;
+  }
+
+  .btn-icon {
+    font-size: 0.85rem;
   }
   
   .student-info p {

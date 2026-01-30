@@ -4,6 +4,7 @@ import { Button, Card } from '@/components/common';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/firebase/config';
 import { useStudentDashboardData } from '@/hooks/data/useStudentDashboardData';
+import PasswordResetModal from '@/features/auth/components/PasswordResetModal';
 import './StudentDashboard.css';
 
 const StudentDashboard: React.FC = () => {
@@ -24,6 +25,7 @@ const StudentDashboard: React.FC = () => {
   
   // UI state only
   const [activeTab, setActiveTab] = useState('overview');
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
   
   // Attendance pagination and filtering state
   const [attendanceSearchTerm, setAttendanceSearchTerm] = useState('');
@@ -166,6 +168,14 @@ const StudentDashboard: React.FC = () => {
           <div className="header-right">
             <Button
               variant="secondary"
+              onClick={() => setShowPasswordReset(true)}
+              className="password-reset-btn"
+            >
+              <span className="btn-icon">🔐</span>
+              Change Password
+            </Button>
+            <Button
+              variant="secondary"
               onClick={handleLogout}
               className="logout-btn"
             >
@@ -250,10 +260,20 @@ const StudentDashboard: React.FC = () => {
                     description: string;
                     icon: string;
                     color: string;
+                    auditInfo?: string;
                   }> = [];
 
                   // Add recent academic reports
                   academicReports.slice(0, 3).forEach((report) => {
+                    let auditInfo = '';
+                    if (report.updatedByInfo) {
+                      const updateDate = report.updatedAt?.toDate?.() || new Date(report.updatedAt || Date.now());
+                      auditInfo = `Updated by ${report.updatedByInfo.userName} (${report.updatedByInfo.userRole}) on ${updateDate.toLocaleDateString()}`;
+                    } else if (report.createdByInfo) {
+                      const createDate = report.createdAt?.toDate?.() || new Date(report.createdAt || Date.now());
+                      auditInfo = `Created by ${report.createdByInfo.userName} (${report.createdByInfo.userRole}) on ${createDate.toLocaleDateString()}`;
+                    }
+                    
                     activities.push({
                       id: `report-${report.id}`,
                       type: 'report',
@@ -261,12 +281,22 @@ const StudentDashboard: React.FC = () => {
                       title: `📊 ${report.term} Report`,
                       description: `${report.subjects.length} subjects - ${report.term} term`,
                       icon: '📊',
-                      color: 'blue'
+                      color: 'blue',
+                      auditInfo
                     });
                   });
 
                   // Add recent remarks
                   remarks.slice(0, 2).forEach((remark) => {
+                    let auditInfo = '';
+                    if (remark.updatedByInfo) {
+                      const updateDate = remark.updatedAt?.toDate?.() || new Date(remark.updatedAt || Date.now());
+                      auditInfo = `Updated by ${remark.updatedByInfo.userName} (${remark.updatedByInfo.userRole}) on ${updateDate.toLocaleDateString()}`;
+                    } else if (remark.createdByInfo) {
+                      const createDate = remark.createdAt?.toDate?.() || new Date(remark.createdAt || Date.now());
+                      auditInfo = `Created by ${remark.createdByInfo.userName} (${remark.createdByInfo.userRole}) on ${createDate.toLocaleDateString()}`;
+                    }
+                    
                     activities.push({
                       id: `remark-${remark.id}`,
                       type: 'remark',
@@ -274,7 +304,8 @@ const StudentDashboard: React.FC = () => {
                       title: `💬 ${remark.type === 'positive' ? 'Positive' : remark.type === 'negative' ? 'Needs Attention' : 'General'} Remark`,
                       description: remark.remark.length > 50 ? remark.remark.substring(0, 50) + '...' : remark.remark,
                       icon: remark.type === 'positive' ? '✅' : remark.type === 'negative' ? '⚠️' : '💬',
-                      color: remark.type === 'positive' ? 'green' : remark.type === 'negative' ? 'red' : 'blue'
+                      color: remark.type === 'positive' ? 'green' : remark.type === 'negative' ? 'red' : 'blue',
+                      auditInfo
                     });
                   });
 
@@ -291,6 +322,11 @@ const StudentDashboard: React.FC = () => {
                           <span className="activity-date">{activity.date}</span>
                         </div>
                         <p className="activity-description">{activity.description}</p>
+                        {activity.auditInfo && (
+                          <p className="activity-audit-info">
+                            <span className="audit-icon">👤</span> {activity.auditInfo}
+                          </p>
+                        )}
                       </div>
                     </div>
                   ));
@@ -356,9 +392,19 @@ const StudentDashboard: React.FC = () => {
                   <span>Date</span>
                   <span>Status</span>
                   <span>Remarks</span>
+                  <span>Marked By</span>
                 </div>
                 {getPaginatedAttendance().map((record) => {
                   const studentAttendance = record.students.find(s => s.rollNumber === student.rollNumber);
+                  
+                  // Get audit info
+                  let auditInfo = '';
+                  if (record.updatedBy) {
+                    auditInfo = `Updated by ${record.updatedBy.name}`;
+                  } else if (record.markedBy) {
+                    auditInfo = `Marked by ${record.markedBy.name}`;
+                  }
+                  
                   return (
                     <div key={record.id} className="table-row">
                       <span>{record.date}</span>
@@ -366,6 +412,9 @@ const StudentDashboard: React.FC = () => {
                         {studentAttendance?.status || 'Not marked'}
                       </span>
                       <span>{studentAttendance?.remarks || '-'}</span>
+                      <span className="audit-info-cell">
+                        {auditInfo || '-'}
+                      </span>
                     </div>
                   );
                 })}
@@ -463,6 +512,20 @@ const StudentDashboard: React.FC = () => {
                                 </span>
                               )}
                             </div>
+                            {(report.createdByInfo || report.updatedByInfo) && (
+                              <div className="report-audit-info">
+                                {report.updatedByInfo ? (
+                                  <span className="audit-text">
+                                    Updated by {report.updatedByInfo.userName} ({report.updatedByInfo.userRole})
+                                    {report.updatedAt && ` on ${report.updatedAt.toDate ? report.updatedAt.toDate().toLocaleDateString() : new Date(report.updatedAt).toLocaleDateString()}`}
+                                  </span>
+                                ) : report.createdByInfo && (
+                                  <span className="audit-text">
+                                    Created by {report.createdByInfo.userName} ({report.createdByInfo.userRole})
+                                  </span>
+                                )}
+                              </div>
+                            )}
                           </div>
                           <div className="report-header-right">
                             <div className="report-summary-compact">
@@ -611,6 +674,20 @@ const StudentDashboard: React.FC = () => {
                               ) : 'Unknown date'
                             }
                           </small>
+                          {(remark.createdByInfo || remark.updatedByInfo) && (
+                            <div className="remark-audit-info">
+                              {remark.updatedByInfo ? (
+                                <small className="audit-text">
+                                  Updated by {remark.updatedByInfo.userName} ({remark.updatedByInfo.userRole})
+                                  {remark.updatedAt && ` on ${remark.updatedAt.toDate ? remark.updatedAt.toDate().toLocaleDateString() : new Date(remark.updatedAt).toLocaleDateString()}`}
+                                </small>
+                              ) : remark.createdByInfo && (
+                                <small className="audit-text">
+                                  Created by {remark.createdByInfo.userName} ({remark.createdByInfo.userRole})
+                                </small>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -655,6 +732,14 @@ const StudentDashboard: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Password Reset Modal */}
+      <PasswordResetModal
+        isOpen={showPasswordReset}
+        onClose={() => setShowPasswordReset(false)}
+        userEmail={student?.email || currentUser?.email || ''}
+        mode="self"
+      />
     </div>
   );
 };

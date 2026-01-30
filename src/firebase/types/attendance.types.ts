@@ -60,8 +60,14 @@ export interface Attendance {
 	/** User who marked the attendance */
 	markedBy?: AttendanceMarker;
 	
+	/** User who last updated the attendance */
+	updatedBy?: AttendanceMarker;
+	
 	/** Timestamp when attendance was created */
 	createdAt?: any;
+	
+	/** Timestamp when attendance was last updated */
+	updatedAt?: any;
 }
 
 /**

@@ -43,6 +43,12 @@
   font-weight: 600;
 }
 
+.nav-user-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .btn-signout {
   background: #ffd54f;
   color: #2e7d32;
@@ -807,6 +813,34 @@
   .nav-brand h1 {
     font-size: 1.2rem;
   }
+
+  .nav-user {
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .nav-user span {
+    width: 100%;
+    font-size: 0.9rem;
+  }
+
+  .nav-user-actions {
+    display: flex;
+    flex-direction: row;
+    width: 86%;
+    gap: 5px;
+    justify-content: center;
+  }
+
+  .nav-user-actions button {
+    flex: 1;
+    padding: 6px 12px !important;
+    font-size: 0.85rem !important;
+    white-space: nowrap;
+    min-width: 0;
+  }
   
   .dashboard-content {
     padding: 20px;
@@ -900,6 +934,19 @@
   .welcome-section h2 {
     font-size: 1.8rem;
   }
+
+  .nav-user span {
+    font-size: 0.85rem;
+  }
+
+  .nav-user-actions button {
+    padding: 5px 10px !important;
+    font-size: 0.8rem !important;
+  }
+
+  .btn-icon {
+    font-size: 0.9rem;
+  }
   
   .stat-card {
     padding: 20px;
@@ -929,4 +976,46 @@
   .photo-actions {
     flex-direction: column;
   }
+}
+
+/* Audit Trail Styles */
+.activity-audit-info {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-top: 5px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.audit-icon {
+  font-size: 0.9rem;
+}
+
+.audit-text {
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.audit-info-cell {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.report-audit-info {
+  margin-top: 5px;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.remark-audit-info {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.remark-audit-info .audit-text {
+  display: block;
+  margin-top: 4px;
 }

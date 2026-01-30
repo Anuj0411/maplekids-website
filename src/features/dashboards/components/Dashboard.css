@@ -1629,8 +1629,8 @@
 @media (max-width: 480px) {
   .dashboard-nav {
     padding: 8px 12px;
-    height: 50px;
-    min-height: 50px;
+    height: 70px;
+    min-height: 47px;
   }
   
   .nav-brand h1 {
@@ -1700,8 +1700,8 @@
 @media (max-width: 360px) {
   .dashboard-nav {
     padding: 6px 10px;
-    height: 45px;
-    min-height: 45px;
+    height: 70px;
+    min-height: 47px;
   }
   
   .nav-brand h1 {
@@ -1720,7 +1720,7 @@
   
   .dashboard-content {
     padding: 10px;
-    padding-top: calc(45px + 10px);
+    padding-top: calc(45px + 28px);
   }
   
   .welcome-section {

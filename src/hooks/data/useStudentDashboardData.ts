@@ -11,6 +11,14 @@ export interface SubjectResult {
   remarks: string;
 }
 
+export interface AuditInfo {
+  userId: string;
+  userName: string;
+  userEmail: string;
+  userRole: string;
+  timestamp: any;
+}
+
 export interface AcademicReport {
   id?: string;
   studentId: string;
@@ -20,6 +28,10 @@ export interface AcademicReport {
   term: string;
   createdAt: any;
   createdBy: string;
+  createdByInfo?: AuditInfo;
+  updatedBy?: string;
+  updatedByInfo?: AuditInfo;
+  updatedAt?: any;
 }
 
 export interface StudentRemark {
@@ -33,6 +45,10 @@ export interface StudentRemark {
   date: string;
   createdAt: any;
   createdBy: string;
+  createdByInfo?: AuditInfo;
+  updatedBy?: string;
+  updatedByInfo?: AuditInfo;
+  updatedAt?: any;
 }
 
 interface UseStudentDashboardDataOptions {

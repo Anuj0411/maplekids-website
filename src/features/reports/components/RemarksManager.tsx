@@ -4,6 +4,8 @@ import { useStudents } from '@/hooks/data/useStudents';
 import { useRemarks, Remark } from '@/hooks/data/useRemarks';
 import { useForm } from '@/hooks/form/useForm';
 import { useFormValidation } from '@/hooks/form/useFormValidation';
+import { useAuth } from '@/features/auth';
+import { serverTimestamp } from 'firebase/firestore';
 import './RemarksManager.css';
 
 interface RemarkFormData {
@@ -34,6 +36,8 @@ const RemarksManager: React.FC<RemarksManagerProps> = ({ selectedClass, onClose 
     classFilter: selectedClass,
   });
 
+  const { userData } = useAuth();
+
   const validation = useFormValidation();
 
   const { values, errors, handleChange, handleSubmit, isSubmitting, setFieldValue, reset } = useForm<RemarkFormData>({
@@ -54,11 +58,25 @@ const RemarksManager: React.FC<RemarksManagerProps> = ({ selectedClass, onClose 
       date: validation.rules.required('Date is required')(values.date),
     }),
     onSubmit: async (values) => {
+      if (!userData) {
+        alert('User not authenticated');
+        return;
+      }
+
       const student = students.find(s => s.rollNumber === values.studentId);
       if (!student) {
         alert('Student not found');
         return;
       }
+
+      // Create audit info for current user
+      const currentAuditInfo = {
+        userId: userData.id,
+        userName: `${userData.firstName} ${userData.lastName}`,
+        userEmail: userData.email,
+        userRole: userData.role,
+        timestamp: serverTimestamp()
+      };
 
       const remarkData = {
         studentId: values.studentId,
@@ -68,7 +86,14 @@ const RemarksManager: React.FC<RemarksManagerProps> = ({ selectedClass, onClose 
         remark: values.remark,
         type: values.type,
         date: values.date,
-        createdBy: 'teacher' // This should be the actual teacher ID
+        createdBy: userData.id,
+        ...(editingRemark ? {
+          updatedBy: userData.id,
+          updatedByInfo: currentAuditInfo,
+          updatedAt: serverTimestamp()
+        } : {
+          createdByInfo: currentAuditInfo
+        })
       };
 
       if (editingRemark) {

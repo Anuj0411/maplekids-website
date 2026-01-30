@@ -5,6 +5,7 @@ import { Button } from '@/components/common';
 import BulkAttendanceForm from '@/features/attendance/components/BulkAttendanceForm';
 import AcademicReportsManager from '@/features/reports/components/AcademicReportsManager';
 import RemarksManager from '@/features/reports/components/RemarksManager';
+import PasswordResetModal from '@/features/auth/components/PasswordResetModal';
 import { useAuth } from '@/hooks/auth/useAuth';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useUserRole } from '@/hooks/auth/useUserRole';
@@ -22,6 +23,7 @@ const TeacherDashboard: React.FC = () => {
   const [selectedClass, setSelectedClass] = useState<string>('all');
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [activeTab, setActiveTab] = useState<'attendance' | 'reports' | 'remarks'>('attendance');
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
   const navigate = useNavigate();
 
   // Use attendance hook with date filter only (class filtering is done on students)
@@ -87,7 +89,15 @@ const TeacherDashboard: React.FC = () => {
         </div>
         <div className="nav-user">
           <span>Teacher: {user.firstName} {user.lastName}</span>
-          <Button onClick={handleSignOut} className="btn-signout">Sign Out</Button>
+          <div className="nav-user-actions">
+            <Button 
+              onClick={() => setShowPasswordReset(true)} 
+              className="btn-secondary"
+            >
+              🔐 Change Password
+            </Button>
+            <Button onClick={handleSignOut} className="btn-signout">Sign Out</Button>
+          </div>
         </div>
       </nav>
 
@@ -205,6 +215,14 @@ const TeacherDashboard: React.FC = () => {
           <RemarksManager selectedClass={selectedClass} />
         )}
       </div>
+
+      {/* Password Reset Modal */}
+      <PasswordResetModal
+        isOpen={showPasswordReset}
+        onClose={() => setShowPasswordReset(false)}
+        userEmail={user?.email || ''}
+        mode="self"
+      />
     </div>
   );
 };
