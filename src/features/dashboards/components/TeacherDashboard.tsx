@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import '@/styles/Dashboard.css';
 import { Button } from '@/components/common';
 import { holidayService } from '@/firebase/services';
-import type { Holiday } from '@/firebase/services';
 import BulkAttendanceForm from '@/features/attendance/components/BulkAttendanceForm';
 import AcademicReportsManager from '@/features/reports/components/AcademicReportsManager';
 import RemarksManager from '@/features/reports/components/RemarksManager';
@@ -27,7 +26,6 @@ const TeacherDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'attendance' | 'reports' | 'remarks'>('attendance');
   const [showPasswordReset, setShowPasswordReset] = useState(false);
   const [holidayDates, setHolidayDates] = useState<Set<string>>(new Set());
-  const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [dateError, setDateError] = useState<string>('');
   const navigate = useNavigate();
 
@@ -35,9 +33,7 @@ const TeacherDashboard: React.FC = () => {
   const reloadHolidays = async () => {
     const currentYear = new Date().getFullYear();
     const dates = await holidayService.getHolidayDatesSet(currentYear);
-    const holidaysList = await holidayService.getHolidaysByYear(currentYear);
     setHolidayDates(dates);
-    setHolidays(holidaysList);
   };
 
   // Use attendance hook with date filter only (class filtering is done on students)
@@ -53,9 +49,7 @@ const TeacherDashboard: React.FC = () => {
     const loadHolidays = async () => {
       const currentYear = new Date().getFullYear();
       const dates = await holidayService.getHolidayDatesSet(currentYear);
-      const holidaysList = await holidayService.getHolidaysByYear(currentYear);
       setHolidayDates(dates);
-      setHolidays(holidaysList);
     };
     loadHolidays();
     
