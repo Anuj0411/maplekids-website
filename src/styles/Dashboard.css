@@ -678,10 +678,25 @@
   flex-wrap: wrap;
 }
 
+/* Filters Container - Side by Side Layout */
+.filters-container {
+  background: white;
+  padding: 25px;
+  border-radius: 15px;
+  margin-bottom: 30px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  display: flex;
+  gap: 30px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
 .control-group {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  flex: 1;
+  min-width: 200px;
 }
 
 .control-group label {
@@ -698,6 +713,7 @@
   transition: all 0.3s ease;
   background: #fafbfc;
   min-width: 200px;
+  cursor: pointer;
 }
 
 .class-select:focus, .date-input:focus {
@@ -705,6 +721,47 @@
   border-color: #ffd54f;
   background: white;
   box-shadow: 0 0 0 3px rgba(255, 213, 79, 0.1);
+}
+
+/* Date input error state */
+.date-input-error {
+  border-color: #ef4444 !important;
+  background-color: #fef2f2 !important;
+}
+
+.date-input-error:focus {
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+}
+
+/* Date Error Message */
+.date-error-message {
+  color: #ef4444;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-top: 5px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  animation: fadeIn 0.3s ease-in;
+}
+
+/* Blocked Dates Info */
+.blocked-dates-info {
+  margin-top: 6px;
+  padding: 6px 10px;
+  background: #fff3e0;
+  border-left: 3px solid #ff9800;
+  border-radius: 4px;
+}
+
+.blocked-dates-info small {
+  line-height: 1.4;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .attendance-summary {
@@ -879,6 +936,17 @@
   
   .class-filter {
     justify-content: center;
+  }
+
+  /* Make filters stack on mobile */
+  .filters-container {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .control-group {
+    width: 100%;
+    min-width: unset;
   }
   
   .finance-summary {

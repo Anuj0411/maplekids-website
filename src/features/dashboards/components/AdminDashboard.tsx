@@ -8,6 +8,7 @@ import AttendanceOverview from '@/features/attendance/components/AttendanceOverv
 import UserCreationModal from '@/features/students/components/UserCreationModal';
 import ExcelBulkUserCreationModal from '@/features/students/components/ExcelBulkUserCreationModal';
 import AdminAnnouncementManager from '@/features/announcements/components/AdminAnnouncementManager';
+import HolidayManager from '@/features/holidays/components/HolidayManager';
 import PasswordResetModal from '@/features/auth/components/PasswordResetModal';
 import type { Announcement } from '@/firebase/services/announcement.service';
 import { useAuth } from '@/hooks/auth/useAuth';
@@ -414,6 +415,15 @@ const AdminDashboard: React.FC = () => {
             <span className="tab-text">Announcements</span>
           </button>
           <button 
+            className={`tab-button ${activeTab === 'holidays' ? 'active' : ''}`}
+            onClick={() => setActiveTab('holidays')}
+            data-icon="🗓️"
+            data-label="Holidays"
+          >
+            <span className="tab-icon">🗓️</span>
+            <span className="tab-text">Holidays</span>
+          </button>
+          <button 
             className={`tab-button ${activeTab === 'finance' ? 'active' : ''}`}
             onClick={() => setActiveTab('finance')}
             data-icon="💰"
@@ -693,6 +703,13 @@ const AdminDashboard: React.FC = () => {
                 console.log('Announcements updated:', announcements);
               }}
             />
+          </div>
+        )}
+
+        {/* Holidays Tab */}
+        {activeTab === 'holidays' && (
+          <div className="tab-content">
+            <HolidayManager />
           </div>
         )}
 

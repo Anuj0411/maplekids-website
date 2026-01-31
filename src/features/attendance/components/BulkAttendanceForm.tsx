@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/common';
+import { Toast, ToastType } from '@/components/ui';
 import { useStudents } from '@/hooks/data/useStudents';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useAttendance } from '@/hooks/data/useAttendance';
@@ -8,6 +9,8 @@ import './BulkAttendanceForm.css';
 interface BulkAttendanceFormProps {
   selectedClass: string;
   selectedDate: string;
+  isDateDisabled?: boolean;
+  dateErrorMessage?: string;
   onAttendanceSaved: () => void;
 }
 
@@ -22,6 +25,8 @@ interface StudentAttendance {
 const BulkAttendanceForm: React.FC<BulkAttendanceFormProps> = ({
   selectedClass,
   selectedDate,
+  isDateDisabled = false,
+  dateErrorMessage = '',
   onAttendanceSaved
 }) => {
   // Use custom hooks for data
@@ -36,6 +41,11 @@ const BulkAttendanceForm: React.FC<BulkAttendanceFormProps> = ({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>('');
+  const [toast, setToast] = useState<{ isOpen: boolean; message: string; type: ToastType }>({
+    isOpen: false,
+    message: '',
+    type: 'info'
+  });
 
   // Initialize and update attendance data when students or date changes
   useEffect(() => {
@@ -108,6 +118,18 @@ const BulkAttendanceForm: React.FC<BulkAttendanceFormProps> = ({
   };
 
   const saveAttendance = async () => {
+    // Check if date is disabled (holiday/Sunday/out of range)
+    if (isDateDisabled) {
+      setError(dateErrorMessage || 'Cannot mark attendance for this date');
+      setToast({
+        isOpen: true,
+        message: dateErrorMessage || 'Cannot mark attendance for this date',
+        type: 'error'
+      });
+      setSaving(false);
+      return;
+    }
+
     if (selectedClass === 'all') {
       setError('Please select a specific class');
       return;
@@ -154,14 +176,34 @@ const BulkAttendanceForm: React.FC<BulkAttendanceFormProps> = ({
       await markAttendance(attendanceData);
       
       setSuccess(`Attendance saved successfully for ${markedStudents.length} students`);
+      setToast({
+        isOpen: true,
+        message: `Attendance saved successfully for ${markedStudents.length} students on ${new Date(selectedDate).toLocaleDateString()}!`,
+        type: 'success'
+      });
       onAttendanceSaved();
+      
+      // Reset all students to unmarked state and clear remarks
+      setStudentAttendance(prev => 
+        prev.map(student => ({
+          ...student,
+          status: 'unmarked',
+          remarks: ''
+        }))
+      );
       
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(''), 3000);
 
     } catch (err) {
       console.error('Error saving attendance:', err);
-      setError('Failed to save attendance. Please try again.');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to save attendance. Please try again.';
+      setError(errorMessage);
+      setToast({
+        isOpen: true,
+        message: errorMessage,
+        type: 'error'
+      });
     } finally {
       setSaving(false);
     }
@@ -202,8 +244,34 @@ const BulkAttendanceForm: React.FC<BulkAttendanceFormProps> = ({
     );
   }
 
+  if (isDateDisabled && dateErrorMessage) {
+    return (
+      <div className="bulk-attendance-disabled">
+        <div className="disabled-icon">🚫</div>
+        <h3>Attendance Not Available</h3>
+        <p className="disabled-message">{dateErrorMessage}</p>
+        <div className="disabled-info">
+          <h4>Restrictions:</h4>
+          <ul>
+            <li>📅 Can only edit attendance for the last 3 days</li>
+            <li>☀️ Sundays are non-working days</li>
+            <li>🏖️ Holidays are non-working days</li>
+          </ul>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bulk-attendance-form">
+      {/* Toast Notification */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isOpen={toast.isOpen}
+        onClose={() => setToast({ ...toast, isOpen: false })}
+      />
+
       <div className="attendance-header">
         <h3>📋 Bulk Attendance - {selectedClass.toUpperCase()}</h3>
         <div className="attendance-info">
@@ -234,6 +302,7 @@ const BulkAttendanceForm: React.FC<BulkAttendanceFormProps> = ({
             variant="secondary"
             onClick={() => bulkSelectAll('present')}
             className="bulk-btn present"
+            disabled={isDateDisabled}
           >
             ✅ Mark All Present
           </Button>
@@ -241,6 +310,7 @@ const BulkAttendanceForm: React.FC<BulkAttendanceFormProps> = ({
             variant="secondary"
             onClick={() => bulkSelectAll('absent')}
             className="bulk-btn absent"
+            disabled={isDateDisabled}
           >
             ❌ Mark All Absent
           </Button>
@@ -248,6 +318,7 @@ const BulkAttendanceForm: React.FC<BulkAttendanceFormProps> = ({
             variant="secondary"
             onClick={() => bulkSelectAll('late')}
             className="bulk-btn late"
+            disabled={isDateDisabled}
           >
             ⏰ Mark All Late
           </Button>
@@ -275,18 +346,21 @@ const BulkAttendanceForm: React.FC<BulkAttendanceFormProps> = ({
                     <button
                       className={`status-btn present ${student.status === 'present' ? 'active' : ''}`}
                       onClick={() => updateStudentStatus(student.studentId, 'present')}
+                      disabled={isDateDisabled}
                     >
                       ✅ Present
                     </button>
                     <button
                       className={`status-btn absent ${student.status === 'absent' ? 'active' : ''}`}
                       onClick={() => updateStudentStatus(student.studentId, 'absent')}
+                      disabled={isDateDisabled}
                     >
                       ❌ Absent
                     </button>
                     <button
                       className={`status-btn late ${student.status === 'late' ? 'active' : ''}`}
                       onClick={() => updateStudentStatus(student.studentId, 'late')}
+                      disabled={isDateDisabled}
                     >
                       ⏰ Late
                     </button>
@@ -307,6 +381,7 @@ const BulkAttendanceForm: React.FC<BulkAttendanceFormProps> = ({
                     value={student.remarks}
                     onChange={(e) => updateStudentRemarks(student.studentId, e.target.value)}
                     className="remarks-input"
+                    disabled={isDateDisabled}
                   />
                 </td>
               </tr>
@@ -335,6 +410,7 @@ const BulkAttendanceForm: React.FC<BulkAttendanceFormProps> = ({
                 <button
                   className={`mobile-status-btn present ${student.status === 'present' ? 'active' : ''}`}
                   onClick={() => updateStudentStatus(student.studentId, 'present')}
+                  disabled={isDateDisabled}
                 >
                   <span className="mobile-status-icon">✅</span>
                   <span>Present</span>
@@ -342,6 +418,7 @@ const BulkAttendanceForm: React.FC<BulkAttendanceFormProps> = ({
                 <button
                   className={`mobile-status-btn absent ${student.status === 'absent' ? 'active' : ''}`}
                   onClick={() => updateStudentStatus(student.studentId, 'absent')}
+                  disabled={isDateDisabled}
                 >
                   <span className="mobile-status-icon">❌</span>
                   <span>Absent</span>
@@ -349,6 +426,7 @@ const BulkAttendanceForm: React.FC<BulkAttendanceFormProps> = ({
                 <button
                   className={`mobile-status-btn late ${student.status === 'late' ? 'active' : ''}`}
                   onClick={() => updateStudentStatus(student.studentId, 'late')}
+                  disabled={isDateDisabled}
                 >
                   <span className="mobile-status-icon">⏰</span>
                   <span>Late</span>
@@ -364,6 +442,7 @@ const BulkAttendanceForm: React.FC<BulkAttendanceFormProps> = ({
                 value={student.remarks}
                 onChange={(e) => updateStudentRemarks(student.studentId, e.target.value)}
                 className="mobile-remarks-input"
+                disabled={isDateDisabled}
               />
             </div>
           </div>
@@ -402,7 +481,7 @@ const BulkAttendanceForm: React.FC<BulkAttendanceFormProps> = ({
         <Button
           variant="primary"
           onClick={saveAttendance}
-          disabled={saving || studentAttendance.filter(s => s.status !== 'unmarked').length === 0}
+          disabled={saving || studentAttendance.filter(s => s.status !== 'unmarked').length === 0 || isDateDisabled}
           className="save-attendance-btn"
         >
           {saving ? (

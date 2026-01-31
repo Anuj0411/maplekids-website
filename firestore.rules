@@ -49,6 +49,12 @@ service cloud.firestore {
       allow write: if request.auth != null;  // Only authenticated users can create/update/delete
     }
     
+    // Holidays - read by all authenticated users, write only by authenticated users (admins/teachers)
+    match /holidays/{document} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;  // Only authenticated users can manage holidays
+    }
+    
     // User announcement preferences - per-user dismissals
     match /users/{userId}/announcementPreferences/{announcementId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;

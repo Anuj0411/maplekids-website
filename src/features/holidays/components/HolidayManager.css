@@ -1,0 +1,369 @@
+/* Holiday Manager Styles - Minimalist Design */
+.holiday-manager {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.holiday-manager-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  gap: 15px;
+}
+
+/* Header - Minimalist */
+.holiday-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.holiday-header-left h3 {
+  color: #1a1a1a;
+  font-size: 1.5rem;
+  margin: 0 0 5px 0;
+  font-weight: 600;
+}
+
+.holiday-header-left p {
+  color: #666;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.holiday-header-right {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.year-select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  background: white;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.year-select:hover {
+  border-color: #2e7d32;
+}
+
+.year-select:focus {
+  outline: none;
+  border-color: #2e7d32;
+  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+}
+
+.add-holiday-btn {
+  white-space: nowrap;
+  font-size: 0.9rem !important;
+  padding: 8px 16px !important;
+}
+
+/* Holiday Form Card - Minimalist */
+.holiday-form-card {
+  background: #f9f9f9;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 25px;
+  border-left: 4px solid #2e7d32;
+}
+
+.holiday-form-card h4 {
+  color: #1a1a1a;
+  font-size: 1.1rem;
+  margin: 0 0 18px 0;
+  font-weight: 600;
+}
+
+.holiday-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  color: #333;
+  font-weight: 500;
+  font-size: 0.85rem;
+}
+
+.form-input {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  background: white;
+  font-family: inherit;
+}
+
+.form-input:hover {
+  border-color: #bbb;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #2e7d32;
+  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  padding-top: 8px;
+}
+
+.form-actions button {
+  font-size: 0.9rem !important;
+  padding: 8px 16px !important;
+}
+
+/* Holidays List - Clean Table Style */
+.holidays-list {
+  margin-bottom: 30px;
+}
+
+.no-holidays {
+  background: white;
+  padding: 50px 20px;
+  border-radius: 8px;
+  text-align: center;
+  border: 1px dashed #ddd;
+}
+
+.no-holidays p {
+  font-size: 1rem;
+  color: #666;
+  margin: 8px 0;
+}
+
+.no-holidays-hint {
+  font-size: 0.95rem !important;
+  color: #999 !important;
+}
+
+/* Holidays Table - Minimalist */
+.holidays-grid {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e0e0e0;
+}
+
+.holiday-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background 0.2s ease;
+}
+
+.holiday-card:last-child {
+  border-bottom: none;
+}
+
+.holiday-card:hover {
+  background: #f9f9f9;
+}
+
+.holiday-card-header {
+  display: none;
+}
+
+.holiday-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.holiday-name {
+  color: #1a1a1a;
+  font-size: 1rem;
+  margin: 0;
+  font-weight: 500;
+}
+
+.holiday-date {
+  color: #666;
+  font-size: 0.85rem;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.holiday-date::before {
+  content: '📅';
+  font-size: 0.9rem;
+}
+
+.holiday-type-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #555;
+  background: #f0f0f0;
+  margin-left: 8px;
+}
+
+.holiday-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.holiday-card:hover .holiday-actions {
+  opacity: 1;
+}
+
+.action-btn {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  opacity: 0.7;
+}
+
+.action-btn:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.edit-btn:hover {
+  background: rgba(46, 125, 50, 0.1);
+}
+
+.delete-btn:hover {
+  background: rgba(244, 67, 54, 0.1);
+}
+
+/* Holiday Info Card - Minimalist */
+.holiday-info-card {
+  background: #f9f9f9;
+  padding: 16px 20px;
+  border-radius: 8px;
+  border-left: 3px solid #2e7d32;
+}
+
+.holiday-info-card h4 {
+  color: #1a1a1a;
+  font-size: 0.95rem;
+  margin: 0 0 12px 0;
+  font-weight: 600;
+}
+
+.holiday-info-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.holiday-info-card li {
+  color: #555;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  padding-left: 5px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .holiday-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .holiday-header-right {
+    width: 100%;
+  }
+
+  .year-select,
+  .add-holiday-btn {
+    flex: 1;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .holiday-card {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .holiday-actions {
+    opacity: 1;
+    justify-content: flex-end;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .form-actions button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .holiday-manager {
+    padding: 12px;
+  }
+
+  .holiday-header-left h3 {
+    font-size: 1.3rem;
+  }
+
+  .holiday-form-card {
+    padding: 16px;
+  }
+
+  .holiday-card {
+    padding: 14px 16px;
+  }
+
+  .holiday-info-card {
+    padding: 14px 16px;
+  }
+
+  .holiday-name {
+    font-size: 0.95rem;
+  }
+
+  .holiday-date {
+    font-size: 0.8rem;
+  }
+}
+

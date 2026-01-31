@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '@/styles/Dashboard.css';
 import { Button } from '@/components/common';
+import { holidayService } from '@/firebase/services';
+import type { Holiday } from '@/firebase/services';
 import BulkAttendanceForm from '@/features/attendance/components/BulkAttendanceForm';
 import AcademicReportsManager from '@/features/reports/components/AcademicReportsManager';
 import RemarksManager from '@/features/reports/components/RemarksManager';
@@ -24,7 +26,19 @@ const TeacherDashboard: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [activeTab, setActiveTab] = useState<'attendance' | 'reports' | 'remarks'>('attendance');
   const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [holidayDates, setHolidayDates] = useState<Set<string>>(new Set());
+  const [holidays, setHolidays] = useState<Holiday[]>([]);
+  const [dateError, setDateError] = useState<string>('');
   const navigate = useNavigate();
+
+  // Function to reload holidays
+  const reloadHolidays = async () => {
+    const currentYear = new Date().getFullYear();
+    const dates = await holidayService.getHolidayDatesSet(currentYear);
+    const holidaysList = await holidayService.getHolidaysByYear(currentYear);
+    setHolidayDates(dates);
+    setHolidays(holidaysList);
+  };
 
   // Use attendance hook with date filter only (class filtering is done on students)
   const { 
@@ -33,6 +47,131 @@ const TeacherDashboard: React.FC = () => {
   } = useAttendance({
     filterByDate: selectedDate
   });
+
+  // Load holidays for the current year
+  useEffect(() => {
+    const loadHolidays = async () => {
+      const currentYear = new Date().getFullYear();
+      const dates = await holidayService.getHolidayDatesSet(currentYear);
+      const holidaysList = await holidayService.getHolidaysByYear(currentYear);
+      setHolidayDates(dates);
+      setHolidays(holidaysList);
+    };
+    loadHolidays();
+    
+    // Also reload when window gets focus (in case admin added holidays in another tab)
+    const handleFocus = () => {
+      loadHolidays();
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, []);
+
+  // Helper functions for date validation
+  const getMaxAllowedDate = () => {
+    return new Date().toISOString().split('T')[0];
+  };
+
+  const getMinAllowedDate = () => {
+    const date = new Date();
+    date.setDate(date.getDate() - 3);
+    return date.toISOString().split('T')[0];
+  };
+
+  const isDateAllowed = (dateStr: string): boolean => {
+    const date = new Date(dateStr + 'T00:00:00');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const threeDaysAgo = new Date(today);
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+
+    // Check if date is within last 3 days
+    if (date < threeDaysAgo || date > today) {
+      return false;
+    }
+
+    // Check if it's Sunday (0 = Sunday)
+    if (date.getDay() === 0) {
+      return false;
+    }
+
+    // Check if it's a holiday
+    if (holidayDates.has(dateStr)) {
+      return false;
+    }
+
+    return true;
+  };
+
+  const getDateValidationMessage = (dateStr: string): string => {
+    const date = new Date(dateStr + 'T00:00:00');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const threeDaysAgo = new Date(today);
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+
+    if (date > today) {
+      return '⚠️ Cannot mark attendance for future dates';
+    }
+
+    if (date < threeDaysAgo) {
+      return '⚠️ Can only edit attendance for the last 3 days';
+    }
+
+    if (date.getDay() === 0) {
+      return '🚫 Cannot mark attendance on Sundays';
+    }
+
+    if (holidayDates.has(dateStr)) {
+      return '🚫 Cannot mark attendance on holidays';
+    }
+
+    return '';
+  };
+
+  // Validate date whenever it changes
+  useEffect(() => {
+    const error = getDateValidationMessage(selectedDate);
+    setDateError(error);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate, holidayDates]);
+
+  // Handle date change with validation
+  const handleDateChange = (newDate: string) => {
+    setSelectedDate(newDate);
+  };
+
+  // Add effect to style the date picker with custom CSS for disabled dates
+  useEffect(() => {
+    const dateInput = document.getElementById('date-select');
+    if (!dateInput) return;
+
+    // Create a custom style for the calendar
+    const styleId = 'calendar-disabled-dates-style';
+    let styleElement = document.getElementById(styleId) as HTMLStyleElement;
+    
+    if (!styleElement) {
+      styleElement = document.createElement('style');
+      styleElement.id = styleId;
+      document.head.appendChild(styleElement);
+    }
+
+    // Generate CSS to show visual hints (this is limited for native date inputs)
+    // We'll add a pulsing border when an invalid date is selected
+    styleElement.textContent = `
+      input[type="date"].date-input-error::-webkit-calendar-picker-indicator {
+        filter: invert(27%) sepia(98%) saturate(2476%) hue-rotate(346deg) brightness(94%) contrast(97%);
+      }
+    `;
+
+    return () => {
+      // Cleanup if needed
+    };
+  }, [holidayDates]);
+
 
   // Check user role on mount and redirect if not teacher
   useEffect(() => {
@@ -132,8 +271,8 @@ const TeacherDashboard: React.FC = () => {
           </button>
         </div>
 
-        {/* Class Selection */}
-        <div className="class-selection">
+        {/* Class and Date Selection - Side by Side */}
+        <div className="filters-container">
           <div className="control-group">
             <label htmlFor="class-select">Select Class:</label>
             <select
@@ -153,6 +292,75 @@ const TeacherDashboard: React.FC = () => {
               <option value="1st">1st</option>
             </select>
           </div>
+
+          {activeTab === 'attendance' && (
+            <div className="control-group">
+              <label htmlFor="date-select">Select Date:</label>
+              <input
+                type="date"
+                id="date-select"
+                value={selectedDate}
+                onChange={(e) => handleDateChange(e.target.value)}
+                min={getMinAllowedDate()}
+                max={getMaxAllowedDate()}
+                className={`date-input ${!isDateAllowed(selectedDate) ? 'date-input-error' : ''}`}
+                title={dateError || 'Select a date within the last 3 days (excluding Sundays and holidays)'}
+              />
+              {dateError && (
+                <span className="date-error-message">{dateError}</span>
+              )}
+              
+              {/* Show blocked dates info */}
+              <div className="blocked-dates-info">
+                <small style={{ color: '#666', fontSize: '0.75rem', marginTop: '6px', display: 'block' }}>
+                  🚫 Blocked dates this month: {(() => {
+                    const currentMonth = new Date().getMonth();
+                    const currentYear = new Date().getFullYear();
+                    const blockedDates = [];
+                    
+                    // Get Sundays in current month
+                    const firstDay = new Date(currentYear, currentMonth, 1);
+                    const lastDay = new Date(currentYear, currentMonth + 1, 0);
+                    
+                    for (let d = new Date(firstDay); d <= lastDay; d.setDate(d.getDate() + 1)) {
+                      if (d.getDay() === 0) { // Sunday
+                        blockedDates.push({
+                          date: new Date(d),
+                          label: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' (Sun)'
+                        });
+                      }
+                    }
+                    
+                    // Add holidays from current month
+                    Array.from(holidayDates)
+                      .filter(date => {
+                        const d = new Date(date + 'T00:00:00');
+                        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+                      })
+                      .forEach(date => {
+                        const d = new Date(date + 'T00:00:00');
+                        blockedDates.push({
+                          date: d,
+                          label: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' (Holiday)'
+                        });
+                      });
+                    
+                    // Sort by date and format
+                    blockedDates.sort((a, b) => a.date.getTime() - b.date.getTime());
+                    return blockedDates.length > 0 
+                      ? blockedDates.map(item => item.label).join(', ')
+                      : 'None';
+                  })()}
+                </small>
+              </div>
+              
+              <div className="date-picker-info">
+                <small style={{ color: '#64748b', fontSize: '0.75rem', marginTop: '4px', display: 'block' }}>
+                  ℹ️ Sundays and holidays are not available
+                </small>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Tab Content */}
@@ -178,27 +386,16 @@ const TeacherDashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* Date Selection for Attendance */}
-            <div className="attendance-controls">
-              <div className="control-group">
-                <label htmlFor="date-select">Select Date:</label>
-                <input
-                  type="date"
-                  id="date-select"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="date-input"
-                />
-              </div>
-            </div>
-
             {/* Bulk Attendance Form */}
             <BulkAttendanceForm
               selectedClass={selectedClass}
               selectedDate={selectedDate}
+              isDateDisabled={!isDateAllowed(selectedDate)}
+              dateErrorMessage={dateError}
               onAttendanceSaved={() => {
-                // Reload attendance data after saving
+                // Reload attendance data and holidays after saving
                 refetchAttendance();
+                reloadHolidays();
               }}
             />
           </>

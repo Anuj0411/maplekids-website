@@ -1329,3 +1329,214 @@ export const authService = {
 		}
 	},
 };
+
+// Holiday Service
+export interface Holiday {
+	id?: string;
+	startDate: string; // YYYY-MM-DD format
+	endDate: string; // YYYY-MM-DD format
+	name: string;
+	createdAt: string;
+	createdBy: {
+		userId: string;
+		name: string;
+		email: string;
+	};
+}
+
+export const holidayService = {
+	/**
+	 * Get all holidays
+	 */
+	async getAllHolidays(): Promise<Holiday[]> {
+		try {
+			const holidaysRef = collection(db, 'holidays');
+			const snapshot = await getDocs(holidaysRef);
+			
+			return snapshot.docs.map(doc => ({
+				id: doc.id,
+				...doc.data()
+			} as Holiday));
+		} catch (error) {
+			console.error('Error fetching holidays:', error);
+			throw error;
+		}
+	},
+
+	/**
+	 * Get holidays that overlap with a specific year
+	 */
+	async getHolidaysByYear(year: number): Promise<Holiday[]> {
+		try {
+			const allHolidays = await this.getAllHolidays();
+			const startOfYear = `${year}-01-01`;
+			const endOfYear = `${year}-12-31`;
+			
+			// Filter holidays that overlap with the year
+			return allHolidays.filter(holiday => {
+				return holiday.startDate <= endOfYear && holiday.endDate >= startOfYear;
+			});
+		} catch (error) {
+			console.error('Error fetching holidays by year:', error);
+			throw error;
+		}
+	},
+
+	/**
+	 * Check if a specific date falls within any holiday range
+	 */
+	async isHoliday(date: string): Promise<boolean> {
+		try {
+			const allHolidays = await this.getAllHolidays();
+			return allHolidays.some(holiday => date >= holiday.startDate && date <= holiday.endDate);
+		} catch (error) {
+			console.error('Error checking if date is holiday:', error);
+			return false;
+		}
+	},
+
+	/**
+	 * Get holiday set (all dates within ranges) for quick lookup
+	 * Works purely with date strings - no timezone conversion
+	 */
+	async getHolidayDatesSet(year?: number): Promise<Set<string>> {
+		try {
+			const holidays = year 
+				? await this.getHolidaysByYear(year)
+				: await this.getAllHolidays();
+			
+			const dateSet = new Set<string>();
+			
+			// Simply add all holiday dates as strings
+			holidays.forEach(holiday => {
+				// Add start date directly
+				dateSet.add(holiday.startDate);
+				
+				// If it's a range, add all dates in between
+				if (holiday.startDate !== holiday.endDate) {
+					// Parse the date components
+					const [sYear, sMonth, sDay] = holiday.startDate.split('-').map(Number);
+					const [eYear, eMonth, eDay] = holiday.endDate.split('-').map(Number);
+					
+					// Create dates at noon to avoid timezone issues
+					const start = new Date(sYear, sMonth - 1, sDay, 12, 0, 0);
+					const end = new Date(eYear, eMonth - 1, eDay, 12, 0, 0);
+					
+					const current = new Date(start);
+					while (current <= end) {
+						const y = current.getFullYear();
+						const m = String(current.getMonth() + 1).padStart(2, '0');
+						const d = String(current.getDate()).padStart(2, '0');
+						const dateStr = `${y}-${m}-${d}`;
+						dateSet.add(dateStr);
+						current.setDate(current.getDate() + 1);
+					}
+				}
+			});
+			
+			return dateSet;
+		} catch (error) {
+			console.error('Error getting holiday dates set:', error);
+			return new Set();
+		}
+	},
+
+	/**
+	 * Add a new holiday
+	 */
+	async addHoliday(holiday: Omit<Holiday, 'id'>): Promise<string> {
+		try {
+			const holidaysRef = collection(db, 'holidays');
+			const docRef = await addDoc(holidaysRef, holiday);
+			
+			return docRef.id;
+		} catch (error) {
+			console.error('Error adding holiday:', error);
+			throw error;
+		}
+	},
+
+	/**
+	 * Update an existing holiday
+	 */
+	async updateHoliday(holidayId: string, updates: Partial<Holiday>): Promise<void> {
+		try {
+			const holidayRef = doc(db, 'holidays', holidayId);
+			await updateDoc(holidayRef, updates);
+		} catch (error) {
+			console.error('Error updating holiday:', error);
+			throw error;
+		}
+	},
+
+	/**
+	 * Delete a holiday
+	 */
+	async deleteHoliday(holidayId: string): Promise<void> {
+		try {
+			const holidayRef = doc(db, 'holidays', holidayId);
+			await deleteDoc(holidayRef);
+		} catch (error) {
+			console.error('Error deleting holiday:', error);
+			throw error;
+		}
+	},
+
+	/**
+	 * Check if a date is Sunday
+	 */
+	isSunday(date: string): boolean {
+		const d = new Date(date + 'T00:00:00');
+		return d.getDay() === 0;
+	},
+
+	/**
+	 * Check if a date is a non-working day (Sunday or holiday)
+	 */
+	async isNonWorkingDay(date: string): Promise<boolean> {
+		if (this.isSunday(date)) {
+			return true;
+		}
+		return await this.isHoliday(date);
+	},
+
+	/**
+	 * Get working days count between two dates (excluding Sundays and holidays)
+	 */
+	async getWorkingDaysCount(startDate: string, endDate: string): Promise<number> {
+		try {
+			const holidays = await this.getAllHolidays();
+			const holidayDates = new Set<string>();
+			
+			// Expand all holiday ranges into individual dates
+			holidays.forEach(holiday => {
+				const start = new Date(holiday.startDate + 'T00:00:00');
+				const end = new Date(holiday.endDate + 'T00:00:00');
+				
+				for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+					holidayDates.add(d.toISOString().split('T')[0]);
+				}
+			});
+			
+			const start = new Date(startDate + 'T00:00:00');
+			const end = new Date(endDate + 'T00:00:00');
+			let workingDays = 0;
+			
+			for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+				const dateStr = d.toISOString().split('T')[0];
+				const isSunday = d.getDay() === 0;
+				const isHoliday = holidayDates.has(dateStr);
+				
+				if (!isSunday && !isHoliday) {
+					workingDays++;
+				}
+			}
+			
+			return workingDays;
+		} catch (error) {
+			console.error('Error calculating working days:', error);
+			throw error;
+		}
+	}
+};
+
