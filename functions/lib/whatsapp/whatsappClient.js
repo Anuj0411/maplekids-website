@@ -13,12 +13,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendWhatsAppMessage = sendWhatsAppMessage;
 exports.sendTemplateMessage = sendTemplateMessage;
 const node_fetch_1 = require("node-fetch");
-// Get WhatsApp credentials from environment variables
-// For local: Set in .env file
-// For production: Set via Firebase Console or deployment
-const WHATSAPP_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN || 'YOUR_TEMP_ACCESS_TOKEN';
-const PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_ID || 'YOUR_PHONE_NUMBER_ID';
 const API_VERSION = 'v18.0';
+function getWhatsAppCredentials() {
+    var _a, _b;
+    const token = (_a = process.env.WHATSAPP_ACCESS_TOKEN) === null || _a === void 0 ? void 0 : _a.trim();
+    const phoneNumberId = (_b = process.env.WHATSAPP_PHONE_ID) === null || _b === void 0 ? void 0 : _b.trim();
+    if (!token || !phoneNumberId) {
+        throw new Error('Missing WHATSAPP_ACCESS_TOKEN or WHATSAPP_PHONE_ID. Set them in the Functions environment.');
+    }
+    return { token, phoneNumberId };
+}
 /**
  * Send a text message via WhatsApp Cloud API
  *
@@ -26,7 +30,8 @@ const API_VERSION = 'v18.0';
  * @param text - Message text (max 4096 characters)
  */
 async function sendWhatsAppMessage(to, text) {
-    const url = `https://graph.facebook.com/${API_VERSION}/${PHONE_NUMBER_ID}/messages`;
+    const { token, phoneNumberId } = getWhatsAppCredentials();
+    const url = `https://graph.facebook.com/${API_VERSION}/${phoneNumberId}/messages`;
     const payload = {
         messaging_product: 'whatsapp',
         recipient_type: 'individual',
@@ -41,7 +46,7 @@ async function sendWhatsAppMessage(to, text) {
         const response = await (0, node_fetch_1.default)(url, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${WHATSAPP_TOKEN}`,
+                'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(payload),
@@ -72,7 +77,8 @@ async function sendWhatsAppMessage(to, text) {
  * @param parameters - Template parameters (e.g., student name, amount)
  */
 async function sendTemplateMessage(to, templateName, parameters) {
-    const url = `https://graph.facebook.com/${API_VERSION}/${PHONE_NUMBER_ID}/messages`;
+    const { token, phoneNumberId } = getWhatsAppCredentials();
+    const url = `https://graph.facebook.com/${API_VERSION}/${phoneNumberId}/messages`;
     const payload = {
         messaging_product: 'whatsapp',
         to: to,
@@ -97,7 +103,7 @@ async function sendTemplateMessage(to, templateName, parameters) {
         const response = await (0, node_fetch_1.default)(url, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${WHATSAPP_TOKEN}`,
+                'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(payload),

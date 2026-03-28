@@ -75,11 +75,12 @@ RESPONSE FORMAT:
 - End with "How else can I help you?" for ongoing conversations
 `;
 /**
- * Get Gemini model instance with system instructions
+ * Gemini model with system instructions (stable behavior vs. injecting text as fake history).
  */
 function getModel() {
     return getGeminiAI().getGenerativeModel({
-        model: 'gemini-1.5-flash', // Fast and cost-effective
+        model: 'gemini-1.5-flash',
+        systemInstruction: SYSTEM_INSTRUCTION,
     });
 }
 /**
@@ -104,28 +105,11 @@ function getGenerationConfig() {
 async function generateAIResponse(userMessage, userId, userContext) {
     try {
         console.log(`🤖 Generating AI response for user: ${userId}`);
-        // Get conversation history from Firestore
         const history = await (0, firebaseService_1.getConversationHistory)(userId);
-        // Build enhanced context
-        const contextPrompt = buildContextPrompt(userMessage, userContext, history);
-        // Get or create chat session
+        const contextPrompt = buildContextPrompt(userMessage, userContext);
         const model = getModel();
-        // If this is the first message, include system instruction
-        let chatHistory = history;
-        if (history.length === 0) {
-            chatHistory = [
-                {
-                    role: 'user',
-                    text: 'Hello, I need help.',
-                },
-                {
-                    role: 'model',
-                    text: SYSTEM_INSTRUCTION + '\n\nHello! I\'m your Maplekids AI Assistant. How can I help you today?',
-                },
-            ];
-        }
         const chat = model.startChat({
-            history: chatHistory.map(msg => ({
+            history: history.map((msg) => ({
                 role: msg.role === 'user' ? 'user' : 'model',
                 parts: [{ text: msg.text }],
             })),
@@ -149,9 +133,8 @@ async function generateAIResponse(userMessage, userId, userContext) {
  * Build context-enhanced prompt
  * This gives Gemini more information to generate better responses
  */
-function buildContextPrompt(userMessage, userContext, history) {
+function buildContextPrompt(userMessage, userContext) {
     const contextParts = [];
-    // Add user information if available
     if (userContext) {
         if (userContext.name) {
             contextParts.push(`User name: ${userContext.name}`);
@@ -167,6 +150,12 @@ function buildContextPrompt(userMessage, userContext, history) {
         }
         if (userContext.language) {
             contextParts.push(`Preferred language: ${userContext.language}`);
+        }
+        if (userContext.intent) {
+            contextParts.push(`Detected intent: ${userContext.intent}`);
+        }
+        if (userContext.schoolContextSummary) {
+            contextParts.push(`School data context:\n${userContext.schoolContextSummary}`);
         }
     }
     // Build final prompt
@@ -229,34 +218,45 @@ async function detectIntent(message) {
  * @param additionalContext - Any additional information
  */
 async function generateIntentBasedResponse(intent, userData, additionalContext) {
+    var _a, _b, _c, _d, _e, _f, _g;
     const model = getModel();
     let prompt = '';
+    const cls = (_a = userData.studentClass) !== null && _a !== void 0 ? _a : 'unknown';
+    const roll = (_b = userData.rollNumber) !== null && _b !== void 0 ? _b : 'n/a';
     switch (intent) {
         case 'fees':
-            prompt = `Generate a friendly response about fee status.
-      Student: ${userData.studentName}
-      Current fees: ₹${userData.feeAmount || 'N/A'}
-      Due date: ${userData.feeDueDate || 'N/A'}
-      Status: ${userData.feeStatus || 'N/A'}
-      ${additionalContext ? `Additional info: ${additionalContext}` : ''}`;
+            prompt = `Generate a concise friendly WhatsApp message about school fees at Maplekids Play School.
+Student: ${userData.studentName} (class ${cls}, roll ${roll})
+Fee data in database: ${userData.feeStatus || 'Not stored — parent must contact office for balance and due dates.'}
+${userData.feeAmount ? `Reference amount if any: ₹${userData.feeAmount}` : ''}
+${additionalContext ? `More context: ${additionalContext}` : ''}`;
             break;
         case 'attendance':
-            prompt = `Generate a friendly response about attendance.
-      Student: ${userData.studentName}
-      This month: ${userData.presentDays || 0}/${userData.totalDays || 0} days (${userData.attendancePercentage || 0}%)
-      Status: ${userData.attendanceStatus || 'N/A'}
-      ${additionalContext ? `Additional info: ${additionalContext}` : ''}`;
+            prompt = `Generate a concise friendly WhatsApp message about attendance.
+Student: ${userData.studentName} (class ${cls}, roll ${roll})
+From school records: ${(_c = userData.presentDays) !== null && _c !== void 0 ? _c : 0} present / ${(_d = userData.totalDays) !== null && _d !== void 0 ? _d : 0} class days with attendance marked (${(_e = userData.attendancePercentage) !== null && _e !== void 0 ? _e : 0}% present).
+Latest recorded class date: ${(_f = userData.lastAttendanceDate) !== null && _f !== void 0 ? _f : 'none'} — status: ${(_g = userData.attendanceStatus) !== null && _g !== void 0 ? _g : 'n/a'}.
+If totals are zero, explain that no attendance rows matched yet and suggest checking with the class teacher.
+${additionalContext ? `More context: ${additionalContext}` : ''}`;
             break;
         case 'reports':
-            prompt = `Generate a friendly response about academic performance.
-      Student: ${userData.studentName}
-      Latest report: ${userData.latestTerm || 'N/A'}
-      Subjects: ${userData.subjectCount || 0}
-      Overall performance: ${userData.performance || 'N/A'}
-      ${additionalContext ? `Additional info: ${additionalContext}` : ''}`;
+            prompt = `Generate a concise friendly WhatsApp message about report cards / academic performance.
+Student: ${userData.studentName} (class ${cls})
+Digital report data: ${userData.performance || 'Not available in this system — direct parent to the school office or teacher for official reports.'}
+${additionalContext ? `More context: ${additionalContext}` : ''}`;
+            break;
+        case 'homework':
+            prompt = `Generate a brief friendly WhatsApp message about homework.
+Student: ${userData.studentName} (class ${cls})
+There is no live homework feed in the database; suggest the school diary, class group, or class teacher for assignments.`;
+            break;
+        case 'events':
+            prompt = `Generate a brief friendly WhatsApp message about school events.
+Student: ${userData.studentName} (class ${cls})
+There is no events calendar in this database; point them to school notices, the office, or official communications for dates.`;
             break;
         default:
-            prompt = `User asked about: ${intent}. Provide helpful information about Maplekids Play School.`;
+            prompt = `User topic: ${intent}. Student context: ${userData.studentName} (class ${cls}). Give helpful Maplekids Play School guidance in WhatsApp-friendly tone.`;
     }
     const result = await model.generateContent(prompt);
     return result.response.text();

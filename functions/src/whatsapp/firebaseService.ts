@@ -11,6 +11,7 @@
  */
 
 import * as admin from 'firebase-admin';
+import type { DocumentData } from 'firebase-admin/firestore';
 
 // Initialize Firebase Admin (only once)
 if (!admin.apps.length) {
@@ -35,7 +36,7 @@ interface Message {
 /**
  * User interface
  */
-interface User {
+export interface User {
   phoneNumber: string;
   name?: string;
   role?: 'parent' | 'teacher' | 'admin';
@@ -43,6 +44,254 @@ interface User {
   language?: string;
   createdAt: Date;
   lastMessageAt?: Date;
+}
+
+export interface SchoolStudentRecord {
+  docId: string;
+  rollNumber: string;
+  firstName: string;
+  lastName: string;
+  class: string;
+  parentName?: string;
+  parentPhone?: string;
+}
+
+export interface AttendanceRollup {
+  studentName: string;
+  rollNumber: string;
+  className: string;
+  totalDaysRecorded: number;
+  present: number;
+  absent: number;
+  late: number;
+  lastRecordDate?: string;
+  lastStatus?: string;
+}
+
+export interface SchoolContextForWhatsApp {
+  students: SchoolStudentRecord[];
+  primaryStudent?: SchoolStudentRecord;
+  attendanceSummary?: AttendanceRollup;
+}
+
+function digitsOnly(phone: string): string {
+  return phone.replace(/\D/g, '');
+}
+
+/** E.164-style variants for matching Firestore parentPhone values */
+export function parentPhoneQueryVariants(waPhone: string): string[] {
+  const digits = digitsOnly(waPhone);
+  const out = new Set<string>();
+  if (digits) {
+    out.add(digits);
+    out.add(`+${digits}`);
+  }
+  if (digits.length === 10) {
+    out.add(`91${digits}`);
+    out.add(`+91${digits}`);
+  }
+  if (digits.length === 12 && digits.startsWith('91')) {
+    out.add(digits);
+    out.add(`+${digits}`);
+    out.add(digits.slice(2));
+  }
+  return [...out];
+}
+
+function mapStudentDoc(docId: string, data: DocumentData): SchoolStudentRecord {
+  return {
+    docId,
+    rollNumber: String(data.rollNumber ?? docId),
+    firstName: String(data.firstName ?? ''),
+    lastName: String(data.lastName ?? ''),
+    class: String(data.class ?? ''),
+    parentName: data.parentName ? String(data.parentName) : undefined,
+    parentPhone: data.parentPhone ? String(data.parentPhone) : undefined,
+  };
+}
+
+/**
+ * Find students whose parentPhone matches the WhatsApp number (any common format).
+ */
+export async function findStudentsByParentPhone(waPhone: string): Promise<SchoolStudentRecord[]> {
+  const variants = parentPhoneQueryVariants(waPhone);
+  const byId = new Map<string, SchoolStudentRecord>();
+
+  for (const v of variants) {
+    const snap = await db.collection('students').where('parentPhone', '==', v).get();
+    snap.forEach((doc) => {
+      if (!byId.has(doc.id)) {
+        byId.set(doc.id, mapStudentDoc(doc.id, doc.data()));
+      }
+    });
+  }
+
+  return [...byId.values()];
+}
+
+async function loadStudentByUserLink(user: User): Promise<SchoolStudentRecord | null> {
+  if (!user.studentId) {
+    return null;
+  }
+  const byDoc = await db.collection('students').doc(user.studentId).get();
+  if (byDoc.exists) {
+    return mapStudentDoc(byDoc.id, byDoc.data()!);
+  }
+  const snap = await db
+    .collection('students')
+    .where('rollNumber', '==', user.studentId)
+    .limit(5)
+    .get();
+  if (snap.empty) {
+    return null;
+  }
+  const d = snap.docs[0];
+  return mapStudentDoc(d.id, d.data());
+}
+
+/**
+ * Roll up attendance docs for one student (class + roll number).
+ */
+export async function getAttendanceRollupForStudent(
+  rollNumber: string,
+  className: string
+): Promise<AttendanceRollup | undefined> {
+  if (!className || !rollNumber) {
+    return undefined;
+  }
+
+  const snap = await db.collection('attendance').where('class', '==', className).get();
+
+  let present = 0;
+  let absent = 0;
+  let late = 0;
+  let totalDaysRecorded = 0;
+  let lastRecordDate: string | undefined;
+  let lastStatus: string | undefined;
+
+  const dated: Array<{ date: string; status: string; studentName?: string }> = [];
+
+  snap.forEach((doc) => {
+    const data = doc.data();
+    const students: Array<{ rollNumber?: string; status?: string; studentName?: string }> =
+      Array.isArray(data.students) ? data.students : [];
+    const row = students.find((s) => String(s.rollNumber) === String(rollNumber));
+    if (!row || !row.status) {
+      return;
+    }
+    totalDaysRecorded += 1;
+    if (row.status === 'present') {
+      present += 1;
+    } else if (row.status === 'absent') {
+      absent += 1;
+    } else if (row.status === 'late') {
+      late += 1;
+    }
+    const dateStr = String(data.date ?? '');
+    dated.push({
+      date: dateStr,
+      status: row.status,
+      studentName: row.studentName,
+    });
+  });
+
+  dated.sort((a, b) => b.date.localeCompare(a.date));
+  if (dated.length > 0) {
+    lastRecordDate = dated[0].date;
+    lastStatus = dated[0].status;
+  }
+
+  const studentName = dated[0]?.studentName || '';
+
+  return {
+    studentName,
+    rollNumber,
+    className,
+    totalDaysRecorded,
+    present,
+    absent,
+    late,
+    lastRecordDate,
+    lastStatus,
+  };
+}
+
+/**
+ * If exactly one student matches this phone, link whatsapp_users to that roll number.
+ */
+export async function tryAutoLinkParentToStudent(waPhone: string): Promise<void> {
+  const matches = await findStudentsByParentPhone(waPhone);
+  if (matches.length !== 1) {
+    return;
+  }
+  const s = matches[0];
+  const childName = [s.firstName, s.lastName].filter(Boolean).join(' ').trim();
+  await db
+    .collection('whatsapp_users')
+    .doc(waPhone)
+    .set(
+      {
+        studentId: s.rollNumber,
+        name: childName || s.parentName || undefined,
+        role: 'parent',
+      },
+      { merge: true }
+    );
+  console.log(`Auto-linked WhatsApp user ${waPhone} to student ${s.rollNumber}`);
+}
+
+/**
+ * Load linked students + attendance summary for AI context.
+ */
+export async function loadSchoolContextForWhatsApp(
+  waPhone: string,
+  user: User | null
+): Promise<SchoolContextForWhatsApp> {
+  let students = await findStudentsByParentPhone(waPhone);
+
+  if (user?.studentId) {
+    const linked = await loadStudentByUserLink(user);
+    if (linked && !students.some((s) => s.rollNumber === linked.rollNumber)) {
+      students = [linked, ...students];
+    }
+  }
+
+  const primaryStudent = students[0];
+  let attendanceSummary: AttendanceRollup | undefined;
+  if (primaryStudent) {
+    attendanceSummary = await getAttendanceRollupForStudent(
+      primaryStudent.rollNumber,
+      primaryStudent.class
+    );
+  }
+
+  return { students, primaryStudent, attendanceSummary };
+}
+
+export function formatSchoolContextForPrompt(ctx: SchoolContextForWhatsApp): string | undefined {
+  if (!ctx.primaryStudent) {
+    return undefined;
+  }
+  const s = ctx.primaryStudent;
+  const name = [s.firstName, s.lastName].filter(Boolean).join(' ').trim();
+  const lines: string[] = [
+    `Linked student on file: ${name || '(name missing)'} — class ${s.class || 'unknown'}, roll ${s.rollNumber}.`,
+  ];
+  if (ctx.attendanceSummary && ctx.attendanceSummary.totalDaysRecorded > 0) {
+    const a = ctx.attendanceSummary;
+    lines.push(
+      `Attendance in records: ${a.present} present, ${a.absent} absent, ${a.late} late across ${a.totalDaysRecorded} class session(s).`
+    );
+    if (a.lastRecordDate) {
+      lines.push(`Latest recorded class date: ${a.lastRecordDate} (status: ${a.lastStatus ?? 'n/a'}).`);
+    }
+  } else {
+    lines.push('No attendance records matched this student in Firestore yet.');
+  }
+  if (ctx.students.length > 1) {
+    lines.push(`Note: ${ctx.students.length} students share this parent phone; using the first match for summaries.`);
+  }
+  return lines.join('\n');
 }
 
 /**
@@ -79,22 +328,29 @@ export async function saveMessage(message: Message): Promise<void> {
 export async function getUserByPhone(phoneNumber: string): Promise<User | null> {
   try {
     const userDoc = await db.collection('whatsapp_users').doc(phoneNumber).get();
-    
+
     if (userDoc.exists) {
-      return userDoc.data() as User;
+      const user = userDoc.data() as User;
+      if (!user.studentId) {
+        await tryAutoLinkParentToStudent(phoneNumber);
+        const refreshed = await db.collection('whatsapp_users').doc(phoneNumber).get();
+        return refreshed.data() as User;
+      }
+      return user;
     }
-    
-    // New user - create profile
+
     const newUser: User = {
       phoneNumber,
       createdAt: new Date(),
-      role: 'parent', // Default role
+      role: 'parent',
     };
-    
+
     await db.collection('whatsapp_users').doc(phoneNumber).set(newUser);
     console.log(`👤 Created new user: ${phoneNumber}`);
-    
-    return newUser;
+
+    await tryAutoLinkParentToStudent(phoneNumber);
+    const refreshed = await db.collection('whatsapp_users').doc(phoneNumber).get();
+    return refreshed.data() as User;
   } catch (error) {
     console.error('Error getting user:', error);
     throw error;

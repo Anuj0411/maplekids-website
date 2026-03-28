@@ -38,7 +38,9 @@ GEMINI_API_KEY=AIzaSyYOUR_ACTUAL_GEMINI_KEY_HERE
 # WhatsApp Configuration  
 WHATSAPP_ACCESS_TOKEN=YOUR_WHATSAPP_TOKEN
 WHATSAPP_PHONE_ID=YOUR_PHONE_NUMBER_ID
-WHATSAPP_VERIFY_TOKEN=maplekids_whatsapp_verify_1769855959
+WHATSAPP_VERIFY_TOKEN=your_secret_verify_token
+# Meta App Secret (Settings → Basic) — required in production for webhook POST signature verification
+WHATSAPP_APP_SECRET=YOUR_META_APP_SECRET
 ```
 
 ### Step 3: Save and Close
@@ -69,7 +71,8 @@ When deploying to Firebase, you need to set environment variables via the Fireba
      - `GEMINI_API_KEY` = Your Gemini API key
      - `WHATSAPP_ACCESS_TOKEN` = Your WhatsApp token
      - `WHATSAPP_PHONE_ID` = Your phone number ID
-     - `WHATSAPP_VERIFY_TOKEN` = `maplekids_whatsapp_verify_1769855959`
+     - `WHATSAPP_VERIFY_TOKEN` = same value you enter in Meta webhook setup
+     - `WHATSAPP_APP_SECRET` = Meta app secret (required in production for POST body verification)
 
 4. **Save and Redeploy**
    ```bash
@@ -88,7 +91,8 @@ cat > .env << 'EOF'
 GEMINI_API_KEY=AIzaSyYOUR_KEY
 WHATSAPP_ACCESS_TOKEN=YOUR_TOKEN
 WHATSAPP_PHONE_ID=YOUR_PHONE_ID
-WHATSAPP_VERIFY_TOKEN=maplekids_whatsapp_verify_1769855959
+WHATSAPP_VERIFY_TOKEN=your_secret_verify_token
+WHATSAPP_APP_SECRET=YOUR_META_APP_SECRET
 EOF
 
 # Deploy (Firebase will read from .env)
@@ -169,11 +173,7 @@ npm install dotenv --save
 
 ## 📚 Environment Variable Priority
 
-The code checks for environment variables in this order:
-
-1. **`.env` file** (local development)
-2. **Firebase Console environment** (production)
-3. **Default fallback values** (if nothing is set)
+The code reads environment variables from the **Functions runtime** (`.env` with the emulator, or Firebase Console / `firebase functions:secrets` in production). There are **no** safe defaults for `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_ID`, `WHATSAPP_VERIFY_TOKEN`, or `WHATSAPP_APP_SECRET` (production POSTs).
 
 ---
 
@@ -184,7 +184,8 @@ The code checks for environment variables in this order:
 | `GEMINI_API_KEY` | Google AI Studio | `AIzaSy...` |
 | `WHATSAPP_ACCESS_TOKEN` | Meta Business Suite | `EAABsz...` |
 | `WHATSAPP_PHONE_ID` | Meta WhatsApp Config | `1234567890` |
-| `WHATSAPP_VERIFY_TOKEN` | You create this | `maplekids_whatsapp_verify_1769855959` |
+| `WHATSAPP_VERIFY_TOKEN` | You create this (Meta webhook) | `my_verify_secret` |
+| `WHATSAPP_APP_SECRET` | Meta App → Settings → Basic | App secret string |
 
 ---
 

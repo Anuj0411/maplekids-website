@@ -3,83 +3,111 @@
  * Message Processor
  *
  * Processes incoming WhatsApp messages and generates AI responses
- *
- * LEARNING NOTES:
- * - This is where the "AI brain" lives
- * - Integrated with Google Gemini AI for intelligent responses
- * - Supports context-aware conversations
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.processMessage = processMessage;
 const whatsappClient_1 = require("./whatsappClient");
 const firebaseService_1 = require("./firebaseService");
 const geminiService_1 = require("./geminiService");
+const STRUCTURED_INTENTS = new Set([
+    'fees',
+    'attendance',
+    'reports',
+    'homework',
+    'events',
+]);
+function mapIntentUserData(ctx) {
+    var _a, _b, _c, _d;
+    const p = ctx.primaryStudent;
+    const name = [p.firstName, p.lastName].filter(Boolean).join(' ').trim() || 'Student';
+    const a = ctx.attendanceSummary;
+    const total = (_a = a === null || a === void 0 ? void 0 : a.totalDaysRecorded) !== null && _a !== void 0 ? _a : 0;
+    const present = (_b = a === null || a === void 0 ? void 0 : a.present) !== null && _b !== void 0 ? _b : 0;
+    const pct = total > 0 ? Math.round((present / total) * 100) : 0;
+    return {
+        studentName: name,
+        studentClass: p.class,
+        rollNumber: p.rollNumber,
+        feeAmount: undefined,
+        feeDueDate: undefined,
+        feeStatus: 'Fee balances are not stored in Firestore — parents should contact the school office for exact amounts and due dates.',
+        presentDays: present,
+        totalDays: total,
+        attendancePercentage: pct,
+        attendanceStatus: (_c = a === null || a === void 0 ? void 0 : a.lastStatus) !== null && _c !== void 0 ? _c : (total === 0 ? 'No matching attendance rows yet' : 'See summary'),
+        lastAttendanceDate: (_d = a === null || a === void 0 ? void 0 : a.lastRecordDate) !== null && _d !== void 0 ? _d : 'n/a',
+        latestTerm: 'Not stored in this assistant',
+        subjectCount: 0,
+        performance: 'Official report cards are not loaded into this assistant — please contact the class teacher or office.',
+    };
+}
 /**
  * Process a single WhatsApp message
- *
- * @param message - The message object from WhatsApp
- * @param value - Additional context (phone number, metadata)
  */
 async function processMessage(message, value) {
+    var _a;
     try {
-        // Extract message details
-        const from = message.from; // User's phone number
+        const from = message.from;
         const messageId = message.id;
         const timestamp = message.timestamp;
-        // Different message types: text, image, audio, video, document
         let messageText = '';
-        let messageType = message.type;
+        const messageType = message.type;
         switch (messageType) {
             case 'text':
                 messageText = message.text.body;
                 break;
             case 'image':
-                messageText = '[Image received]';
-                // We'll handle image processing in Week 6 (Computer Vision)
+                messageText = '[Image received — image understanding is not enabled yet]';
                 break;
             case 'audio':
-                messageText = '[Audio received]';
-                // We'll handle voice transcription in Week 5
+                messageText = '[Audio received — voice transcription is not enabled yet]';
                 break;
             default:
                 messageText = `[${messageType} message]`;
         }
-        console.log(`📩 Message from ${from}: ${messageText}`);
-        // STEP 1: Save incoming message to Firestore
+        console.log(`Message from ${from}: ${messageText}`);
         await (0, firebaseService_1.saveMessage)({
             messageId,
             from,
             to: value.metadata.phone_number_id,
             text: messageText,
             type: messageType,
-            timestamp: new Date(parseInt(timestamp) * 1000),
+            timestamp: new Date(parseInt(timestamp, 10) * 1000),
             direction: 'incoming',
         });
-        // STEP 2: Get or create user profile
         const user = await (0, firebaseService_1.getUserByPhone)(from);
-        // Update last message timestamp
         await (0, firebaseService_1.updateUserLastMessage)(from);
-        // STEP 3: Detect intent for better routing
         const intent = await (0, geminiService_1.detectIntent)(messageText);
-        console.log(`🎯 Detected intent: ${intent}`);
-        // STEP 4: Generate AI response using Gemini
+        console.log(`Detected intent: ${intent}`);
+        const schoolContext = await (0, firebaseService_1.loadSchoolContextForWhatsApp)(from, user);
         let responseText;
         if ((0, geminiService_1.isGeminiConfigured)()) {
-            // Use Gemini AI for intelligent responses
-            responseText = await (0, geminiService_1.generateAIResponse)(messageText, from, {
-                name: user === null || user === void 0 ? void 0 : user.name,
-                role: user === null || user === void 0 ? void 0 : user.role,
-                studentId: user === null || user === void 0 ? void 0 : user.studentId,
-                intent: intent,
-            });
+            if (schoolContext.primaryStudent && STRUCTURED_INTENTS.has(intent)) {
+                const userData = mapIntentUserData(schoolContext);
+                responseText = await (0, geminiService_1.generateIntentBasedResponse)(intent, userData);
+                await (0, firebaseService_1.saveConversationTurn)(from, messageText, responseText);
+            }
+            else {
+                responseText = await (0, geminiService_1.generateAIResponse)(messageText, from, {
+                    name: user === null || user === void 0 ? void 0 : user.name,
+                    role: user === null || user === void 0 ? void 0 : user.role,
+                    studentId: user === null || user === void 0 ? void 0 : user.studentId,
+                    intent,
+                    studentName: schoolContext.primaryStudent
+                        ? [schoolContext.primaryStudent.firstName, schoolContext.primaryStudent.lastName]
+                            .filter(Boolean)
+                            .join(' ')
+                            .trim()
+                        : undefined,
+                    studentClass: (_a = schoolContext.primaryStudent) === null || _a === void 0 ? void 0 : _a.class,
+                    schoolContextSummary: (0, firebaseService_1.formatSchoolContextForPrompt)(schoolContext),
+                });
+            }
         }
         else {
-            // Fallback to simple responses if Gemini not configured
-            responseText = await generateFallbackResponse(messageText, user, intent);
+            responseText = await generateFallbackResponse(user, intent, schoolContext);
         }
-        // STEP 5: Send response via WhatsApp
         await (0, whatsappClient_1.sendWhatsAppMessage)(from, responseText);
-        // STEP 6: Save outgoing message to Firestore
         await (0, firebaseService_1.saveMessage)({
             messageId: `${Date.now()}-${from}`,
             from: value.metadata.phone_number_id,
@@ -89,37 +117,32 @@ async function processMessage(message, value) {
             timestamp: new Date(),
             direction: 'outgoing',
         });
-        console.log(`✅ Processed message from ${from}`);
+        console.log(`Processed message from ${from}`);
     }
     catch (error) {
         console.error('Error processing message:', error);
         throw error;
     }
 }
-/**
- * Generate fallback response when Gemini AI is not configured
- *
- * @param userMessage - The user's message text
- * @param user - User profile object
- * @param intent - Detected intent
- * @returns Simple response
- */
-async function generateFallbackResponse(userMessage, user, intent) {
+async function generateFallbackResponse(user, intent, schoolContext) {
     const userName = (user === null || user === void 0 ? void 0 : user.name) || 'there';
-    // Intent-based responses
+    const summary = (0, firebaseService_1.formatSchoolContextForPrompt)(schoolContext);
+    const attendanceLine = schoolContext.attendanceSummary && schoolContext.attendanceSummary.totalDaysRecorded > 0
+        ? `Recorded attendance: ${schoolContext.attendanceSummary.present} present / ${schoolContext.attendanceSummary.totalDaysRecorded} class days.`
+        : '';
     switch (intent) {
         case 'greeting':
-            return `Hello ${userName}! 👋 Welcome to Maplekids AI Assistant. How can I help you today?`;
+            return `Hello ${userName}! Welcome to Maplekids AI Assistant. How can I help you today?`;
         case 'fees':
-            return `Hi ${userName}, I can help you with fee information. However, AI is not fully configured yet. Please contact the school office for fee details. 📞`;
+            return `Hi ${userName}, for fee amounts and due dates please contact the school office — balances are not stored in this chat bot yet. ${summary ? `\n\n${summary}` : ''}`;
         case 'attendance':
-            return `Hi ${userName}, I can help you check attendance. However, AI is not fully configured yet. Please contact your class teacher for attendance details. 📅`;
+            return `Hi ${userName}, ${attendanceLine || 'No attendance records matched your number yet — please contact your class teacher.'}${summary ? `\n\n${summary}` : ''}`;
         case 'reports':
-            return `Hi ${userName}, I can help you with report cards. However, AI is not fully configured yet. Please contact the school office. 📊`;
+            return `Hi ${userName}, report cards are not available through this assistant yet. Please contact the school office or class teacher.`;
         case 'homework':
-            return `Hi ${userName}, I can help you with homework information. However, AI is not fully configured yet. Please contact your class teacher. 📚`;
+            return `Hi ${userName}, please check the school diary or message the class teacher for homework — it is not stored in this assistant yet.`;
         default:
-            return `Hello ${userName}! I'm the Maplekids AI Assistant. I'm still learning, but I'll be able to help you with:\n\n• Fee information 💰\n• Attendance reports 📅\n• Academic reports 📊\n• Homework updates 📚\n• School events 🎉\n\nFor now, please contact the school office directly. Thank you! 🙏`;
+            return `Hello ${userName}! I'm the Maplekids AI Assistant.${summary ? ` ${summary}` : ''}\n\nI can help with general school questions. For fees, reports, and detailed attendance, please contact the school office or teacher.`;
     }
 }
 //# sourceMappingURL=messageProcessor.js.map

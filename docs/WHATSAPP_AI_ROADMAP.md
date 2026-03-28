@@ -2,51 +2,30 @@
 
 ## 📋 Current Status
 
-### ✅ Completed (Foundation)
+### ✅ Completed (Foundation + core AI)
 - [x] Firebase Cloud Functions setup
-- [x] WhatsApp webhook handler (GET/POST)
-- [x] Message processor with basic routing
-- [x] WhatsApp Cloud API client (send messages)
-- [x] Firestore service (save messages, users)
-- [x] Basic echo bot functionality
-- [x] Dependencies installed (@google/generative-ai)
+- [x] WhatsApp webhook handler (GET/POST) with **Meta `X-Hub-Signature-256` verification** in production (`WHATSAPP_APP_SECRET`)
+- [x] Message processor with intent routing and **Firestore-backed school context**
+- [x] WhatsApp Cloud API client (send messages; credentials required at runtime — no placeholder tokens)
+- [x] Firestore: messages, users, conversations + **composite index** for `whatsapp_conversations` (`userId` + `timestamp`)
+- [x] **Google Gemini** integration (`systemInstruction`, chat history, intent-specific prompts)
+- [x] **Student / attendance integration**: match parent phone to `students.parentPhone`, auto-link `whatsapp_users`, roll up `attendance` by class + roll number
+- [x] Dependencies: `@google/generative-ai` (current SDK)
 
-### 🚧 In Progress
-- [ ] Google Gemini AI integration
-- [ ] Intelligent conversation handling
-- [ ] Context-aware responses
+### 🚧 In Progress / Not started (see sections below)
+- Voice transcription, rich media, calendar, scheduled notifications, admin dashboard, fee collection in DB, payment links
 
-### 📅 Next Steps (Weeks 3-8)
+### 📅 Next Steps (Weeks 5-8)
 
 ---
 
-## Week 3-4: Google Gemini AI Integration
+## Week 3-4: Google Gemini AI Integration — **done (MVP)**
 
-### Goal
-Replace the simple echo bot with intelligent AI responses using Google Gemini
-
-### Tasks
-1. **Create Gemini AI Service** (`functions/src/whatsapp/geminiService.ts`)
-   - Initialize Gemini API client
-   - Create chat session with context
-   - Handle conversation history
-   - Generate intelligent responses
-
-2. **Update Message Processor**
-   - Integrate Gemini service
-   - Build conversation context
-   - Handle multi-turn conversations
-   - Add intent detection
-
-3. **Create AI Prompt Templates**
-   - System instructions for school assistant
-   - Context templates for different queries
-   - Response formatting guidelines
-
-4. **Testing**
-   - Test basic queries (fees, attendance, homework)
-   - Test conversation flow
-   - Test edge cases
+### Delivered
+1. **Gemini service** (`functions/src/whatsapp/geminiService.ts`) — model + system instruction, history, intent-specific generation
+2. **Message processor** — Gemini + fallback path; structured replies for fees / attendance / reports / homework / events when a linked student exists
+3. **Prompts** — school assistant persona + intent prompts grounded in Firestore where data exists
+4. **Testing** — run against emulator / deployed function with real Meta webhook + `GEMINI_API_KEY`
 
 ---
 
@@ -83,28 +62,15 @@ Add voice messages, multi-language support, and rich responses
 ### Goal
 Connect AI to real Maplekids data (students, fees, attendance)
 
-### Tasks
-1. **Student Data Integration**
-   - Query student info by phone number
-   - Fetch attendance records
-   - Get academic reports
-   - Retrieve teacher remarks
+### Status (partial)
+- **Done:** Resolve students via `students.parentPhone` (multiple phone formats), auto-link `whatsapp_users.studentId`, aggregate attendance from `attendance` (class + roll) for AI replies.
+- **Not done:** Fee balances in Firestore, payment links, report-card documents, teacher remarks in structured form.
 
-2. **Fee Management**
-   - Check fee status
-   - Generate payment links
-   - Send payment reminders
-   - Track payment history
-
-3. **Attendance Queries**
-   - Daily attendance status
-   - Monthly summaries
-   - Attendance reports
-
-4. **Report Card Access**
-   - Fetch latest report
-   - Subject-wise performance
-   - Term comparisons
+### Remaining tasks
+1. **Student Data Integration** — reports / remarks from DB
+2. **Fee Management** — store fee status, Razorpay or payment links, reminders
+3. **Attendance** — tighter date-range queries, monthly summaries (optional indexes)
+4. **Report Card Access** — fetch published reports if/when stored in Firestore or Storage
 
 ---
 
@@ -239,9 +205,9 @@ User receives response
 ## Security Considerations
 
 1. **Authentication**
-   - Verify webhook token
-   - Validate Meta signatures
-   - Rate limiting
+   - Verify webhook token (`WHATSAPP_VERIFY_TOKEN` on GET)
+   - Validate Meta `X-Hub-Signature-256` on POST when `WHATSAPP_APP_SECRET` is set (required outside the emulator)
+   - Rate limiting (not implemented yet)
 
 2. **Authorization**
    - User can only access their student's data
@@ -283,14 +249,9 @@ User receives response
 
 ---
 
-## Next Immediate Steps
+## Next immediate steps
 
-Let's start with **Week 3: Gemini AI Integration**
-
-1. Create Gemini service file
-2. Set up API key configuration
-3. Build conversation context
-4. Integrate with message processor
-5. Test with real queries
-
-**Ready to begin?** 🚀
+1. Deploy `firestore.indexes.json` (`firebase deploy --only firestore:indexes`) so `whatsapp_conversations` history queries succeed.
+2. Set `WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN`, WhatsApp tokens, and `GEMINI_API_KEY` in the Functions environment.
+3. Continue with **Week 5+** items (voice, templates, scheduled sends, admin UI) as needed.
+4. Test end-to-end with the Meta test number and `firebase functions:log`.

@@ -30,11 +30,11 @@
     "xlsx": "^0.18.5"
   },
   "scripts": {
-    "start": "craco start",
-    "build": "craco build",
-    "test": "craco test",
+    "start": "npx craco start",
+    "build": "npx craco build",
+    "test": "npx craco test",
     "test:assessments": "node src/runAssessmentTests.js",
-    "test:coverage": "craco test --coverage --watchAll=false",
+    "test:coverage": "npx craco test --coverage --watchAll=false",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {

@@ -4,25 +4,22 @@
 
 **CONGRATULATIONS!** You've created the foundation of a production-ready WhatsApp AI Assistant! Here's what's working:
 
-### ✅ Completed (Week 1)
-1. **WhatsApp Webhook** - Receives messages from Meta Cloud API
-2. **Message Processor** - Handles incoming messages intelligently
-3. **Firebase Integration** - Stores conversations in Firestore
-4. **User Management** - Auto-creates profiles for new users
-5. **Echo Bot** - Simple responses (AI coming in Week 3!)
+### ✅ Completed (foundation + AI MVP)
+1. **WhatsApp Webhook** — GET verify + POST with **signature check** in production (`WHATSAPP_APP_SECRET`)
+2. **Message Processor** — Intents, **Gemini** replies, structured prompts when a student is linked
+3. **Firebase** — Messages, users, conversation turns; **student + attendance** context from `students` / `attendance`
+4. **User management** — Auto-create `whatsapp_users`, **auto-link** when exactly one `parentPhone` matches
+5. **AI** — Gemini with system instructions + history; fallback text if `GEMINI_API_KEY` is unset
 
-### 📂 Files Created
+### 📂 Core files
 ```
-functions/
-├── src/
-│   ├── index.ts (main entry point)
-│   └── whatsapp/
-│       ├── index.ts (webhook function export)
-│       ├── webhook.ts (GET/POST handler)
-│       ├── messageProcessor.ts (message routing)
-│       ├── whatsappClient.ts (send messages)
-│       └── firebaseService.ts (database operations)
-└── package.json (updated with dependencies)
+functions/src/whatsapp/
+├── index.ts              # exports whatsappWebhook
+├── webhook.ts            # Meta verify + POST
+├── messageProcessor.ts   # pipeline
+├── whatsappClient.ts     # send API (requires env tokens)
+├── firebaseService.ts    # Firestore + school context
+└── geminiService.ts      # Gemini + intent prompts
 ```
 
 ---

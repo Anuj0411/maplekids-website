@@ -1,62 +1,108 @@
 /**
  * WhatsApp Webhook Handler
- * 
+ *
  * Handles incoming webhook requests from Meta Cloud API
- * 
- * LEARNING NOTES:
- * - GET requests are for webhook verification (Meta validates your server)
- * - POST requests contain actual messages from users
- * - We need to verify the token to ensure requests are from Meta
  */
 
+import * as crypto from 'crypto';
 import type { Request, Response } from 'express';
 import { processMessage } from './messageProcessor';
 
-// Get verify token from environment variable
-// For local: Set in .env file as WHATSAPP_VERIFY_TOKEN
-// For production: Set via Firebase Console or deployment
-const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || 'maplekids_whatsapp_verify_token_2026';
+const IS_EMULATOR = process.env.FUNCTIONS_EMULATOR === 'true';
+
+function getVerifyToken(): string | undefined {
+  const t = process.env.WHATSAPP_VERIFY_TOKEN?.trim();
+  return t || undefined;
+}
+
+type RequestWithRawBody = Request & { rawBody?: Buffer };
+
+/**
+ * Verify X-Hub-Signature-256 (Meta webhook integrity).
+ * Requires raw request body (Firebase attaches req.rawBody on HTTPS functions).
+ */
+export function verifyMetaWebhookSignature(req: Request, appSecret: string): boolean {
+  const signature = req.headers['x-hub-signature-256'];
+  if (!signature || typeof signature !== 'string' || !signature.startsWith('sha256=')) {
+    return false;
+  }
+  const rawBody = (req as RequestWithRawBody).rawBody;
+  if (!rawBody || !Buffer.isBuffer(rawBody)) {
+    console.error('Webhook signature check failed: rawBody missing (use Firebase HTTPS onRequest)');
+    return false;
+  }
+  const expectedHex = crypto.createHmac('sha256', appSecret).update(rawBody).digest('hex');
+  const receivedHex = signature.slice('sha256='.length);
+  try {
+    const a = Buffer.from(receivedHex, 'hex');
+    const b = Buffer.from(expectedHex, 'hex');
+    if (a.length !== b.length) {
+      return false;
+    }
+    return crypto.timingSafeEqual(a, b);
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Handle webhook verification (GET) and message processing (POST)
  */
 export async function handleWebhook(req: Request, res: Response) {
-  
-  // WEBHOOK VERIFICATION (happens once when you set up WhatsApp)
   if (req.method === 'GET') {
     const mode = req.query['hub.mode'];
     const token = req.query['hub.verify_token'];
     const challenge = req.query['hub.challenge'];
 
-    console.log('Webhook verification request:', { mode, token });
+    const verifyToken = getVerifyToken();
+    if (!verifyToken) {
+      console.error('WHATSAPP_VERIFY_TOKEN is not set; cannot complete webhook verification');
+      res.status(503).send('Service misconfigured');
+      return;
+    }
 
-    // Check if mode and token match
-    if (mode === 'subscribe' && token === VERIFY_TOKEN) {
-      console.log('Webhook verified successfully! ✅');
-      res.status(200).send(challenge); // Meta expects the challenge back
+    console.log('Webhook verification request:', { mode, token: token ? '[set]' : '[missing]' });
+
+    if (mode === 'subscribe' && token === verifyToken) {
+      console.log('Webhook verified successfully');
+      res.status(200).send(challenge);
     } else {
-      console.error('Webhook verification failed! ❌');
+      console.error('Webhook verification failed');
       res.status(403).send('Forbidden');
     }
     return;
   }
 
-  // MESSAGE PROCESSING (happens every time a user sends a message)
   if (req.method === 'POST') {
+    const appSecret = process.env.WHATSAPP_APP_SECRET?.trim();
+
+    if (!IS_EMULATOR) {
+      if (!appSecret) {
+        console.error('WHATSAPP_APP_SECRET is required in production for webhook POST verification');
+        res.status(503).send('Service misconfigured');
+        return;
+      }
+      if (!verifyMetaWebhookSignature(req, appSecret)) {
+        console.error('Invalid Meta webhook signature');
+        res.status(403).send('Invalid signature');
+        return;
+      }
+    } else if (appSecret && !verifyMetaWebhookSignature(req, appSecret)) {
+      console.error('Invalid Meta webhook signature (emulator)');
+      res.status(403).send('Invalid signature');
+      return;
+    }
+
     const body = req.body;
 
     console.log('Incoming webhook:', JSON.stringify(body, null, 2));
 
-    // Meta sends webhook for multiple events (messages, status updates, etc.)
-    // We only care about actual messages
     if (body.object === 'whatsapp_business_account') {
-      // Process each entry (can have multiple messages in one webhook)
       for (const entry of body.entry || []) {
         for (const change of entry.changes || []) {
           if (change.field === 'messages') {
             const value = change.value;
-            
-            // Extract message data
+
             if (value.messages && value.messages.length > 0) {
               for (const message of value.messages) {
                 await processMessage(message, value);
@@ -65,7 +111,7 @@ export async function handleWebhook(req: Request, res: Response) {
           }
         }
       }
-      
+
       res.status(200).send('EVENT_RECEIVED');
     } else {
       res.status(404).send('Not Found');
@@ -73,6 +119,5 @@ export async function handleWebhook(req: Request, res: Response) {
     return;
   }
 
-  // Invalid request method
   res.status(405).send('Method Not Allowed');
 }
