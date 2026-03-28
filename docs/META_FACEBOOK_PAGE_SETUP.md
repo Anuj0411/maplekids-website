@@ -121,13 +121,13 @@ nano .env
 **Replace** the `TEMP_TOKEN_FOR_NOW` with your **real Access Token**:
 
 ```env
-# Gemini AI Configuration
-GEMINI_API_KEY=AIzaSyAIh_Y2c-W0mOWkxT54DLP4IqUx5lfSiqo
+# Gemini AI Configuration (from Google AI Studio — never commit real keys)
+GEMINI_API_KEY=YOUR_GEMINI_API_KEY
 
-# WhatsApp Configuration  
-WHATSAPP_ACCESS_TOKEN=EAABsbCS1iHgBO7ZC...  # ← Your real token here
-WHATSAPP_PHONE_ID=1234567890123456  # ← Your Phone Number ID
-WHATSAPP_VERIFY_TOKEN=maplekids_whatsapp_verify_1769855959
+# WhatsApp Configuration
+WHATSAPP_ACCESS_TOKEN=YOUR_META_WHATSAPP_ACCESS_TOKEN
+WHATSAPP_PHONE_ID=YOUR_PHONE_NUMBER_ID
+WHATSAPP_VERIFY_TOKEN=your_secret_verify_token
 ```
 
 **Save**: `Ctrl + X` → `Y` → `Enter`

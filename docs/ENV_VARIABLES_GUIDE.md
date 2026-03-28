@@ -32,8 +32,8 @@ nano .env
 Your `.env` file should look like this:
 
 ```env
-# Gemini AI Configuration
-GEMINI_API_KEY=AIzaSyYOUR_ACTUAL_GEMINI_KEY_HERE
+# Gemini AI Configuration (paste key from Google AI Studio; do not commit)
+GEMINI_API_KEY=YOUR_GEMINI_API_KEY
 
 # WhatsApp Configuration  
 WHATSAPP_ACCESS_TOKEN=YOUR_WHATSAPP_TOKEN
@@ -88,7 +88,7 @@ cd /Users/anujparashar/maplekids-website-master
 
 # Create .env file at root for deployment
 cat > .env << 'EOF'
-GEMINI_API_KEY=AIzaSyYOUR_KEY
+GEMINI_API_KEY=YOUR_GEMINI_API_KEY
 WHATSAPP_ACCESS_TOKEN=YOUR_TOKEN
 WHATSAPP_PHONE_ID=YOUR_PHONE_ID
 WHATSAPP_VERIFY_TOKEN=your_secret_verify_token
@@ -148,7 +148,7 @@ cd functions
 cat .env
 
 # If empty, add your key:
-echo 'GEMINI_API_KEY=AIzaSyYOUR_KEY' >> .env
+echo 'GEMINI_API_KEY=YOUR_GEMINI_API_KEY' >> .env
 ```
 
 ### Error: "Webhook verification failed"
@@ -181,7 +181,7 @@ The code reads environment variables from the **Functions runtime** (`.env` with
 
 | Variable | Where to Get It | Example |
 |----------|----------------|---------|
-| `GEMINI_API_KEY` | Google AI Studio | `AIzaSy...` |
+| `GEMINI_API_KEY` | Google AI Studio | (paste full key; never commit) |
 | `WHATSAPP_ACCESS_TOKEN` | Meta Business Suite | `EAABsz...` |
 | `WHATSAPP_PHONE_ID` | Meta WhatsApp Config | `1234567890` |
 | `WHATSAPP_VERIFY_TOKEN` | You create this (Meta webhook) | `my_verify_secret` |

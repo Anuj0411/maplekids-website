@@ -30,8 +30,7 @@ cd /Users/anujparashar/maplekids-website-master
 # Set Gemini API key
 firebase functions:config:set gemini.api_key="YOUR_GEMINI_API_KEY_HERE"
 
-# Example (use your actual key):
-# firebase functions:config:set gemini.api_key="AIzaSyA1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q"
+# Do not paste real keys into docs or commits; use your key only in .env / Firebase Console.
 ```
 
 #### Step 2: Set WhatsApp Credentials (Optional for now)
@@ -57,7 +56,7 @@ Expected output:
 ```json
 {
   "gemini": {
-    "api_key": "AIzaSy..."
+    "api_key": "<your Gemini key>"
   },
   "whatsapp": {
     "token": "EAA...",

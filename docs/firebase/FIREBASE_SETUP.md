@@ -70,7 +70,7 @@ This guide will help you set up Firebase for your Play School website. Follow th
 2. **Your config should look like this:**
 ```typescript
 const firebaseConfig = {
-  apiKey: "AIzaSyC...", // Your actual API key
+  apiKey: "<from Firebase Console — use env vars in app, do not commit>",
   authDomain: "your-project-id.firebaseapp.com",
   projectId: "your-project-id",
   storageBucket: "your-project-id.appspot.com",
