@@ -10,13 +10,12 @@
  */
 
 import fetch from 'node-fetch';
-import * as functions from 'firebase-functions';
 
-// YOU'LL GET THESE FROM META BUSINESS SUITE
-// Store in Firebase Config: firebase functions:config:set whatsapp.token="YOUR_TOKEN"
-// For local testing, use environment variables
-const WHATSAPP_TOKEN = functions.config().whatsapp?.token || process.env.WHATSAPP_ACCESS_TOKEN || 'YOUR_TEMP_ACCESS_TOKEN';
-const PHONE_NUMBER_ID = functions.config().whatsapp?.phone_id || process.env.WHATSAPP_PHONE_ID || 'YOUR_PHONE_NUMBER_ID';
+// Get WhatsApp credentials from environment variables
+// For local: Set in .env file
+// For production: Set via Firebase Console or deployment
+const WHATSAPP_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN || 'YOUR_TEMP_ACCESS_TOKEN';
+const PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_ID || 'YOUR_PHONE_NUMBER_ID';
 const API_VERSION = 'v18.0';
 
 /**

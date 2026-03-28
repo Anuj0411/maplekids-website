@@ -12,9 +12,10 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.handleWebhook = handleWebhook;
 const messageProcessor_1 = require("./messageProcessor");
-// Store this in Firebase Config or Environment Variables (for now hardcoded)
-// YOU'LL GET THIS TOKEN WHEN SETTING UP META CLOUD API
-const VERIFY_TOKEN = 'maplekids_whatsapp_verify_token_2026';
+// Get verify token from environment variable
+// For local: Set in .env file as WHATSAPP_VERIFY_TOKEN
+// For production: Set via Firebase Console or deployment
+const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || 'maplekids_whatsapp_verify_token_2026';
 /**
  * Handle webhook verification (GET) and message processing (POST)
  */

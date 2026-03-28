@@ -5,12 +5,13 @@
  * 
  * LEARNING NOTES:
  * - This is where the "AI brain" lives
- * - We'll integrate Google Gemini AI here for intelligent responses
- * - For now, we'll start with simple echo bot, then add AI gradually
+ * - Integrated with Google Gemini AI for intelligent responses
+ * - Supports context-aware conversations
  */
 
 import { sendWhatsAppMessage } from './whatsappClient';
-import { saveMessage, getUserByPhone } from './firebaseService';
+import { saveMessage, getUserByPhone, updateUserLastMessage } from './firebaseService';
+import { generateAIResponse, detectIntent, isGeminiConfigured } from './geminiService';
 
 /**
  * Process a single WhatsApp message
@@ -61,14 +62,33 @@ export async function processMessage(message: any, value: any): Promise<void> {
     // STEP 2: Get or create user profile
     const user = await getUserByPhone(from);
     
-    // STEP 3: Generate AI response (for now, simple echo bot)
-    // We'll replace this with Gemini AI in Week 3-4
-    const responseText = await generateResponse(messageText, user);
-
-    // STEP 4: Send response via WhatsApp
+    // Update last message timestamp
+    await updateUserLastMessage(from);
+    
+    // STEP 3: Detect intent for better routing
+    const intent = await detectIntent(messageText);
+    console.log(`🎯 Detected intent: ${intent}`);
+    
+    // STEP 4: Generate AI response using Gemini
+    let responseText: string;
+    
+    if (isGeminiConfigured()) {
+      // Use Gemini AI for intelligent responses
+      responseText = await generateAIResponse(messageText, from, {
+        name: user?.name,
+        role: user?.role,
+        studentId: user?.studentId,
+        intent: intent,
+      });
+    } else {
+      // Fallback to simple responses if Gemini not configured
+      responseText = await generateFallbackResponse(messageText, user, intent);
+    }
+    
+    // STEP 5: Send response via WhatsApp
     await sendWhatsAppMessage(from, responseText);
-
-    // STEP 5: Save outgoing message to Firestore
+    
+    // STEP 6: Save outgoing message to Firestore
     await saveMessage({
       messageId: `${Date.now()}-${from}`,
       from: value.metadata.phone_number_id,
@@ -87,33 +107,38 @@ export async function processMessage(message: any, value: any): Promise<void> {
 }
 
 /**
- * Generate AI response (PLACEHOLDER - we'll add Gemini AI here)
+ * Generate fallback response when Gemini AI is not configured
  * 
  * @param userMessage - The user's message text
  * @param user - User profile object
- * @returns AI-generated response
+ * @param intent - Detected intent
+ * @returns Simple response
  */
-async function generateResponse(userMessage: string, user: any): Promise<string> {
-  // WEEK 1-2: Simple echo bot for testing
-  // WEEK 3-4: Replace with Google Gemini AI
-  
+async function generateFallbackResponse(
+  userMessage: string,
+  user: any,
+  intent: string
+): Promise<string> {
   const userName = user?.name || 'there';
   
-  // Simple command routing (we'll make this smarter with AI)
-  const lowerMessage = userMessage.toLowerCase();
-  
-  if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
-    return `Hello ${userName}! 👋 Welcome to Maplekids AI Assistant. How can I help you today?`;
+  // Intent-based responses
+  switch (intent) {
+    case 'greeting':
+      return `Hello ${userName}! 👋 Welcome to Maplekids AI Assistant. How can I help you today?`;
+      
+    case 'fees':
+      return `Hi ${userName}, I can help you with fee information. However, AI is not fully configured yet. Please contact the school office for fee details. 📞`;
+      
+    case 'attendance':
+      return `Hi ${userName}, I can help you check attendance. However, AI is not fully configured yet. Please contact your class teacher for attendance details. 📅`;
+      
+    case 'reports':
+      return `Hi ${userName}, I can help you with report cards. However, AI is not fully configured yet. Please contact the school office. 📊`;
+      
+    case 'homework':
+      return `Hi ${userName}, I can help you with homework information. However, AI is not fully configured yet. Please contact your class teacher. 📚`;
+      
+    default:
+      return `Hello ${userName}! I'm the Maplekids AI Assistant. I'm still learning, but I'll be able to help you with:\n\n• Fee information 💰\n• Attendance reports 📅\n• Academic reports 📊\n• Homework updates 📚\n• School events 🎉\n\nFor now, please contact the school office directly. Thank you! 🙏`;
   }
-  
-  if (lowerMessage.includes('fee') || lowerMessage.includes('payment')) {
-    return `Hi ${userName}, your current fee status: ₹6,000/quarter. Next due date: 15th Feb 2026. Reply "PAY" to make payment via Razorpay.`;
-  }
-  
-  if (lowerMessage.includes('attendance')) {
-    return `${userName}'s attendance this month: 18/20 days (90%). Great job! 🌟`;
-  }
-  
-  // Default echo response
-  return `You said: "${userMessage}"\n\n(This is a simple echo bot. AI features coming in Week 3! 🤖)`;
 }

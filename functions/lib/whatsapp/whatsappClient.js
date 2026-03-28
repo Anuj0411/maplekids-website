@@ -13,8 +13,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendWhatsAppMessage = sendWhatsAppMessage;
 exports.sendTemplateMessage = sendTemplateMessage;
 const node_fetch_1 = require("node-fetch");
-// YOU'LL GET THESE FROM META BUSINESS SUITE
-// Store in Firebase Config: firebase functions:config:set whatsapp.token="YOUR_TOKEN"
+// Get WhatsApp credentials from environment variables
+// For local: Set in .env file
+// For production: Set via Firebase Console or deployment
 const WHATSAPP_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN || 'YOUR_TEMP_ACCESS_TOKEN';
 const PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_ID || 'YOUR_PHONE_NUMBER_ID';
 const API_VERSION = 'v18.0';

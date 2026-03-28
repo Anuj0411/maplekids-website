@@ -125,21 +125,32 @@ export async function updateUserLastMessage(phoneNumber: string): Promise<void> 
 export async function getConversationHistory(
   phoneNumber: string,
   limit: number = 10
-): Promise<Message[]> {
+): Promise<Array<{ role: string; text: string }>> {
   try {
     const snapshot = await db
-      .collection('whatsapp_messages')
-      .where('from', '==', phoneNumber)
+      .collection('whatsapp_conversations')
+      .where('userId', '==', phoneNumber)
       .orderBy('timestamp', 'desc')
       .limit(limit)
       .get();
 
-    const messages: Message[] = [];
+    const history: Array<{ role: string; text: string }> = [];
+    
     snapshot.forEach((doc) => {
-      messages.push(doc.data() as Message);
+      const data = doc.data();
+      // Add user message
+      history.push({
+        role: 'user',
+        text: data.userMessage,
+      });
+      // Add AI response
+      history.push({
+        role: 'model',
+        text: data.aiResponse,
+      });
     });
 
-    return messages.reverse(); // Oldest to newest
+    return history.reverse(); // Oldest to newest
   } catch (error) {
     console.error('Error getting conversation history:', error);
     return [];
@@ -172,3 +183,36 @@ export async function linkUserToStudent(
     throw error;
   }
 }
+
+/**
+ * Save conversation turn for AI context
+ * 
+ * WHY: Store user message and AI response for:
+ * - Building conversation history
+ * - Training and improving AI
+ * - Analytics and insights
+ */
+export async function saveConversationTurn(
+  userId: string,
+  userMessage: string,
+  aiResponse: string
+): Promise<void> {
+  try {
+    const conversationId = `${userId}_${Date.now()}`;
+    
+    await db.collection('whatsapp_conversations').add({
+      userId,
+      conversationId,
+      userMessage,
+      aiResponse,
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: new Date(),
+    });
+    
+    console.log(`💬 Saved conversation turn for user: ${userId}`);
+  } catch (error) {
+    console.error('Error saving conversation turn:', error);
+    throw error;
+  }
+}
+
