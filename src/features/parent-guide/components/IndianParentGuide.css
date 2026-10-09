@@ -1256,3 +1256,55 @@
     font-size: 1rem;
   }
 }
+
+.tip-item,
+.activity-card,
+.cultural-note,
+.challenge-solution,
+.daily-challenge-section,
+.challenge-card,
+.personalized-recommendations,
+.sections-sidebar,
+.guide-header,
+.age-group-info {
+  border: none;
+  border-radius: var(--radius-clay);
+  box-shadow: var(--shadow-clay);
+}
+
+.tip-item:hover,
+.activity-card:hover,
+.challenge-card:hover {
+  transform: none;
+  box-shadow: var(--shadow-clay-hover);
+}
+
+.search-input,
+.guide-controls input,
+.guide-controls select {
+  border: none;
+  border-radius: var(--radius-clay-sm);
+  background: #fffaf3;
+  box-shadow: var(--shadow-clay-inset);
+}
+
+.age-group-btn,
+.action-btn,
+.challenge-btn {
+  border: none;
+  border-radius: var(--radius-clay);
+  box-shadow: var(--shadow-clay);
+}
+
+.age-group-btn:active,
+.action-btn:active,
+.challenge-btn:active,
+.tip-item:active {
+  transform: scale(0.98);
+  box-shadow: var(--shadow-clay-pressed);
+}
+
+.age-group-btn.active,
+.admin-tabs .tab-button.active {
+  box-shadow: var(--shadow-clay-pressed);
+}

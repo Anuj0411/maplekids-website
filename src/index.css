@@ -148,6 +148,31 @@ html {
   --shadow-playful-hover: 0 6px 20px 0 rgba(251, 191, 36, 0.25);
   --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
   --shadow-card-hover: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+
+  /* Claymorphism — brand clay, not a new palette */
+  --radius-clay: 1.75rem;
+  --radius-clay-sm: 1.25rem;
+  --clay-shade: rgba(180, 83, 9, 0.18);
+  --clay-shade-deep: rgba(180, 83, 9, 0.28);
+  --clay-highlight: rgba(255, 255, 255, 0.85);
+  --shadow-clay:
+    8px 8px 16px var(--clay-shade),
+    -6px -6px 14px var(--clay-highlight),
+    inset -5px -5px 10px rgba(255, 255, 255, 0.65),
+    inset 5px 5px 10px rgba(180, 83, 9, 0.12);
+  --shadow-clay-hover:
+    10px 12px 22px rgba(180, 83, 9, 0.24),
+    -6px -6px 16px rgba(255, 255, 255, 0.95),
+    inset -5px -5px 10px rgba(255, 255, 255, 0.7),
+    inset 5px 5px 10px rgba(180, 83, 9, 0.1);
+  --shadow-clay-pressed:
+    inset 6px 6px 12px var(--clay-shade-deep),
+    inset -4px -4px 10px rgba(255, 255, 255, 0.75);
+  --shadow-clay-inset:
+    inset 6px 6px 12px rgba(180, 83, 9, 0.16),
+    inset -4px -4px 10px rgba(255, 255, 255, 0.9);
+  --playful-shadow: var(--shadow-clay);
+  --playful-shadow-hover: var(--shadow-clay-hover);
   
   /* Typography Scale */
   --font-size-xs: 0.75rem;
@@ -285,12 +310,12 @@ p {
 /* Button System */
 .btn {
   font-family: var(--font-primary);
-  font-weight: var(--font-weight-medium);
+  font-weight: var(--font-weight-semibold);
   line-height: 1;
   border: none;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-clay);
   cursor: pointer;
-  transition: var(--transition-all);
+  transition: box-shadow 0.2s ease, transform 0.15s ease, background 0.2s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -298,7 +323,12 @@ p {
   text-decoration: none;
   position: relative;
   overflow: hidden;
-  box-shadow: var(--shadow-playful);
+  box-shadow: var(--shadow-clay);
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.98);
+  box-shadow: var(--shadow-clay-pressed);
 }
 
 .btn:disabled {
@@ -351,105 +381,95 @@ p {
 /* Button Variants */
 .btn-primary {
   background: var(--gradient-primary);
-  color: var(--text-inverse);
-  border: 1px solid transparent;
+  color: var(--gray-900);
+  border: none;
 }
 
 .btn-primary:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-playful-hover);
+  box-shadow: var(--shadow-clay-hover);
 }
 
 .btn-secondary {
-  background: var(--bg-secondary);
+  background: linear-gradient(145deg, #ffffff, var(--primary-yellow-light));
   color: var(--text-primary);
-  border: 1px solid var(--border-primary);
+  border: none;
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: var(--bg-tertiary);
-  border-color: var(--border-secondary);
-  transform: translateY(-1px);
+  box-shadow: var(--shadow-clay-hover);
 }
 
 .btn-success {
   background: var(--gradient-success);
   color: var(--text-inverse);
-  border: 1px solid transparent;
+  border: none;
 }
 
 .btn-success:hover:not(:disabled) {
-  background: var(--success-dark);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.25);
+  box-shadow: var(--shadow-clay-hover);
 }
 
 .btn-warning {
   background: var(--warning);
-  color: var(--text-inverse);
-  border: 1px solid transparent;
+  color: var(--gray-900);
+  border: none;
 }
 
 .btn-warning:hover:not(:disabled) {
-  background: var(--warning-dark);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 20px rgba(245, 158, 11, 0.25);
+  box-shadow: var(--shadow-clay-hover);
 }
 
 .btn-error {
   background: var(--error);
   color: var(--text-inverse);
-  border: 1px solid transparent;
+  border: none;
 }
 
 .btn-error:hover:not(:disabled) {
-  background: var(--error-dark);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.25);
+  box-shadow: var(--shadow-clay-hover);
 }
 
 .btn-danger {
   background: var(--error);
   color: var(--text-inverse);
-  border: 1px solid transparent;
+  border: none;
 }
 
 .btn-danger:hover:not(:disabled) {
-  background: var(--error-dark);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.25);
+  box-shadow: var(--shadow-clay-hover);
 }
 
 .btn-outline {
-  background: transparent;
-  color: var(--text-primary);
-  border: 1px solid var(--border-primary);
+  background: var(--primary-yellow-light);
+  color: var(--primary-yellow-darker);
+  border: none;
+  box-shadow: var(--shadow-clay-inset);
 }
 
 .btn-outline:hover:not(:disabled) {
-  background: var(--bg-secondary);
-  border-color: var(--border-secondary);
-  transform: translateY(-1px);
+  background: var(--primary-yellow-light);
+  box-shadow: var(--shadow-clay);
 }
 
 /* Card System */
 .card {
-  background: var(--bg-primary);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-card);
-  transition: var(--transition-all);
+  background: linear-gradient(145deg, #ffffff, #fff8eb);
+  border-radius: var(--radius-clay);
+  box-shadow: var(--shadow-clay);
+  border: none;
+  transition: box-shadow 0.2s ease;
   overflow: hidden;
 }
 
 .card:hover {
-  box-shadow: var(--shadow-card-hover);
-  transform: translateY(-2px);
+  box-shadow: var(--shadow-clay-hover);
 }
 
 .card-header {
   padding: var(--space-6);
-  border-bottom: 1px solid var(--border-light);
-  background: var(--bg-secondary);
+  border-bottom: none;
+  background: transparent;
+  box-shadow: inset 0 -1px 0 rgba(180, 83, 9, 0.08);
 }
 
 .card-body {
@@ -458,28 +478,32 @@ p {
 
 .card-footer {
   padding: var(--space-6);
-  border-top: 1px solid var(--border-light);
-  background: var(--bg-secondary);
+  border-top: none;
+  background: transparent;
+  box-shadow: inset 0 1px 0 rgba(180, 83, 9, 0.08);
 }
 
 /* Form Elements */
-.form-input {
+.form-input,
+textarea.form-input,
+select.form-input {
   font-family: var(--font-primary);
   font-size: var(--font-size-base);
   line-height: var(--line-height-normal);
   color: var(--text-primary);
-  background: var(--bg-primary);
-  border: 1px solid var(--border-medium);
-  border-radius: var(--radius-md);
+  background: #fffaf3;
+  border: none;
+  border-radius: var(--radius-clay-sm);
   padding: var(--space-3) var(--space-4);
-  transition: var(--transition-colors);
+  transition: box-shadow 0.2s ease;
   width: 100%;
+  box-shadow: var(--shadow-clay-inset);
 }
 
 .form-input:focus {
   outline: none;
-  border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.1);
+  border-color: transparent;
+  box-shadow: var(--shadow-clay-inset), 0 0 0 3px rgba(251, 191, 36, 0.45);
 }
 
 .form-input:disabled {
@@ -493,7 +517,7 @@ p {
 }
 
 .form-input.error:focus {
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+  box-shadow: var(--shadow-clay-inset), 0 0 0 3px rgba(239, 68, 68, 0.35);
 }
 
 .form-label {
@@ -562,13 +586,14 @@ p {
 }
 
 .modal-content {
-  background: var(--bg-primary);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-2xl);
+  background: linear-gradient(145deg, #ffffff, #fff8eb);
+  border-radius: var(--radius-clay);
+  box-shadow: var(--shadow-clay);
   max-width: 90vw;
   max-height: 90vh;
   overflow: auto;
   position: relative;
+  border: none;
 }
 
 /* Table System */
@@ -576,9 +601,9 @@ p {
   width: 100%;
   border-collapse: collapse;
   background: var(--bg-primary);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-clay-sm);
   overflow: hidden;
-  box-shadow: var(--shadow-card);
+  box-shadow: none;
 }
 
 .table th,
@@ -780,6 +805,9 @@ p {
 .shadow-xl { box-shadow: var(--shadow-xl); }
 .shadow-2xl { box-shadow: var(--shadow-2xl); }
 .shadow-playful { box-shadow: var(--shadow-playful); }
+.shadow-clay { box-shadow: var(--shadow-clay); }
+.shadow-clay-inset { box-shadow: var(--shadow-clay-inset); }
+.rounded-clay { border-radius: var(--radius-clay); }
 
 /* Position Utilities */
 .relative { position: relative; }
@@ -934,4 +962,10 @@ pre code {
   background: none;
   padding: 0;
   border-radius: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn:active:not(:disabled) {
+    transform: none;
+  }
 }

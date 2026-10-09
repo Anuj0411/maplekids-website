@@ -26,11 +26,9 @@
 }
 
 .modal {
-  background: #ffffff;
-  border-radius: 20px;
-  box-shadow: 
-    0 25px 50px -12px rgba(0, 0, 0, 0.25),
-    0 0 0 1px rgba(255, 255, 255, 0.1);
+  background: linear-gradient(145deg, #ffffff, #fff8eb);
+  border-radius: var(--radius-clay);
+  box-shadow: var(--shadow-clay);
   max-width: 700px;
   max-height: 95vh;
   width: 100%;
@@ -56,31 +54,31 @@
 .modal-title {
   margin: 0;
   padding: 28px 32px 24px 32px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-  color: white;
+  border-bottom: none;
+  color: var(--gray-900);
   font-size: 1.6rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #60a5fa 0%, #34d399 100%);
+  background: var(--gradient-primary);
   position: relative;
-  border-radius: 20px 20px 0 0;
+  border-radius: var(--radius-clay) var(--radius-clay) 0 0;
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
   min-height: 70px;
   letter-spacing: -0.025em;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  text-shadow: none;
+  box-shadow: none;
 }
 
 .modal-close {
   position: absolute;
   top: 20px;
   right: 20px;
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: #fffaf3;
+  border: none;
   font-size: 20px;
-  color: white;
+  color: var(--gray-900);
   cursor: pointer;
   width: 36px;
   height: 36px;
@@ -92,7 +90,7 @@
   backdrop-filter: blur(10px);
   z-index: 10;
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-clay);
 }
 
 .modal-close:hover {

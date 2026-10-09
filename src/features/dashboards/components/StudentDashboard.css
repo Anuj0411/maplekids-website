@@ -1431,3 +1431,19 @@
   font-size: 14px;
   line-height: 1.4;
 }
+
+.stat-card,
+.recent-activity,
+.student-dashboard .card,
+.profile-section,
+.info-card {
+  border: none;
+  border-radius: var(--radius-clay);
+  box-shadow: var(--shadow-clay);
+  background: linear-gradient(145deg, #ffffff, #fff8eb);
+}
+
+.stat-card:hover {
+  transform: none;
+  box-shadow: var(--shadow-clay-hover);
+}
