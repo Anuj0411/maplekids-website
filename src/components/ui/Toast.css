@@ -6,9 +6,9 @@
   min-width: 320px;
   max-width: 500px;
   padding: 16px 20px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  background: linear-gradient(145deg, #ffffff, #fff8eb);
+  border-radius: var(--radius-clay);
+  box-shadow: var(--shadow-clay);
   display: flex;
   align-items: flex-start;
   gap: 12px;

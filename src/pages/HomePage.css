@@ -3046,3 +3046,102 @@ body {
     height: 230px;
   }
 }
+
+/* Clay surfaces — depth only; layout and behavior stay put */
+.game-card,
+.event-card,
+.feature-card,
+.about-feature,
+.about-image,
+.about-carousel,
+.no-events-message,
+.section-header {
+  border-radius: var(--radius-clay);
+  border-color: transparent;
+  box-shadow: var(--shadow-clay);
+}
+
+.game-card:hover,
+.event-card:hover,
+.about-feature:hover,
+.stat-item:hover {
+  transform: none;
+  box-shadow: var(--shadow-clay-hover);
+  border-color: transparent;
+}
+
+.feature-card .card-front,
+.feature-card .card-back {
+  border-radius: var(--radius-clay);
+}
+
+.btn-game-start,
+.btn-childcare-primary,
+.btn-childcare-secondary,
+.btn-game-reset,
+.home-container .footer-section ul li button {
+  border-radius: var(--radius-clay);
+  box-shadow: var(--shadow-clay);
+}
+
+.btn-game-start,
+.btn-childcare-primary {
+  color: var(--gray-900);
+}
+
+.btn-game-start:hover,
+.btn-childcare-primary:hover,
+.btn-childcare-secondary:hover,
+.btn-game-reset:hover {
+  transform: none;
+  box-shadow: var(--shadow-clay-hover);
+}
+
+.btn-game-start:active,
+.btn-childcare-primary:active,
+.btn-childcare-secondary:active,
+.btn-game-reset:active,
+.shape-option:active,
+.letter-option:active,
+.number-option:active {
+  transform: scale(0.98);
+  box-shadow: var(--shadow-clay-pressed);
+}
+
+.shape-option,
+.letter-option,
+.number-option,
+.object-item {
+  border: none;
+  border-radius: var(--radius-clay-sm);
+  background: #fffaf3;
+  box-shadow: var(--shadow-clay-inset);
+}
+
+.shape-option:hover,
+.letter-option:hover,
+.number-option:hover {
+  transform: none;
+  box-shadow: var(--shadow-clay);
+}
+
+.feature-tag,
+.hero-badge,
+.game-score,
+.childcare-badge,
+.childcare-feature {
+  border-radius: var(--radius-clay);
+  box-shadow: var(--shadow-clay);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-game-start:active,
+  .btn-childcare-primary:active,
+  .btn-childcare-secondary:active,
+  .btn-game-reset:active,
+  .shape-option:active,
+  .letter-option:active,
+  .number-option:active {
+    transform: none;
+  }
+}

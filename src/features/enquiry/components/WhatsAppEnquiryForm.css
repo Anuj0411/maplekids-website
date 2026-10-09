@@ -384,3 +384,43 @@
     font-size: 1rem; /* Standard font size on mobile */
   }
 }
+
+.whatsapp-enquiry-modal,
+.whatsapp-enquiry-container,
+.whatsapp-enquiry-modal .modal-content {
+  border-radius: var(--radius-clay);
+  box-shadow: var(--shadow-clay);
+}
+
+.whatsapp-enquiry-modal .modal-title {
+  background: var(--gradient-primary) !important;
+  color: var(--gray-900);
+  box-shadow: none;
+  border-radius: var(--radius-clay) var(--radius-clay) 0 0;
+}
+
+.whatsapp-enquiry-modal .form-group input,
+.whatsapp-enquiry-modal .form-group textarea,
+.whatsapp-enquiry-modal .form-group select {
+  border: none;
+  border-radius: var(--radius-clay-sm);
+  background: #fffaf3;
+  box-shadow: var(--shadow-clay-inset);
+}
+
+.whatsapp-enquiry-modal .form-group input:focus,
+.whatsapp-enquiry-modal .form-group textarea:focus,
+.whatsapp-enquiry-modal .form-group textarea[name="message"]:focus {
+  box-shadow: var(--shadow-clay-inset), 0 0 0 3px rgba(251, 191, 36, 0.45);
+}
+
+.whatsapp-enquiry-modal button[type="submit"],
+.whatsapp-enquiry-modal .btn {
+  border-radius: var(--radius-clay);
+  box-shadow: var(--shadow-clay);
+}
+
+.whatsapp-enquiry-modal button[type="submit"]:active {
+  transform: scale(0.98);
+  box-shadow: var(--shadow-clay-pressed);
+}

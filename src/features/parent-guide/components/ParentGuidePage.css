@@ -206,3 +206,21 @@
     margin-top: 10px;
   }
 }
+
+.parent-guide-page {
+  background: linear-gradient(135deg, var(--primary-yellow-light) 0%, #fff7e6 100%);
+}
+
+.feature-item {
+  border: none;
+  border-radius: var(--radius-clay);
+  background: linear-gradient(145deg, #ffffff, #fff8eb);
+  box-shadow: var(--shadow-clay);
+  color: var(--gray-900);
+}
+
+.feature-item:hover {
+  transform: none;
+  background: linear-gradient(145deg, #ffffff, #fff8eb);
+  box-shadow: var(--shadow-clay-hover);
+}

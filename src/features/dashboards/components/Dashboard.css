@@ -7,18 +7,18 @@
 
 /* Professional Navigation */
 .dashboard-nav {
-  background: #ffffff;
+  background: linear-gradient(145deg, #ffffff, #fff8eb);
   padding: var(--space-4) var(--space-8);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-clay);
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: 1000;
-  border-bottom: 2px solid var(--primary-yellow);
+  border-bottom: none;
   height: 80px;
   backdrop-filter: none;
 }
@@ -28,11 +28,11 @@
   display: flex !important;
   gap: 4px;
   margin-bottom: 24px;
-  background: white;
-  border-radius: 12px;
+  background: #fffaf3;
+  border-radius: var(--radius-clay);
   padding: 6px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e5e7eb;
+  box-shadow: var(--shadow-clay-inset);
+  border: none;
   opacity: 1;
   visibility: visible;
 }
@@ -42,7 +42,7 @@
   padding: 12px 20px;
   border: none;
   background: transparent;
-  border-radius: 8px;
+  border-radius: var(--radius-clay);
   font-size: 14px;
   font-weight: 600;
   color: #6b7280;
@@ -64,9 +64,9 @@
 }
 
 .dashboard-tabs .tab-button.active {
-  background: var(--primary-yellow);
-  color: var(--primary-yellow-dark);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: var(--gradient-primary);
+  color: var(--gray-900);
+  box-shadow: var(--shadow-clay);
 }
 
 .dashboard-tabs .tab-button.active:hover {
@@ -108,18 +108,21 @@
   color: var(--text-primary);
   border: none;
   padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-clay);
   font-weight: var(--font-weight-medium);
   cursor: pointer;
-  transition: all var(--transition-normal);
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
   font-size: 0.875rem;
-  box-shadow: var(--playful-shadow);
+  box-shadow: var(--shadow-clay);
 }
 
 .btn-signout:hover {
-  background: var(--primary-yellow-dark);
-  transform: translateY(-1px);
-  box-shadow: var(--playful-shadow-hover);
+  box-shadow: var(--shadow-clay-hover);
+}
+
+.btn-signout:active {
+  transform: scale(0.98);
+  box-shadow: var(--shadow-clay-pressed);
 }
 
 /* Dashboard Content */
@@ -136,9 +139,10 @@
   margin-bottom: var(--space-10);
   background: var(--background-primary);
   padding: var(--space-8);
-  border-radius: var(--radius-2xl);
-  box-shadow: var(--shadow-lg);
-  border: 1px solid var(--border-light);
+  border-radius: var(--radius-clay);
+  box-shadow: var(--shadow-clay);
+  border: none;
+  background: linear-gradient(145deg, #ffffff, #fff8eb);
 }
 
 .welcome-section h2 {
@@ -168,11 +172,11 @@
   margin-bottom: var(--space-8);
   flex-wrap: wrap;
   justify-content: center;
-  background: var(--background-primary);
+  background: #fffaf3;
   padding: var(--space-4);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--border-light);
+  border-radius: var(--radius-clay);
+  box-shadow: var(--shadow-clay-inset);
+  border: none;
   opacity: 1;
   visibility: visible;
 }
@@ -180,16 +184,16 @@
 .admin-tabs .tab-button {
   background: rgba(255, 255, 255, 0.95);
   color: #1f2937;
-  border: 2px solid var(--primary-yellow);
+  border: none;
   padding: var(--space-3) var(--space-5);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-clay);
   font-weight: 600;
   cursor: pointer;
-  transition: all var(--transition-normal);
+  transition: box-shadow 0.2s ease, background 0.2s ease, transform 0.15s ease;
   font-size: 0.875rem;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: none;
   display: flex !important;
   align-items: center;
   gap: var(--space-2);
@@ -202,11 +206,9 @@
 }
 
 .admin-tabs .tab-button:hover {
-  background: var(--primary-yellow-light);
+  background: #fff;
   color: #1f2937;
-  border-color: var(--primary-yellow);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-clay);
 }
 
 .admin-tabs .tab-button:hover * {
@@ -214,12 +216,11 @@
 }
 
 .admin-tabs .tab-button.active {
-  background: var(--primary-yellow);
-  color: #1f2937;
-  border-color: var(--primary-yellow);
-  box-shadow: var(--shadow-md);
+  background: var(--gradient-primary);
+  color: var(--gray-900);
+  box-shadow: var(--shadow-clay);
   font-weight: 700;
-  transform: translateY(-2px);
+  transform: none;
 }
 
 .admin-tabs .tab-button.active * {
